@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
- * Fan-out for GET /api/v1/events. Event types: INPUT_EXECUTED, MODE_CHANGED, VOTE_TALLY,
+ * Fan-out for GET /api/v1/events. Event types: INPUT_EXECUTED, MODE_CHANGED, MODE_VOTES, VOTE_TALLY,
  * CONSOLE_CHANGED, CHAT_MESSAGE, CHAT_DELETED, GAME_EVENT.
  */
 @Component

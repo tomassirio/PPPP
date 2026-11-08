@@ -55,6 +55,7 @@
 				game.modeVotes = { ANARCHY: 0, DEMOCRACY: 0 }; // the backend clears mode votes on a switch
 				game.tally = null;
 			}),
+			on('MODE_VOTES', (v) => (game.modeVotes = v)),
 			on('VOTE_TALLY', (t) => (game.tally = t)),
 			on('INPUT_EXECUTED', (e) => {
 				if (e.window && e.window === game.tally?.window) game.tally = null;

@@ -75,6 +75,7 @@ public class ModeService {
                     s.leaveDemocracyPercent(), s.holdFrames(), s.releaseFrames(), s.maxQueueLength(), s.chatCommands()));
             return counts();
         }
+        events.publish("MODE_VOTES", counts);
         return counts;
     }
 

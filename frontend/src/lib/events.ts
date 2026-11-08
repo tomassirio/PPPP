@@ -1,5 +1,5 @@
 // One shared EventSource on /api/v1/events for every component.
-// Event types: INPUT_EXECUTED, MODE_CHANGED, VOTE_TALLY, CONSOLE_CHANGED, CHAT_MESSAGE, CHAT_DELETED, GAME_EVENT.
+// Event types: INPUT_EXECUTED, MODE_CHANGED, MODE_VOTES, VOTE_TALLY, CONSOLE_CHANGED, CHAT_MESSAGE, CHAT_DELETED, GAME_EVENT.
 
 type Handler = (data: any) => void;
 
