@@ -8,6 +8,8 @@ spring:
   session:
     redis:
       namespace: spring:session
+      # Indexed = FindByIndexNameSessionRepository, so a user's sessions can be ended by email.
+      repository-type: indexed
   mvc:
     problemdetails:
       enabled: true
