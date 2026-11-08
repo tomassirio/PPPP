@@ -22,7 +22,8 @@ public class SecurityConfig {
                         .anyRequest().hasRole("PLAYER"))
                 .oauth2Login(o -> o
                         .userInfoEndpoint(u -> u.oidcUserService(allowlistOidcUserService))
-                        .defaultSuccessUrl("/play", true))
+                        .defaultSuccessUrl("/play", true)
+                        .failureUrl("/?error=denied"))
                 // API callers get 401, not a redirect to Google.
                 .exceptionHandling(e -> e.defaultAuthenticationEntryPointFor(
                         new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
