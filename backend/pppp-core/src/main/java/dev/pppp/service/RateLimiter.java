@@ -21,4 +21,9 @@ public class RateLimiter {
             throw new RateLimitedException("Rate limit exceeded");
         }
     }
+
+    /** Inputs the user may still send in the current 1 s window. */
+    public int remaining(String userId) {
+        return (int) Math.max(0, settings.rateLimit().inputsPerSecond() - counts.count(userId));
+    }
 }

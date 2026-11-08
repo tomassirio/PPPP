@@ -20,4 +20,10 @@ public class RateLimitRepository {
         if (n == 1) redis.expire(key, Duration.ofSeconds(1));
         return n;
     }
+
+    /** Inputs counted in the current window, without counting a new one. */
+    public long count(String userId) {
+        String n = redis.opsForValue().get("ratelimit:" + userId);
+        return n == null ? 0 : Long.parseLong(n);
+    }
 }

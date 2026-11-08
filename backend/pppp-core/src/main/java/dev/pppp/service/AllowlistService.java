@@ -27,15 +27,13 @@ public class AllowlistService {
     private final AllowlistRepository repo;
     private final ApplicationEventPublisher events;
     private final ChatService chat;
-    private final SettingsService settings;
     private final PpppProperties props;
 
     public AllowlistService(AllowlistRepository repo, ApplicationEventPublisher events, ChatService chat,
-                            SettingsService settings, PpppProperties props) {
+                            PpppProperties props) {
         this.repo = repo;
         this.events = events;
         this.chat = chat;
-        this.settings = settings;
         this.props = props;
     }
 
@@ -97,10 +95,6 @@ public class AllowlistService {
         chat.postSystem(id + " was banned");
     }
 
-    /** Inputs the user may still send in the current 1 s window. */
-    public int rateLimitRemaining(String email) {
-        return Math.max(0, settings.rateLimit().inputsPerSecond() - repo.inputsThisSecond(normalize(email)));
-    }
 
     private void requireAllowlisted(String email) {
         if (role(email) == null) throw notAllowlisted(normalize(email));

@@ -4,6 +4,7 @@ import dev.pppp.model.Role;
 import dev.pppp.model.User;
 import dev.pppp.security.CurrentUser;
 import dev.pppp.service.AllowlistService;
+import dev.pppp.service.RateLimiter;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -32,9 +33,11 @@ public class AllowlistController {
     public record Me(String id, String name, List<String> roles, int rateLimitRemaining) {}
 
     private final AllowlistService allowlist;
+    private final RateLimiter rateLimiter;
 
-    public AllowlistController(AllowlistService allowlist) {
+    public AllowlistController(AllowlistService allowlist, RateLimiter rateLimiter) {
         this.allowlist = allowlist;
+        this.rateLimiter = rateLimiter;
     }
 
     @GetMapping("/me")
@@ -46,7 +49,7 @@ public class AllowlistController {
                 .filter(a -> a.startsWith("ROLE_"))
                 .map(a -> a.substring(5))
                 .toList();
-        return new Me(id, name, roles, allowlist.rateLimitRemaining(id));
+        return new Me(id, name, roles, rateLimiter.remaining(id));
     }
 
     @GetMapping("/admin/allowlist")

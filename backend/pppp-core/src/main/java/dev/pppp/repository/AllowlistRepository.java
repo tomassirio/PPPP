@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Repository;
 
-/** Redis hash allowlist (user id -> role), set bans, and the read side of ratelimit:{userId}. Ids arrive normalized. */
+/** Redis hash allowlist (user id -> role), set bans. Ids arrive normalized. */
 @Repository
 public class AllowlistRepository {
     private static final String ALLOWLIST = "allowlist";
@@ -58,11 +58,5 @@ public class AllowlistRepository {
 
     public void ban(String id) {
         redis.opsForSet().add(BANS, id);
-    }
-
-    /** Inputs counted in the current 1 s rate-limit window (key written by RateLimiter). */
-    public int inputsThisSecond(String id) {
-        String used = redis.opsForValue().get("ratelimit:" + id);
-        return used == null ? 0 : Integer.parseInt(used);
     }
 }

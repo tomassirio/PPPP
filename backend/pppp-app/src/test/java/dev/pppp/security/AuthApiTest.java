@@ -18,7 +18,6 @@ import dev.pppp.config.PpppProperties;
 import dev.pppp.TestRedis;
 import dev.pppp.repository.AllowlistRepository;
 import dev.pppp.service.ChatService;
-import dev.pppp.service.SettingsService;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +49,6 @@ class AuthApiTest {
     @Autowired StringRedisTemplate redis;
     @Autowired AllowlistService allowlist;
     @Autowired ChatService chat;
-    @Autowired SettingsService settings;
     @Autowired AllowlistRepository repo;
     @Autowired AllowlistOidcUserService oidcUsers;
     @Autowired RedisIndexedSessionRepository sessions;
@@ -145,10 +143,10 @@ class AuthApiTest {
     void seedsConfiguredAdminsOnlyWhenAllowlistIsEmpty() {
         // An empty PPPP_ADMINS binds to [""].
         var props = new PpppProperties(List.of("", "Boss@X.com"), null);
-        new AllowlistService(repo, events, chat, settings, props).seedAdmins();
+        new AllowlistService(repo, events, chat, props).seedAdmins();
         assertThat(redis.opsForHash().entries("allowlist")).isEqualTo(Map.of("boss@x.com", "ADMIN"));
 
-        new AllowlistService(repo, events, chat, settings,
+        new AllowlistService(repo, events, chat,
                 new PpppProperties(List.of("other@x.com"), null)).seedAdmins();
         assertThat(redis.opsForHash().size("allowlist")).isEqualTo(1);
     }
