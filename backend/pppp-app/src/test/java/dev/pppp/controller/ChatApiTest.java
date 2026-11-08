@@ -154,7 +154,7 @@ class ChatApiTest {
     @Test
     void bridgeOnSubmitsCommandLikeMessages() throws Exception {
         settings.save(new Settings.Input("ANARCHY", 10, 80, 50, 6, 6, 50, true));
-        when(inputs.submit("f@y.z", "left2", 1)).thenReturn(new InputService.Accepted("1-0", "ANARCHY"));
+        when(inputs.submit("f@y.z", "left2", 1)).thenReturn(new dev.pppp.model.InputAccepted("1-0", "ANARCHY"));
         when(inputs.submit("g@y.z", "hello", 1)).thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST));
         when(inputs.submit("h@y.z", "a", 1)).thenThrow(new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS));
 

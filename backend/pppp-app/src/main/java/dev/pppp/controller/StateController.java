@@ -1,6 +1,7 @@
 package dev.pppp.controller;
 
 import dev.pppp.emulator.EmulatorHost;
+import dev.pppp.model.VoteTally;
 import dev.pppp.service.InputScheduler;
 import dev.pppp.service.InputService;
 import dev.pppp.service.ModeService;
@@ -12,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class StateController {
     /** tally is the open democracy window, or null. modeVotes counts active players' mode votes. */
     public record State(EmulatorHost.Power power, String cartridgeId, boolean paused, double speed, String mode, long queueDepth,
-                        InputScheduler.Tally tally, Map<String, Long> modeVotes) {}
+                        VoteTally tally, Map<String, Long> modeVotes) {}
 
     private final EmulatorHost host;
     private final ModeService modes;

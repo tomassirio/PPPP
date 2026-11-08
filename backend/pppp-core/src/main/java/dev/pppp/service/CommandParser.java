@@ -6,10 +6,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 
-/** Turns "a", "a3", "left2down2" (+ optional repeat) into the button steps to press. Throws 400 on anything else. */
+/** Turns "a", "a3", "left2down2" (+ optional repeat) into the button steps to press. Throws IllegalArgumentException on anything else. */
 public final class CommandParser {
     public static final int MAX_STEPS = 5;
     private static final Pattern TOKEN = Pattern.compile("(a|b|start|select|up|down|left|right|wait)(\\d{1,2})?");
@@ -52,7 +50,7 @@ public final class CommandParser {
         return Arrays.stream(cmd.split(",")).map(Button::valueOf).toList();
     }
 
-    private static ResponseStatusException bad(String detail) {
-        return new ResponseStatusException(HttpStatus.BAD_REQUEST, detail);
+    private static IllegalArgumentException bad(String detail) {
+        return new IllegalArgumentException(detail);
     }
 }
