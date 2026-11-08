@@ -87,8 +87,9 @@
 
 		<main>
 			<section class="game" aria-label="Game">
-				<GameScreen power={game.power} paused={game.paused} />
-				<SoundControl />
+				<GameScreen power={game.power} paused={game.paused}>
+					{#snippet controls()}<SoundControl />{/snippet}
+				</GameScreen>
 				<div class="tabs" role="group" aria-label="Panels">
 					{#each ['play', 'vote', 'chat'] as const as t (t)}
 						<button type="button" aria-pressed={tab === t} onclick={() => (tab = t)}

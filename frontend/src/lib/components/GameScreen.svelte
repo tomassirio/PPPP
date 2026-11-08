@@ -1,8 +1,10 @@
 <!-- Live screen: PNG frames from /ws/screen drawn on a 160x144 canvas, scaled with pixelated rendering. -->
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { backoff } from '#lib/play.ts';
 
-	let { power, paused }: { power: 'ON' | 'OFF'; paused: boolean } = $props();
+	// `controls` renders at the right of the bezel's status strip (e.g. the sound control).
+	let { power, paused, controls }: { power: 'ON' | 'OFF'; paused: boolean; controls?: Snippet } = $props();
 
 	let canvas: HTMLCanvasElement;
 	let connected = $state(false);
@@ -79,7 +81,10 @@
 		{/if}
 		<p class="sr-only" role="status">{overlay ?? ''}</p>
 	</div>
-	<span class="live" class:off={!!overlay}>● {overlay ? 'OFFLINE' : 'LIVE'}</span>
+	<div class="strip">
+		<span class="live" class:off={!!overlay}>● {overlay ? 'OFFLINE' : 'LIVE'}</span>
+		{@render controls?.()}
+	</div>
 </div>
 
 <style>
@@ -125,6 +130,13 @@
 		overflow: hidden;
 		clip: rect(0 0 0 0);
 		margin: 0;
+	}
+	.strip {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		min-height: 28px;
 	}
 	.live {
 		font-size: 11px;

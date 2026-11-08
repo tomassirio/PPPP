@@ -44,7 +44,7 @@
 
 <div class="sound">
 	<button type="button" aria-pressed={on} aria-label="Sound" title="Sound (M)" onclick={toggle}>
-		<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+		<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
 			<path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" />
 			{#if on}
 				<path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
@@ -53,43 +53,47 @@
 			{/if}
 		</svg>
 	</button>
-	<label>
-		<span>Volume</span>
-		<input type="range" min="0" max="1" step="0.05" bind:value={volume} oninput={setVolume} />
-	</label>
+	<input type="range" min="0" max="1" step="0.05" aria-label="Volume" disabled={!on} bind:value={volume} oninput={setVolume} />
 </div>
 
 <style>
+	/* Sits in the dark screen bezel, next to the LIVE indicator. */
 	.sound {
 		display: flex;
 		align-items: center;
-		justify-content: flex-end;
-		gap: 12px;
-		font-size: 13px;
-		color: var(--muted);
+		gap: 6px;
 	}
 	button {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 40px;
-		height: 40px;
-		border-radius: 8px;
-		border: 1px solid var(--border);
-		background: var(--panel);
-		color: var(--muted);
+		width: 28px;
+		height: 28px;
+		padding: 0;
+		border: none;
+		border-radius: 6px;
+		background: transparent;
+		color: #9aa0a6;
+	}
+	button:hover {
+		color: #d6dade;
 	}
 	button[aria-pressed='true'] {
 		color: var(--accent);
-		border-color: var(--accent);
 	}
-	label {
-		display: flex;
-		align-items: center;
-		gap: 8px;
+	button:focus-visible,
+	input:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
 	}
 	input {
-		width: 120px;
+		width: 84px;
+		height: 4px;
 		accent-color: var(--accent);
+		cursor: pointer;
+	}
+	input:disabled {
+		opacity: 0.35;
+		cursor: default;
 	}
 </style>
