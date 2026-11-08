@@ -23,6 +23,7 @@ Design doc: https://claude.ai/artifact/58m66h93Jn9y9LyDrqKDrm (read with the Cla
 - Screen designs to match: `frontend/design/*.dc.html` (sign-in desktop/phone, play desktop/phone). Tokens in `src/app.css`.
 - Backend calls only through `src/lib/api.ts` (`api(method, path, body)`, adds X-XSRF-TOKEN, throws `ApiError{status, detail, retryAfter}`).
 - Live events only through `src/lib/events.ts` (`on(type, handler)` returns unsubscribe; one shared EventSource).
+- Imports via `#lib/*` need the emitted extension: `#lib/session.svelte.js`, `#lib/api.js`.
 - Session: `src/lib/session.svelte.ts` (`session.me`, `loadMe()`, `isAdmin()`, `logout()`).
 - Backend payload shapes: read the controllers/records in `backend/src/main/java/dev/pppp` rather than guessing.
 - Accessibility: real buttons/labels, visible focus, `prefers-reduced-motion` respected, chat rendered as text never HTML.
