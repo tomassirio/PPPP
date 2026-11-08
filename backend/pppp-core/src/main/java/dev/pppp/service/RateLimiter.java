@@ -1,28 +1,24 @@
 package dev.pppp.service;
 
-import java.time.Duration;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.http.HttpStatus;
+import dev.pppp.exception.RateLimitedException;
+import dev.pppp.repository.RateLimitRepository;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
 
-/** Fixed 1 s window per user: ratelimit:{userId} INCR + EXPIRE 1 s. */
+/** Fixed 1 s window per user, limit from settings. */
 @Component
 public class RateLimiter {
-    private final StringRedisTemplate redis;
+    private final RateLimitRepository counts;
     private final SettingsService settings;
 
-    public RateLimiter(StringRedisTemplate redis, SettingsService settings) {
-        this.redis = redis;
+    public RateLimiter(RateLimitRepository counts, SettingsService settings) {
+        this.counts = counts;
         this.settings = settings;
     }
 
+    /** Throws RateLimitedException when the user is over inputsPerSecond. */
     public void check(String userId) {
-        String key = "ratelimit:" + userId;
-        long n = redis.opsForValue().increment(key);
-        if (n == 1) redis.expire(key, Duration.ofSeconds(1));
-        if (n > settings.rateLimit().inputsPerSecond()) {
-            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Rate limit exceeded");
+        if (counts.increment(userId) > settings.rateLimit().inputsPerSecond()) {
+            throw new RateLimitedException("Rate limit exceeded");
         }
     }
 }

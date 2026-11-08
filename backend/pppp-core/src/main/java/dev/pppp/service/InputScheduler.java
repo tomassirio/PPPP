@@ -1,10 +1,13 @@
 package dev.pppp.service;
 
-import dev.pppp.model.LiveEvent;
-import org.springframework.context.ApplicationEventPublisher;
 import dev.pppp.emulator.Button;
 import dev.pppp.emulator.EmulatorHost;
+import dev.pppp.model.LiveEvent;
 import dev.pppp.model.Settings;
+import dev.pppp.model.VoteTally;
+import dev.pppp.repository.InputQueueRepository;
+import dev.pppp.repository.InputQueueRepository.Entry;
+import dev.pppp.repository.VoteRepository;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -14,18 +17,12 @@ import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.SmartLifecycle;
-import org.springframework.data.redis.connection.stream.Consumer;
-import org.springframework.data.redis.connection.stream.MapRecord;
-import org.springframework.data.redis.connection.stream.ReadOffset;
-import org.springframework.data.redis.connection.stream.StreamOffset;
-import org.springframework.data.redis.connection.stream.StreamReadOptions;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 /**
- * The single owner of button presses. Runs on its own thread, reads inputs:stream through consumer
- * group "engine" one entry at a time. Starts by re-reading its own unacked entries (crash recovery), then new ones.
+ * The single owner of button presses. Runs on its own thread, reads the input queue one entry at a time. Starts by re-reading its own unacked entries (crash recovery), then new ones.
  *
  * <p>Anarchy entries (tagged mode=ANARCHY at submit) run as sent, steps back to back.
  *
@@ -40,26 +37,23 @@ import org.springframework.stereotype.Component;
 @Component
 public class InputScheduler implements SmartLifecycle {
     private static final Logger log = LoggerFactory.getLogger(InputScheduler.class);
-    private static final Consumer CONSUMER = Consumer.from(InputService.GROUP, "scheduler");
-
-    public record Tally(String window, Map<Button, Long> tally, long endsAt) {}
     private record Vote(String id, String user, Button button, int repeat) {}
     private record Window(String n, long endsAt, List<Vote> votes) {}
 
-    private final StringRedisTemplate redis;
-    private final InputService inputs;
+    private final InputQueueRepository queue;
+    private final VoteRepository votes;
     private final EmulatorHost host;
     private final SettingsService settings;
     private final ApplicationEventPublisher events;
     private final ModeService modes;
     private volatile Thread thread;
     private Window window; // scheduler thread only
-    private volatile Tally tally;
+    private volatile VoteTally tally;
 
-    public InputScheduler(StringRedisTemplate redis, InputService inputs, EmulatorHost host,
+    public InputScheduler(InputQueueRepository queue, VoteRepository votes, EmulatorHost host,
                           SettingsService settings, ApplicationEventPublisher events, ModeService modes) {
-        this.redis = redis;
-        this.inputs = inputs;
+        this.queue = queue;
+        this.votes = votes;
         this.host = host;
         this.settings = settings;
         this.events = events;
@@ -67,13 +61,13 @@ public class InputScheduler implements SmartLifecycle {
     }
 
     /** The open democracy window, or null. */
-    public Tally tally() {
+    public VoteTally tally() {
         return tally;
     }
 
     @Override
     public void start() {
-        inputs.createGroup();
+        queue.createGroup();
         thread = Thread.ofPlatform().name("input-scheduler").daemon().start(this::loop);
     }
 
@@ -108,19 +102,16 @@ public class InputScheduler implements SmartLifecycle {
                         || !ModeService.DEMOCRACY.equals(modes.current()))) {
                     resolve();
                 }
-                List<MapRecord<String, Object, Object>> records = recoverFrom != null
-                        ? redis.opsForStream().read(CONSUMER, StreamReadOptions.empty().count(10),
-                                StreamOffset.create(InputService.STREAM, ReadOffset.from(recoverFrom)))
-                        : redis.opsForStream().read(CONSUMER,
-                                StreamReadOptions.empty().count(1).block(Duration.ofMillis(window != null ? 100 : 500)),
-                                StreamOffset.create(InputService.STREAM, ReadOffset.lastConsumed()));
-                if (records == null || records.isEmpty()) {
+                List<Entry> records = recoverFrom != null
+                        ? queue.readOwnPending(recoverFrom, 10)
+                        : queue.readNext(Duration.ofMillis(window != null ? 100 : 500));
+                if (records.isEmpty()) {
                     recoverFrom = null;
                     continue;
                 }
                 for (var r : records) {
                     if (!running()) return;
-                    if (recoverFrom != null) recoverFrom = r.getId().getValue();
+                    if (recoverFrom != null) recoverFrom = r.id();
                     process(r);
                 }
             } catch (Exception e) {
@@ -134,14 +125,14 @@ public class InputScheduler implements SmartLifecycle {
         }
     }
 
-    private void process(MapRecord<String, Object, Object> r) {
-        String id = r.getId().getValue();
-        String status = inputs.statusOf(id);
+    private void process(Entry r) {
+        String id = r.id();
+        String status = queue.status(id);
         if (status != null && !"QUEUED".equals(status)) { // flushed, or already ran
             ack(id);
             return;
         }
-        if (ModeService.DEMOCRACY.equals(r.getValue().get("mode"))) {
+        if (ModeService.DEMOCRACY.equals(r.mode())) {
             vote(r);
         } else {
             if (window != null) resolve();
@@ -149,15 +140,15 @@ public class InputScheduler implements SmartLifecycle {
         }
     }
 
-    private void press(MapRecord<String, Object, Object> r) {
-        String id = r.getId().getValue();
-        String user = (String) r.getValue().get("user");
-        String cmd = (String) r.getValue().get("cmd");
+    private void press(Entry r) {
+        String id = r.id();
+        String user = r.user();
+        String cmd = r.cmd();
         while (running()) {
-            if ("DROPPED".equals(inputs.statusOf(id))) break; // flushed while paused
+            if ("DROPPED".equals(queue.status(id))) break; // flushed while paused
             EmulatorHost.Status console = host.status();
             if (console.power() != EmulatorHost.Power.ON) {
-                inputs.setStatus(id, "DROPPED", null); // no stale backlog while the console is off
+                queue.setStatus(id, "DROPPED", null); // no stale backlog while the console is off
                 break;
             }
             if (console.paused()) {
@@ -165,42 +156,42 @@ public class InputScheduler implements SmartLifecycle {
                 continue;
             }
             if (pressAll(CommandParser.deserialize(cmd), id)) {
-                inputs.setStatus(id, "EXECUTED", Instant.now());
+                queue.setStatus(id, "EXECUTED", Instant.now());
                 events.publishEvent(new LiveEvent("INPUT_EXECUTED", Map.of("id", id, "user", user, "command", cmd)));
             } else {
-                inputs.setStatus(id, "DROPPED", null);
+                queue.setStatus(id, "DROPPED", null);
             }
             break;
         }
         if (running()) ack(id);
     }
 
-    private void vote(MapRecord<String, Object, Object> r) {
-        String id = r.getId().getValue();
+    private void vote(Entry r) {
+        String id = r.id();
         if (host.status().power() != EmulatorHost.Power.ON) {
-            inputs.setStatus(id, "DROPPED", null);
+            queue.setStatus(id, "DROPPED", null);
             ack(id);
             return;
         }
-        String user = (String) r.getValue().get("user");
-        Button button = CommandParser.deserialize((String) r.getValue().get("cmd")).getFirst();
-        int repeat = Integer.parseInt((String) r.getValue().getOrDefault("repeat", "1"));
+        String user = r.user();
+        Button button = CommandParser.deserialize(r.cmd()).getFirst();
+        int repeat = r.repeat();
         if (window == null) {
             window = new Window(id, System.currentTimeMillis() + settings.input().democracyWindowSeconds() * 1000L,
                     new ArrayList<>());
-            redis.delete(List.of(windowKey(), votersKey())); // leftovers of a crashed run of this same window
+            votes.deleteWindow(id); // leftovers of a crashed run of this same window
         }
-        if (redis.opsForSet().add(votersKey(), user) == 0) { // one vote per user per window
-            inputs.setStatus(id, "OUTVOTED", null);
+        if (!votes.addVoter(window.n(), user)) { // one vote per user per window
+            queue.setStatus(id, "OUTVOTED", null);
             ack(id);
             return;
         }
         window.votes().add(new Vote(id, user, button, repeat));
-        redis.opsForZSet().incrementScore(windowKey(), button.name(), 1);
+        votes.countVote(window.n(), button);
 
         Map<Button, Long> counts = new LinkedHashMap<>();
         window.votes().forEach(v -> counts.merge(v.button(), 1L, Long::sum));
-        tally = new Tally(window.n(), Collections.unmodifiableMap(counts), window.endsAt());
+        tally = new VoteTally(window.n(), Collections.unmodifiableMap(counts), window.endsAt());
         events.publishEvent(new LiveEvent("VOTE_TALLY", Map.of("window", tally.window(), "tally", tally.tally(), "endsAt", tally.endsAt())));
 
         long active = modes.activePlayers().size();
@@ -213,7 +204,7 @@ public class InputScheduler implements SmartLifecycle {
         window = null;
         tally = null;
         // Votes flushed by an admin while the window was open no longer count.
-        List<Vote> live = w.votes().stream().filter(v -> !"DROPPED".equals(inputs.statusOf(v.id()))).toList();
+        List<Vote> live = w.votes().stream().filter(v -> !"DROPPED".equals(queue.status(v.id()))).toList();
         Map<Button, List<Vote>> byButton = new LinkedHashMap<>(); // insertion order = first vote order
         live.forEach(v -> byButton.computeIfAbsent(v.button(), b -> new ArrayList<>()).add(v));
         List<Vote> winners = List.of();
@@ -226,7 +217,7 @@ public class InputScheduler implements SmartLifecycle {
             boolean ok = awaitConsole() && pressAll(Collections.nCopies(times, first.button()), w.n());
             Instant at = Instant.now();
             for (Vote v : live) {
-                inputs.setStatus(v.id(), !ok ? "DROPPED" : winners.contains(v) ? "EXECUTED" : "OUTVOTED", ok ? at : null);
+                queue.setStatus(v.id(), !ok ? "DROPPED" : winners.contains(v) ? "EXECUTED" : "OUTVOTED", ok ? at : null);
             }
             if (ok) {
                 events.publishEvent(new LiveEvent("INPUT_EXECUTED", Map.of("id", first.id(), "user", first.user(),
@@ -235,7 +226,7 @@ public class InputScheduler implements SmartLifecycle {
         }
         if (!running()) return; // stopping mid-press: leave them pending, a restart re-tallies
         w.votes().forEach(v -> ack(v.id()));
-        redis.delete(List.of(windowKey(w.n()), votersKey(w.n())));
+        votes.deleteWindow(w.n());
     }
 
     /** Waits out a pause. False when the console is off (or we are stopping). */
@@ -261,13 +252,8 @@ public class InputScheduler implements SmartLifecycle {
     }
 
     private void ack(String id) {
-        redis.opsForStream().acknowledge(InputService.STREAM, InputService.GROUP, id);
+        queue.ack(id);
     }
-
-    private String windowKey() { return windowKey(window.n()); }
-    private String votersKey() { return votersKey(window.n()); }
-    private static String windowKey(String n) { return "vote:window:" + n; }
-    private static String votersKey(String n) { return "vote:voters:" + n; }
 
     private void sleep(long ms) {
         try {

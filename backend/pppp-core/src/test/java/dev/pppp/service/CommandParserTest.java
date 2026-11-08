@@ -8,7 +8,6 @@ import dev.pppp.emulator.Button;
 import java.util.List;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.springframework.web.server.ResponseStatusException;
 
 class CommandParserTest {
 
@@ -46,8 +45,7 @@ class CommandParserTest {
             "left2down2, 1, DEMOCRACY",
     })
     void rejects(String command, int repeat, String mode) {
-        var e = assertThrows(ResponseStatusException.class, () -> CommandParser.parse(command, repeat, mode));
-        assertEquals(400, e.getStatusCode().value());
+        assertThrows(IllegalArgumentException.class, () -> CommandParser.parse(command, repeat, mode));
     }
 
     @org.junit.jupiter.api.Test

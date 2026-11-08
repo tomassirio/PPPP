@@ -61,7 +61,7 @@ class InputApiTest {
         settings.save(Settings.RateLimit.DEFAULT);
         when(host.status()).thenReturn(ON);
         doAnswer(inv -> presses.add(inv.getArgument(0))).when(host).press(any(), anyInt(), anyInt());
-        inputs.flush();
+        inputs.flush("test");
         await(() -> inputs.depth() == 0);
     }
 
