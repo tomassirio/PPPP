@@ -26,6 +26,13 @@ public final class Settings {
     }
 
     public record Autosave(boolean enabled, @NotBlank String cron, @Min(1) @Max(1000) int keep) {
+        public Autosave {
+            // Reject before saving: an invalid cron would otherwise be stored and break the scheduler (400 via Jackson).
+            if (cron != null && !org.quartz.CronExpression.isValidExpression(cron)) {
+                throw new IllegalArgumentException("Invalid Quartz cron: " + cron);
+            }
+        }
+
         public static final Autosave DEFAULT = new Autosave(true, "0 0/30 * * * ?", 48);
     }
 }

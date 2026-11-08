@@ -21,6 +21,11 @@ spring:
             scope: openid,email,profile
   quartz:
     job-store-type: memory
+  servlet:
+    multipart:
+      # Largest Game Boy ROMs are 8 MB.
+      max-file-size: 8MB
+      max-request-size: 9MB
 
 server:
   forward-headers-strategy: framework
