@@ -1,8 +1,12 @@
 package dev.pppp.service;
 
-import dev.pppp.model.UserRevokedEvent;
-
 import dev.pppp.config.PpppProperties;
+import dev.pppp.exception.NotFoundException;
+import dev.pppp.model.Role;
+import dev.pppp.model.User;
+import dev.pppp.model.UserRevokedEvent;
+import dev.pppp.model.UserSessionsEndedEvent;
+import dev.pppp.repository.AllowlistRepository;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -12,33 +16,26 @@ import java.util.Set;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.session.FindByIndexNameSessionRepository;
-import org.springframework.session.Session;
 import org.springframework.stereotype.Service;
 
-/** Runtime allowlist (Redis hash allowlist: email -> role), bans (Redis set bans) and session revocation. */
+/**
+ * Runtime allowlist and bans. Revocation is announced as events: UserRevokedEvent (remove/ban: sessions end,
+ * sockets close) and UserSessionsEndedEvent (role change: sessions end). Listeners in pppp-app do the ending.
+ */
 @Service
 public class AllowlistService {
-    public enum Role { PLAYER, ADMIN }
-
-    public record User(String id, Role role, boolean banned) {}
-
-    private static final String ALLOWLIST = "allowlist";
-    private static final String BANS = "bans";
-
-    private final StringRedisTemplate redis;
-    private final FindByIndexNameSessionRepository<? extends Session> sessions;
+    private final AllowlistRepository repo;
     private final ApplicationEventPublisher events;
     private final ChatService chat;
+    private final SettingsService settings;
     private final PpppProperties props;
 
-    public AllowlistService(StringRedisTemplate redis, FindByIndexNameSessionRepository<? extends Session> sessions,
-                            ApplicationEventPublisher events, ChatService chat, PpppProperties props) {
-        this.redis = redis;
-        this.sessions = sessions;
+    public AllowlistService(AllowlistRepository repo, ApplicationEventPublisher events, ChatService chat,
+                            SettingsService settings, PpppProperties props) {
+        this.repo = repo;
         this.events = events;
         this.chat = chat;
+        this.settings = settings;
         this.props = props;
     }
 
@@ -48,27 +45,26 @@ public class AllowlistService {
 
     @EventListener(ApplicationReadyEvent.class)
     public void seedAdmins() {
-        if (redis.opsForHash().size(ALLOWLIST) > 0) return;
-        Map<String, String> seed = new HashMap<>();
+        if (!repo.isEmpty()) return;
+        Map<String, Role> seed = new HashMap<>();
         // An empty PPPP_ADMINS binds to [""], so skip blanks.
-        props.admins().stream().filter(e -> !e.isBlank()).forEach(e -> seed.put(normalize(e), Role.ADMIN.name()));
-        if (!seed.isEmpty()) redis.opsForHash().putAll(ALLOWLIST, seed);
+        props.admins().stream().filter(e -> !e.isBlank()).forEach(e -> seed.put(normalize(e), Role.ADMIN));
+        if (!seed.isEmpty()) repo.putAll(seed);
     }
 
     /** The user's role, or null if not allowlisted. */
     public Role role(String email) {
-        Object raw = redis.opsForHash().get(ALLOWLIST, normalize(email));
-        return raw == null ? null : Role.valueOf((String) raw);
+        return repo.role(normalize(email));
     }
 
     public boolean isBanned(String email) {
-        return Boolean.TRUE.equals(redis.opsForSet().isMember(BANS, normalize(email)));
+        return repo.isBanned(normalize(email));
     }
 
     public List<User> list() {
-        Set<String> banned = redis.opsForSet().members(BANS);
-        return redis.<String, String>opsForHash().entries(ALLOWLIST).entrySet().stream()
-                .map(e -> new User(e.getKey(), Role.valueOf(e.getValue()), banned.contains(e.getKey())))
+        Set<String> banned = repo.banned();
+        return repo.roles().entrySet().stream()
+                .map(e -> new User(e.getKey(), e.getValue(), banned.contains(e.getKey())))
                 .sorted(Comparator.comparing(User::id))
                 .toList();
     }
@@ -76,32 +72,41 @@ public class AllowlistService {
     /** Adds or changes a role. A role change ends the user's sessions so it applies on next login. */
     public void put(String email, Role role) {
         String id = normalize(email);
-        Role old = role(id);
-        redis.opsForHash().put(ALLOWLIST, id, role.name());
-        if (old != null && old != role) endSessions(id);
+        Role old = repo.role(id);
+        repo.put(id, role);
+        if (old != null && old != role) events.publishEvent(new UserSessionsEndedEvent(id));
     }
 
-    /** Returns false if the email was not on the allowlist. */
-    public boolean remove(String email) {
+    /** Like put, but only for someone already allowlisted. */
+    public void changeRole(String email, Role role) {
+        requireAllowlisted(email);
+        put(email, role);
+    }
+
+    public void remove(String email) {
         String id = normalize(email);
-        if (redis.opsForHash().delete(ALLOWLIST, id) == 0) return false;
-        revoke(id);
-        return true;
-    }
-
-    public void ban(String email) {
-        String id = normalize(email);
-        redis.opsForSet().add(BANS, id);
-        revoke(id);
-        chat.postSystem(id + " was banned");
-    }
-
-    private void revoke(String id) {
-        endSessions(id);
+        if (!repo.remove(id)) throw notAllowlisted(id);
         events.publishEvent(new UserRevokedEvent(id));
     }
 
-    private void endSessions(String id) {
-        sessions.findByPrincipalName(id).keySet().forEach(sessions::deleteById);
+    public void ban(String email) {
+        requireAllowlisted(email);
+        String id = normalize(email);
+        repo.ban(id);
+        events.publishEvent(new UserRevokedEvent(id));
+        chat.postSystem(id + " was banned");
+    }
+
+    /** Inputs the user may still send in the current 1 s window. */
+    public int rateLimitRemaining(String email) {
+        return Math.max(0, settings.rateLimit().inputsPerSecond() - repo.inputsThisSecond(normalize(email)));
+    }
+
+    private void requireAllowlisted(String email) {
+        if (role(email) == null) throw notAllowlisted(normalize(email));
+    }
+
+    private static NotFoundException notAllowlisted(String id) {
+        return new NotFoundException(id + " is not on the allowlist");
     }
 }

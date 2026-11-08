@@ -1,5 +1,6 @@
 package dev.pppp.security;
 
+import dev.pppp.model.Role;
 import dev.pppp.service.AllowlistService;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,7 +16,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import dev.pppp.config.PpppProperties;
 import dev.pppp.TestRedis;
+import dev.pppp.repository.AllowlistRepository;
 import dev.pppp.service.ChatService;
+import dev.pppp.service.SettingsService;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +50,8 @@ class AuthApiTest {
     @Autowired StringRedisTemplate redis;
     @Autowired AllowlistService allowlist;
     @Autowired ChatService chat;
+    @Autowired SettingsService settings;
+    @Autowired AllowlistRepository repo;
     @Autowired AllowlistOidcUserService oidcUsers;
     @Autowired RedisIndexedSessionRepository sessions;
     @Autowired ApplicationEventPublisher events;
@@ -58,9 +63,9 @@ class AuthApiTest {
 
     @Test
     void googleLoginOnlyForAllowlistedUnbannedUsers() {
-        allowlist.put("Admin@X.com", AllowlistService.Role.ADMIN);
-        allowlist.put("player@x.com", AllowlistService.Role.PLAYER);
-        allowlist.put("banned@x.com", AllowlistService.Role.PLAYER);
+        allowlist.put("Admin@X.com", Role.ADMIN);
+        allowlist.put("player@x.com", Role.PLAYER);
+        allowlist.put("banned@x.com", Role.PLAYER);
         redis.opsForSet().add("bans", "banned@x.com");
 
         OidcUser admin = oidcUsers.loadUser(googleLogin("Admin@X.com"));
@@ -83,7 +88,7 @@ class AuthApiTest {
         mvc.perform(post("/api/v1/admin/allowlist").with(csrf()).with(user("a@x.com").roles("PLAYER", "ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated());
-        assertThat(allowlist.role("friend@x.com")).isEqualTo(AllowlistService.Role.PLAYER);
+        assertThat(allowlist.role("friend@x.com")).isEqualTo(Role.PLAYER);
 
         mvc.perform(post("/api/v1/admin/allowlist").with(csrf()).with(user("a@x.com").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"email\":\"nope\",\"role\":\"PLAYER\"}"))
@@ -101,11 +106,20 @@ class AuthApiTest {
     }
 
     @Test
-    void removalAndBanEndSessions() throws Exception {
-        allowlist.put("gone@x.com", AllowlistService.Role.PLAYER);
-        allowlist.put("bad@x.com", AllowlistService.Role.PLAYER);
+    void removalBanAndRoleChangeEndSessions() throws Exception {
+        allowlist.put("gone@x.com", Role.PLAYER);
+        allowlist.put("bad@x.com", Role.PLAYER);
+        allowlist.put("promo@x.com", Role.PLAYER);
         session("gone@x.com");
         session("bad@x.com");
+        session("promo@x.com");
+
+        mvc.perform(put("/api/v1/admin/users/promo@x.com/role").with(csrf()).with(user("a@x.com").roles("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"role\":\"ADMIN\"}"))
+                .andExpect(status().isOk());
+        assertThat(sessions.findByPrincipalName("promo@x.com")).isEmpty();
+        mvc.perform(delete("/api/v1/admin/allowlist/nobody@x.com").with(csrf()).with(user("a@x.com").roles("ADMIN")))
+                .andExpect(status().isNotFound());
 
         mvc.perform(delete("/api/v1/admin/allowlist/Gone@x.com").with(csrf()).with(user("a@x.com").roles("ADMIN")))
                 .andExpect(status().isNoContent());
@@ -131,10 +145,10 @@ class AuthApiTest {
     void seedsConfiguredAdminsOnlyWhenAllowlistIsEmpty() {
         // An empty PPPP_ADMINS binds to [""].
         var props = new PpppProperties(List.of("", "Boss@X.com"), null);
-        new AllowlistService(redis, sessions, events, chat, props).seedAdmins();
+        new AllowlistService(repo, events, chat, settings, props).seedAdmins();
         assertThat(redis.opsForHash().entries("allowlist")).isEqualTo(Map.of("boss@x.com", "ADMIN"));
 
-        new AllowlistService(redis, sessions, events, chat,
+        new AllowlistService(repo, events, chat, settings,
                 new PpppProperties(List.of("other@x.com"), null)).seedAdmins();
         assertThat(redis.opsForHash().size("allowlist")).isEqualTo(1);
     }
