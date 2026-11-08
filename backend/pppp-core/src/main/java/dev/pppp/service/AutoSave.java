@@ -1,8 +1,7 @@
 package dev.pppp.service;
 
 import dev.pppp.job.AutoSaveJob;
-
-import dev.pppp.emulator.EmulatorHost;
+import dev.pppp.model.SaveState;
 import dev.pppp.model.Settings;
 import java.util.Set;
 import org.quartz.CronScheduleBuilder;
@@ -27,25 +26,20 @@ public class AutoSave {
 
     private final Scheduler scheduler;
     private final SettingsService settings;
-    private final SaveStore saves;
-    private final EmulatorHost host;
+    private final SaveStateService saves;
     private final ChatService chat;
 
-    public AutoSave(Scheduler scheduler, SettingsService settings, SaveStore saves, EmulatorHost host, ChatService chat) {
+    public AutoSave(Scheduler scheduler, SettingsService settings, SaveStateService saves, ChatService chat) {
         this.scheduler = scheduler;
         this.settings = settings;
         this.saves = saves;
-        this.host = host;
         this.chat = chat;
     }
 
     /** Takes an automatic state and prunes old ones. Returns null (skips) when the console is off or empty. */
-    public SaveStore.SaveState run() {
-        EmulatorHost.Status s = host.status();
-        if (s.power() != EmulatorHost.Power.ON || s.cartridgeId() == null) return null;
-        host.flushBattery();
-        SaveStore.SaveState state = saves.take(SaveStore.Kind.auto);
-        saves.prune(s.cartridgeId(), settings.autosave().keep());
+    public SaveState run() {
+        SaveState state = saves.takeAuto();
+        if (state == null) return null;
         chat.postSystem("Autosaved (" + state.id() + ")");
         return state;
     }

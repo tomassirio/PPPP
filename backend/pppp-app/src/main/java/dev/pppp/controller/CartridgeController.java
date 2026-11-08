@@ -1,6 +1,7 @@
 package dev.pppp.controller;
 
-import dev.pppp.service.CartridgeStore;
+import dev.pppp.model.Cartridge;
+import dev.pppp.service.CartridgeService;
 import java.io.IOException;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -17,22 +18,22 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/v1/admin/cartridges")
 public class CartridgeController {
-    private final CartridgeStore cartridges;
+    private final CartridgeService cartridges;
 
-    public CartridgeController(CartridgeStore cartridges) {
+    public CartridgeController(CartridgeService cartridges) {
         this.cartridges = cartridges;
     }
 
     @GetMapping
-    public List<CartridgeStore.Cartridge> list() { return cartridges.list(); }
+    public List<Cartridge> list() { return cartridges.list(); }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CartridgeStore.Cartridge upload(@RequestParam("file") MultipartFile file) throws IOException {
-        return cartridges.upload(file);
+    public Cartridge upload(@RequestParam("file") MultipartFile file) throws IOException {
+        return cartridges.upload(file.getOriginalFilename(), file.getBytes());
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable String id) throws IOException { cartridges.delete(id); }
+    public void delete(@PathVariable String id) { cartridges.delete(id); }
 }
