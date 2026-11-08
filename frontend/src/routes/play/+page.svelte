@@ -11,6 +11,7 @@
 	import ModeCard from '#lib/components/ModeCard.svelte';
 	import UpNext from '#lib/components/UpNext.svelte';
 	import VoteTally from '#lib/components/VoteTally.svelte';
+	import banner from '#lib/assets/banner.webp';
 
 	let game = $state<GameState>({
 		power: 'OFF',
@@ -69,9 +70,8 @@
 	<div class="page">
 		<header>
 			<div class="brand">
-				<span class="pixel logo"
-					><span class="long">Pibs&amp;PibettesPlayPokemon</span><span class="short">pppp</span></span
-				>
+				<img class="logo" src={banner} alt="Pibs&amp;PibettesPlayPokemon" width="924" height="111" />
+				<span class="pixel short">pppp</span>
 				<span class="pill">Mode: {modeLabel}</span>
 			</div>
 			<div class="user">
@@ -128,11 +128,14 @@
 		flex-wrap: wrap;
 	}
 	.logo {
-		font-size: 16px;
-		color: var(--accent);
+		display: block;
+		height: 36px;
+		width: auto;
 	}
 	.short {
 		display: none;
+		font-size: 11px;
+		color: var(--accent);
 	}
 	.pill {
 		font-size: 13px;
@@ -221,12 +224,11 @@
 			padding: 8px 16px;
 			gap: 8px;
 		}
-		.long {
+		.logo {
 			display: none;
 		}
 		.short {
 			display: inline;
-			font-size: 11px;
 		}
 		.brand,
 		.user {
