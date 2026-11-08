@@ -3,6 +3,7 @@ package dev.pppp.api;
 import dev.pppp.auth.CurrentUser;
 import dev.pppp.chat.ChatService;
 import dev.pppp.input.InputService;
+import dev.pppp.input.ModeService;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -21,13 +22,22 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 public class InputController {
     public record InputRequest(String command, Integer repeat) {}
+    public record ModeVote(String mode) {}
 
     private final InputService inputs;
     private final ChatService chat;
+    private final ModeService modes;
 
-    public InputController(InputService inputs, ChatService chat) {
+    public InputController(InputService inputs, ChatService chat, ModeService modes) {
         this.inputs = inputs;
         this.chat = chat;
+        this.modes = modes;
+    }
+
+    /** Body: the active players' mode vote counts after this vote. */
+    @PostMapping("/api/v1/votes/mode")
+    public ResponseEntity<Map<String, Long>> voteMode(@RequestBody ModeVote req, Authentication auth) {
+        return ResponseEntity.accepted().body(modes.vote(CurrentUser.id(auth), req.mode()));
     }
 
     @PostMapping("/api/v1/inputs")
