@@ -1,5 +1,6 @@
 package dev.pppp.controller;
 
+import dev.pppp.model.ChatMessage;
 import dev.pppp.service.ChatService;
 
 import dev.pppp.security.CurrentUser;
@@ -33,15 +34,15 @@ class ChatController {
 
     @PostMapping("/chat/messages")
     @ResponseStatus(HttpStatus.CREATED)
-    ChatService.Message send(@RequestBody SendRequest body, Authentication auth) {
+    ChatMessage send(@RequestBody SendRequest body, Authentication auth) {
         String id = CurrentUser.id(auth);
         String name = auth.getPrincipal() instanceof OidcUser oidc && oidc.getFullName() != null ? oidc.getFullName() : id;
         return chat.send(id, name, body.text());
     }
 
     @GetMapping("/chat/messages")
-    List<ChatService.Message> history(@RequestParam(required = false) String before,
-                                      @RequestParam(defaultValue = "50") int limit) {
+    List<ChatMessage> history(@RequestParam(required = false) String before,
+                              @RequestParam(defaultValue = "50") int limit) {
         return chat.history(before, limit);
     }
 

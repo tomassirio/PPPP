@@ -1,5 +1,8 @@
 package dev.pppp.controller;
 
+import dev.pppp.exception.QueueFullException;
+import dev.pppp.exception.RateLimitedException;
+import dev.pppp.model.ChatMessage;
 import dev.pppp.service.ChatService;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,13 +36,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.web.server.ResponseStatusException;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -76,7 +77,7 @@ class ChatApiTest {
                     .andExpect(jsonPath("$.command").value(false))
                     .andExpect(jsonPath("$.at").isNumber());
         }
-        verify(events).publish(eq("CHAT_MESSAGE"), argThat(m -> ((ChatService.Message) m).text().equals("hello 2")));
+        verify(events).publish(eq("CHAT_MESSAGE"), argThat(m -> ((ChatMessage) m).text().equals("hello 2")));
 
         String page1 = mvc.perform(get("/api/v1/chat/messages?limit=2").with(user("x@y.z").roles("PLAYER")))
                 .andExpect(status().isOk())
@@ -155,12 +156,14 @@ class ChatApiTest {
     void bridgeOnSubmitsCommandLikeMessages() throws Exception {
         settings.save(new Settings.Input("ANARCHY", 10, 80, 50, 6, 6, 50, true));
         when(inputs.submit("f@y.z", "left2", 1)).thenReturn(new InputService.Accepted("1-0", "ANARCHY"));
-        when(inputs.submit("g@y.z", "hello", 1)).thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST));
-        when(inputs.submit("h@y.z", "a", 1)).thenThrow(new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS));
+        when(inputs.submit("g@y.z", "hello", 1)).thenThrow(new IllegalArgumentException("bad command"));
+        when(inputs.submit("h@y.z", "a", 1)).thenThrow(new RateLimitedException("slow down"));
+        when(inputs.submit("j@y.z", "b", 1)).thenThrow(new QueueFullException("full", 1));
 
         send("f@y.z", "left2").andExpect(status().isCreated()).andExpect(jsonPath("$.command").value(true));
         send("g@y.z", "hello").andExpect(status().isCreated()).andExpect(jsonPath("$.command").value(false));
         send("h@y.z", "a").andExpect(status().isCreated()).andExpect(jsonPath("$.command").value(false));
+        send("j@y.z", "b").andExpect(status().isCreated()).andExpect(jsonPath("$.command").value(false));
         send("i@y.z", "hello there").andExpect(jsonPath("$.command").value(false));
         verify(inputs, never()).submit(eq("i@y.z"), anyString(), anyInt());
         assertThat(chat.history(null, 50)).anySatisfy(m -> assertThat(m.command()).isTrue());
