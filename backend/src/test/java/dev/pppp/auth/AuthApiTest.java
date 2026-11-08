@@ -44,6 +44,7 @@ class AuthApiTest {
     @Autowired MockMvc mvc;
     @Autowired StringRedisTemplate redis;
     @Autowired AllowlistService allowlist;
+    @Autowired ChatService chat;
     @Autowired AllowlistOidcUserService oidcUsers;
     @Autowired RedisIndexedSessionRepository sessions;
     @Autowired ApplicationEventPublisher events;
@@ -128,10 +129,10 @@ class AuthApiTest {
     void seedsConfiguredAdminsOnlyWhenAllowlistIsEmpty() {
         // An empty PPPP_ADMINS binds to [""].
         var props = new PpppProperties(List.of("", "Boss@X.com"), null);
-        new AllowlistService(redis, sessions, events, new ChatService(), props).seedAdmins();
+        new AllowlistService(redis, sessions, events, chat, props).seedAdmins();
         assertThat(redis.opsForHash().entries("allowlist")).isEqualTo(Map.of("boss@x.com", "ADMIN"));
 
-        new AllowlistService(redis, sessions, events, new ChatService(),
+        new AllowlistService(redis, sessions, events, chat,
                 new PpppProperties(List.of("other@x.com"), null)).seedAdmins();
         assertThat(redis.opsForHash().size("allowlist")).isEqualTo(1);
     }
