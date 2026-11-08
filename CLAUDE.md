@@ -16,3 +16,13 @@ Design doc: https://claude.ai/artifact/58m66h93Jn9y9LyDrqKDrm (read with the Cla
 - Admin actions announce themselves via `ChatService.postSystem(text)`.
 - Redis keys follow the design doc's key layout table exactly.
 - Keep it small: no interfaces with one implementation, no speculative config.
+
+## Frontend (`frontend/`)
+- SvelteKit 3 + Svelte 5 runes, TypeScript, Vite 8, adapter-static (SPA, `ssr = false`), served by nginx. Config lives in `vite.config.ts` (no svelte.config.js).
+- Commands: `cd frontend && npm run check && npm test && npm run build`. Dev: `npm run dev` proxies /api, /ws, /oauth2, /login/oauth2 to localhost:8080.
+- Screen designs to match: `frontend/design/*.dc.html` (sign-in desktop/phone, play desktop/phone). Tokens in `src/app.css`.
+- Backend calls only through `src/lib/api.ts` (`api(method, path, body)`, adds X-XSRF-TOKEN, throws `ApiError{status, detail, retryAfter}`).
+- Live events only through `src/lib/events.ts` (`on(type, handler)` returns unsubscribe; one shared EventSource).
+- Session: `src/lib/session.svelte.ts` (`session.me`, `loadMe()`, `isAdmin()`, `logout()`).
+- Backend payload shapes: read the controllers/records in `backend/src/main/java/dev/pppp` rather than guessing.
+- Accessibility: real buttons/labels, visible focus, `prefers-reduced-motion` respected, chat rendered as text never HTML.

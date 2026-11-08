@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pibs&amp;PibettesPlayPokemon play</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#f2c14e}a:hover{color:#ffd77a}
+button{font:inherit;cursor:pointer}
+
+</style>
+</helmet>
+<div style="min-height: 100vh; box-sizing: border-box; background: #11161a; color: #edebe3; font-family: Inter, system-ui, sans-serif">
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 32px; border-bottom: 1px solid #2c3840">
+<div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap">
+<span style="font-family: &#39;Press Start 2P&#39;, monospace; font-size: 16px; color: #f2c14e">Pibs&amp;PibettesPlayPokemon</span>
+<span style="font-size: 13px; font-weight: 600; padding: 6px 10px; border-radius: 999px; background: #2c3840">Mode: {{modeLabel}}</span>
+</div>
+<div style="display: flex; align-items: center; gap: 16px">
+<span style="font-size: 14px; color: #a3ada8">12 of 18 trainers online</span>
+<span style="width: 36px; height: 36px; border-radius: 50%; background: #2a9d8f; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700" aria-label="Signed in as Pibs">PB</span>
+<a href="Main.dc.html" style="font-size: 14px">Sign out</a>
+</div>
+</header>
+<main style="display: flex; flex-wrap: wrap; gap: 24px; padding: 24px 32px; max-width: 1440px; margin: 0 auto; box-sizing: border-box; align-items: flex-start">
+<section aria-label="Game" style="flex: 1 1 520px; max-width: 560px; display: flex; flex-direction: column; gap: 16px">
+<div style="background: #d8d3c4; border-radius: 16px 16px 48px 16px; padding: 24px; display: flex; flex-direction: column; gap: 24px">
+<div style="background: #3b3f45; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+<div style="aspect-ratio: 160 / 144; width: 100%; background: #cadc9f; border-radius: 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px">
+<span style="font-family: &#39;Press Start 2P&#39;, monospace; font-size: 14px; color: #0f380f">LIVE GAME SCREEN</span>
+<span style="font-size: 13px; color: #0f380f">160 × 144, scaled to fit</span>
+</div>
+<span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: #d6dade">● LIVE</span>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 0 8px">
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 156px; gap: 0"><div style="width: 52px; height: 52px"></div><button type="button" aria-label="Up" onClick="{{press.up}}" style="width: 52px; height: 52px; background: #2b2d42; border: none; border-radius: 6px; display: flex; align-items: center; justify-content: center; padding: 0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#edebe3" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"></path></svg></button><div style="width: 52px; height: 52px"></div><button type="button" aria-label="Left" onClick="{{press.left}}" style="width: 52px; height: 52px; background: #2b2d42; border: none; border-radius: 6px; display: flex; align-items: center; justify-content: center; padding: 0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#edebe3" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></button><div style="width: 52px; height: 52px; background: #2b2d42"></div><button type="button" aria-label="Right" onClick="{{press.right}}" style="width: 52px; height: 52px; background: #2b2d42; border: none; border-radius: 6px; display: flex; align-items: center; justify-content: center; padding: 0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#edebe3" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button><div style="width: 52px; height: 52px"></div><button type="button" aria-label="Down" onClick="{{press.down}}" style="width: 52px; height: 52px; background: #2b2d42; border: none; border-radius: 6px; display: flex; align-items: center; justify-content: center; padding: 0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#edebe3" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button><div style="width: 52px; height: 52px"></div></div>
+<div style="display: flex; gap: 16px; align-items: center; transform: rotate(-20deg)"><button type="button" aria-label="B button" onClick="{{press.b}}" style="width: 64px; height: 64px; border-radius: 50%; background: #bc4b51; color: #ffffff; border: none; font-family: &#39;Press Start 2P&#39;, monospace; font-size: 14px; margin-top: 28px">B</button><button type="button" aria-label="A button" onClick="{{press.a}}" style="width: 64px; height: 64px; border-radius: 50%; background: #bc4b51; color: #ffffff; border: none; font-family: &#39;Press Start 2P&#39;, monospace; font-size: 14px">A</button></div>
+</div>
+<div style="display: flex; gap: 16px; justify-content: center"><button type="button" onClick="{{press.select}}" style="min-width: 88px; height: 44px; border-radius: 22px; background: #8d8a80; color: #1d1f1c; border: none; font-size: 12px; font-weight: 700; letter-spacing: 0.08em">SELECT</button><button type="button" onClick="{{press.start}}" style="min-width: 88px; height: 44px; border-radius: 22px; background: #8d8a80; color: #1d1f1c; border: none; font-size: 12px; font-weight: 700; letter-spacing: 0.08em">START</button></div>
+</div>
+<p style="margin: 0; font-size: 14px">Your last press: <strong style="font-family: &#39;Press Start 2P&#39;, monospace; font-size: 11px">{{lastPress}}</strong> · sent</p>
+<p style="margin: 0; font-size: 13px; color: #a3ada8">Keyboard: arrow keys, Z for A, X for B, Enter for Start, Shift for Select.</p>
+</section>
+<section aria-label="Mode and votes" style="flex: 1 1 320px; display: flex; flex-direction: column; gap: 16px">
+<div style="background: #1a2228; border: 1px solid #2c3840; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box">
+<h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #a3ada8">Mode</h2>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<p style="margin: 0; font-size: 22px; font-weight: 700">{{modeLabel}}</p>
+<p style="margin: 0; font-size: 14px; line-height: 20px; color: #a3ada8">{{modeHelp}}</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; font-size: 14px"><span>Switch to {{otherLabel}}</span><span style="color: #a3ada8">{{switchCount}}</span></div>
+<div style="height: 8px; border-radius: 4px; background: #2c3840; overflow: hidden"><div style="height: 8px; width: {{switchPct}}; background: #f2c14e"></div></div>
+</div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<button type="button" onClick="{{voteSwitch}}" style="height: 44px; padding: 0 16px; border-radius: 8px; border: none; background: #f2c14e; color: #1d1f1c; font-weight: 600; font-size: 14px">Vote {{otherLabel}}</button>
+<button type="button" style="height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #3a4851; background: transparent; color: #edebe3; font-weight: 600; font-size: 14px">Keep {{modeLabel}}</button>
+</div>
+</div>
+<sc-if value="{{isDem}}" hint-placeholder-val="{{true}}">
+<div style="background: #1a2228; border: 1px solid #2c3840; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px">
+<h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #a3ada8">This vote</h2><span style="font-size: 13px; color: #a3ada8">Closes in 4 s · 11 of 18 voted</span>
+</div>
+<sc-for list="{{tally}}" as="t" hint-placeholder-count="3">
+<div style="display: grid; grid-template-columns: 64px 1fr 92px; align-items: center; gap: 10px">
+<span style="font-family: &#39;Press Start 2P&#39;, monospace; font-size: 11px">{{t.label}}</span>
+<div style="height: 10px; border-radius: 5px; background: #2c3840; overflow: hidden"><div style="height: 10px; width: {{t.pct}}; background: {{t.color}}"></div></div>
+<span style="font-size: 13px; color: #a3ada8; text-align: right">{{t.note}}</span>
+</div>
+</sc-for>
+<p style="margin: 0; font-size: 13px; line-height: 19px; color: #a3ada8">Press a button on the pad to vote. Repeat counts merge by median.</p>
+</div>
+</sc-if>
+<sc-if value="{{isAnarchy}}" hint-placeholder-val="{{false}}">
+<div style="background: #1a2228; border: 1px solid #2c3840; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #a3ada8">Up next</h2><span style="font-size: 13px; color: #a3ada8">3 queued</span></div>
+<ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px">
+<li style="display: flex; justify-content: space-between; font-size: 14px"><span style="font-family: &#39;Press Start 2P&#39;, monospace; font-size: 11px">A</span><span style="color: #a3ada8">Sam</span></li>
+<li style="display: flex; justify-content: space-between; font-size: 14px"><span style="font-family: &#39;Press Start 2P&#39;, monospace; font-size: 11px">LEFT ×2</span><span style="color: #a3ada8">Priya</span></li>
+<li style="display: flex; justify-content: space-between; font-size: 14px"><span style="font-family: &#39;Press Start 2P&#39;, monospace; font-size: 11px">B</span><span style="color: #a3ada8">Jordan</span></li>
+</ol>
+</div>
+</sc-if>
+</section>
+<section aria-label="Chat" style="flex: 1 1 340px; height: 640px; background: #1a2228; border: 1px solid #2c3840; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #a3ada8">Chat</h2><span style="font-size: 13px; color: #a3ada8">12 online</span></div>
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; flex: 1 1 auto; overflow-y: auto; min-height: 0">
+<sc-for list="{{messages}}" as="m" hint-placeholder-count="5">
+<li style="font-size: 14px; line-height: 20px"><span style="font-weight: 700; color: {{m.color}}">{{m.who}}</span> <span style="color: {{m.textColor}}">{{m.text}}</span></li>
+</sc-for>
+</ul>
+<div style="display: flex; gap: 8px; align-items: center">
+<label for="chat-d" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Message</label>
+<input id="chat-d" type="text" placeholder="Say something to the group" value="{{draft}}" onChange="{{onDraft}}" style="flex: 1 1 auto; min-width: 0; height: 44px; box-sizing: border-box; background: #11161a; border: 1px solid #3a4851; border-radius: 8px; color: #edebe3; padding: 0 12px; font-size: 14px; font-family: Inter, system-ui, sans-serif">
+<button type="button" onClick="{{send}}" style="height: 44px; padding: 0 16px; border-radius: 8px; border: none; background: #f2c14e; color: #1d1f1c; font-weight: 600; font-size: 14px">Send</button>
+</div>
+<p style="margin: 0; font-size: 12px; line-height: 17px; color: #a3ada8">If your host turns it on, a message that is exactly a command, like a or left2, also presses buttons.</p>
+</section>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"mode":{"editor":"enum","options":["democracy","anarchy"],"default":"democracy"},"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      draft: '',
+      lastPress: 'START',
+      messages: [
+        { who: 'System', text: 'Pibs powered the console on.', sys: true },
+        { who: 'Sam', text: 'who keeps pressing start' },
+        { who: 'Priya', text: 'left2 gets us around the tree' },
+        { who: 'Jordan', text: 'voting democracy, this cave is a maze' },
+        { who: 'System', text: 'Democracy started. Votes close every few seconds.', sys: true },
+        { who: 'Mia', text: 'A A A' }
+      ]
+    };
+  }
+  renderVals() {
+    const mode = this.state.mode ?? this.props.mode ?? 'democracy';
+    const dem = mode === 'democracy';
+    const colors = { Sam: '#f2c14e', Priya: '#7fd1c7', Jordan: '#f4a259', Mia: '#c9a7eb', You: '#a7d676' };
+    const mk = (b) => () => this.setState({ lastPress: b });
+    const tab = this.state.tab ?? 'play';
+    const tabStyle = (t) => 'flex: 1 1 0; height: 44px; border: none; background: transparent; font-size: 14px; font-weight: 600; ' + (tab === t ? 'color: #f2c14e; box-shadow: inset 0 -3px 0 #f2c14e' : 'color: #a3ada8; box-shadow: inset 0 -1px 0 #2c3840');
+    return {
+      modeLabel: dem ? 'Democracy' : 'Anarchy',
+      otherLabel: dem ? 'anarchy' : 'democracy',
+      modeHelp: dem ? 'Each window runs the most-voted button.' : 'Every press runs in arrival order.',
+      switchCount: dem ? '4 of 18 · needs 9' : '5 of 18 · needs 15',
+      switchPct: dem ? '22%' : '28%',
+      isDem: dem, isAnarchy: !dem,
+      statusLine: dem ? 'Vote closes in 4 s' : '3 inputs queued',
+      voteSwitch: () => this.setState({ mode: dem ? 'anarchy' : 'democracy' }),
+      lastPress: this.state.lastPress,
+      press: { up: mk('UP'), down: mk('DOWN'), left: mk('LEFT'), right: mk('RIGHT'), a: mk('A'), b: mk('B'), start: mk('START'), select: mk('SELECT') },
+      tally: [
+        { label: 'A', pct: '55%', note: '6 votes · ×1', color: '#f2c14e' },
+        { label: 'LEFT', pct: '36%', note: '4 votes · ×2', color: '#7fd1c7' },
+        { label: 'UP', pct: '9%', note: '1 vote · ×1', color: '#7fd1c7' }
+      ],
+      messages: this.state.messages.map((m) => ({ ...m, color: m.sys ? '#a3ada8' : (colors[m.who] || '#edebe3'), textColor: m.sys ? '#a3ada8' : '#edebe3' })),
+      draft: this.state.draft,
+      onDraft: (e) => this.setState({ draft: e.target.value }),
+      send: () => {
+        const t = (this.state.draft || '').trim();
+        if (!t) return;
+        this.setState({ draft: '', messages: [...this.state.messages, { who: 'You', text: t }] });
+      },
+      isPlay: tab === 'play', isVote: tab === 'vote', isChat: tab === 'chat',
+      tabPlay: () => this.setState({ tab: 'play' }), tabVote: () => this.setState({ tab: 'vote' }), tabChat: () => this.setState({ tab: 'chat' }),
+      tabPlayStyle: tabStyle('play'), tabVoteStyle: tabStyle('vote'), tabChatStyle: tabStyle('chat')
+    };
+  }
+}
+</script>
+</body>
+</html>

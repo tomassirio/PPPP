@@ -1,0 +1,56 @@
+/* Tokens from the screen designs (frontend/design/*.dc.html). */
+:root {
+	--bg: #11161a;
+	--panel: #1a2228;
+	--border: #2c3840;
+	--text: #edebe3;
+	--muted: #a3ada8;
+	--accent: #f2c14e;
+	--accent-hover: #ffd77a;
+	--accent-shadow: #a23b2a;
+	--ink: #1d1f1c;
+	--screen: #e3efc8;
+	--grass: #9bbc0f;
+	--danger: #e76f51;
+	--pixel-font: 'Press Start 2P', monospace;
+	--body-font: Inter, system-ui, sans-serif;
+	color-scheme: dark;
+}
+
+html,
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--text);
+	font-family: var(--body-font);
+}
+
+a {
+	color: var(--accent);
+}
+a:hover {
+	color: var(--accent-hover);
+}
+
+button {
+	font: inherit;
+	cursor: pointer;
+}
+
+.pixel {
+	font-family: var(--pixel-font);
+}
+
+.panel {
+	background: var(--panel);
+	border: 1px solid var(--border);
+	border-radius: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation: none !important;
+	}
+}
