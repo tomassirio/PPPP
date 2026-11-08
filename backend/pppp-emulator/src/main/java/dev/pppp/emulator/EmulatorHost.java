@@ -10,6 +10,8 @@ import eu.rekawek.coffeegb.core.memory.cart.Rom;
 import eu.rekawek.coffeegb.core.memory.cart.battery.BatteryPersistenceFailedEvent;
 import eu.rekawek.coffeegb.core.memory.cart.battery.BatteryStorage;
 import eu.rekawek.coffeegb.core.serial.SerialEndpoint;
+import eu.rekawek.coffeegb.core.sound.Sound;
+import eu.rekawek.coffeegb.core.sound.StereoPcmConverter;
 import eu.rekawek.coffeegb.core.state.bess.BessCodec;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -49,6 +51,8 @@ public class EmulatorHost {
     private static final int TICKS_PER_FRAME = 70224;
     private static final long FRAME_NANOS = 1_000_000_000L * TICKS_PER_FRAME / Gameboy.TICKS_PER_SEC;
     private static final int PIXELS = Display.DISPLAY_WIDTH * Display.DISPLAY_HEIGHT;
+    /** Mono, so 18 listeners cost ~44 KB/s each; GB audio is near-mono and tops out well below 11 kHz. */
+    private static final int AUDIO_SAMPLE_RATE = 22050;
 
     // Lifecycle fields are guarded by `this`; the machine fields belong to the emulator thread.
     private String cartridgeId;
@@ -60,6 +64,7 @@ public class EmulatorHost {
 
     private final BlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>();
     private final List<Consumer<int[]>> frameListeners = new CopyOnWriteArrayList<>();
+    private final List<Consumer<short[]>> audioListeners = new CopyOnWriteArrayList<>();
 
     private Gameboy gb;
     private EventBusImpl bus;
@@ -67,6 +72,8 @@ public class EmulatorHost {
     private long frame;
     private final int[] pixels = new int[PIXELS];
     private Press press;
+    private StereoPcmConverter pcm;
+    private byte[] pcmBytes = new byte[0];
 
     /** Inserts a ROM. Console must be OFF. batterySave is where the cartridge's .sav lives (may not exist yet). */
     public synchronized void insert(String cartridgeId, Path rom, Path batterySave) {
@@ -233,6 +240,19 @@ public class EmulatorHost {
         frameListeners.add(listener);
     }
 
+    /**
+     * Registers a listener for the console's sound: mono signed 16-bit samples at {@link #audioSampleRate()},
+     * about one frame's worth (~369) per call, in a fresh array shared by all listeners (don't modify it).
+     * Silent while paused or at any speed but 1.0. Runs on the emulator thread: hand off and return.
+     */
+    public void onAudio(Consumer<short[]> listener) {
+        audioListeners.add(listener);
+    }
+
+    public int audioSampleRate() {
+        return AUDIO_SAMPLE_RATE;
+    }
+
     /** Stops the emulator if it is running. Call on application shutdown. */
     public synchronized void shutdown() {
         if (thread != null) powerOff();
@@ -293,12 +313,36 @@ public class EmulatorHost {
 
     private void startMachine() {
         bus = new EventBusImpl(null, "pppp", false);
+        pcm = new StereoPcmConverter(AUDIO_SAMPLE_RATE);
+        bus.register(this::sound, Sound.SoundSampleEvent.class);
         bus.register(e -> e.toRgb(pixels, false), Display.DmgFrameReadyEvent.class);
         bus.register(e -> e.toRgb(pixels), Display.GbcFrameReadyEvent.class);
         bus.register(e -> log.error("Battery {} failed for {}: {}",e.operation(), e.fileName(), e.message()),
                 BatteryPersistenceFailedEvent.class);
         gb = config().build();
         gb.init(bus, SerialEndpoint.NULL_ENDPOINT, InfraredEndpoint.NULL_ENDPOINT, null);
+    }
+
+    /** Posted synchronously from runTicks, about once per frame; the buffer is reused by the APU. */
+    private void sound(Sound.SoundSampleEvent e) {
+        // ponytail: other speeds are dropped, not pitch-corrected; resample by speed here if friends miss the music at 2x.
+        if (audioListeners.isEmpty() || speed != 1.0) return;
+        int max = pcm.maximumPcmBytes(e.buffer().length / 2, e.clockSpec());
+        if (pcmBytes.length < max) pcmBytes = new byte[max];
+        int n = pcm.render(e.buffer(), e.clockSpec(), 100, false, pcmBytes) / 4;
+        short[] mono = new short[n];
+        for (int i = 0, b = 0; i < n; i++, b += 4) {
+            int left = (short) ((pcmBytes[b] & 0xFF) | pcmBytes[b + 1] << 8);
+            int right = (short) ((pcmBytes[b + 2] & 0xFF) | pcmBytes[b + 3] << 8);
+            mono[i] = (short) ((left + right) >> 1);
+        }
+        for (Consumer<short[]> l : audioListeners) {
+            try {
+                l.accept(mono);
+            } catch (RuntimeException ex) {
+                log.warn("Audio listener failed", ex);
+            }
+        }
     }
 
     /** Flushes the battery and releases the machine; fails a running press so its caller wakes up. */

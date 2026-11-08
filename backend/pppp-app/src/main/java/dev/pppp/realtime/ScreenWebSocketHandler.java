@@ -16,14 +16,14 @@ import org.springframework.web.socket.handler.AbstractWebSocketHandler;
 
 /**
  * /ws/screen: pushes every second emulated frame as a PNG binary message to every socket. Each socket
- * has a latest-frame slot, so a slow client just skips frames; nothing here blocks the emulator thread.
+ * has a one-frame handoff, so a slow client just skips frames; nothing here blocks the emulator thread.
  * The handshake goes through the normal security chain (ROLE_PLAYER), so the principal is the Authentication.
  */
 @Component
 public class ScreenWebSocketHandler extends AbstractWebSocketHandler {
 
-    private final Map<WebSocketSession, LatestSlot<byte[]>> sessions = new ConcurrentHashMap<>();
-    private final LatestSlot<int[]> encoder = new LatestSlot<>(this::broadcast);
+    private final Map<WebSocketSession, Handoff<byte[]>> sessions = new ConcurrentHashMap<>();
+    private final Handoff<int[]> encoder = new Handoff<>(1, this::broadcast);
     private volatile byte[] latest;
 
     ScreenWebSocketHandler(EmulatorHost host) {
@@ -39,7 +39,7 @@ public class ScreenWebSocketHandler extends AbstractWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
-        LatestSlot<byte[]> slot = new LatestSlot<>(png -> send(session, png));
+        Handoff<byte[]> slot = new Handoff<>(1, png -> send(session, png));
         sessions.put(session, slot);
         byte[] last = latest;
         if (last != null) slot.offer(last);
@@ -62,12 +62,16 @@ public class ScreenWebSocketHandler extends AbstractWebSocketHandler {
 
     @EventListener
     public void onUserRevoked(UserRevokedEvent event) {
-        sessions.keySet().stream()
-                .filter(s -> s.getPrincipal() instanceof Authentication auth && CurrentUser.id(auth).equals(event.userId()))
+        closeSessionsOf(sessions.keySet(), event.userId());
+    }
+
+    static void closeSessionsOf(java.util.Collection<WebSocketSession> sessions, String userId) {
+        sessions.stream()
+                .filter(s -> s.getPrincipal() instanceof Authentication auth && CurrentUser.id(auth).equals(userId))
                 .forEach(s -> close(s, CloseStatus.POLICY_VIOLATION));
     }
 
-    private static void close(WebSocketSession session, CloseStatus status) {
+    static void close(WebSocketSession session, CloseStatus status) {
         try {
             session.close(status);
         } catch (IOException ignored) {

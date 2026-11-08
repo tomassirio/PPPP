@@ -85,4 +85,29 @@ class EmulatorHostTest {
         host.resume();
         assertThat(frames.poll(2, TimeUnit.SECONDS)).isNotNull();
     }
+
+    @Test
+    void playsAboutOneSecondOfAudioPerSecondAtNormalSpeedOnly() throws Exception {
+        var samples = new java.util.concurrent.atomic.AtomicInteger();
+        var peak = new java.util.concurrent.atomic.AtomicInteger();
+        host.onAudio(chunk -> {
+            samples.addAndGet(chunk.length);
+            for (short s : chunk) peak.accumulateAndGet(Math.abs(s), Math::max);
+        });
+        host.insert("test", TestRom.write(dir), dir.resolve("test.sav"));
+        host.powerOn();
+        Thread.sleep(300); // past start-up jitter
+        samples.set(0);
+        long t0 = System.nanoTime();
+        Thread.sleep(1000);
+        double perSecond = samples.get() * 1e9 / (System.nanoTime() - t0);
+        assertThat(perSecond).isBetween(host.audioSampleRate() * 0.85, host.audioSampleRate() * 1.15);
+        assertThat(peak.get()).as("the ROM's square wave is audible").isGreaterThan(1000);
+
+        host.setSpeed(2.0);
+        Thread.sleep(100);
+        samples.set(0);
+        Thread.sleep(300);
+        assertThat(samples.get()).isZero();
+    }
 }
