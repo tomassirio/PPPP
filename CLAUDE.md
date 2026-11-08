@@ -24,7 +24,7 @@ Design doc: https://claude.ai/artifact/58m66h93Jn9y9LyDrqKDrm (read with the Cla
 ## Frontend (`frontend/`)
 - SvelteKit 3 + Svelte 5 runes, TypeScript, Vite 8, adapter-static (SPA, `ssr = false`), served by nginx. Config lives in `vite.config.ts` (no svelte.config.js).
 - Commands: `cd frontend && npm run check && npm test && npm run build`. Dev: `npm run dev` proxies /api, /ws, /oauth2, /login/oauth2 to localhost:8080.
-- Screen designs to match: `frontend/design/*.dc.html` (sign-in desktop/phone, play desktop/phone). Tokens in `src/app.css`.
+- Screen designs to match for /play: `frontend/design/Play*.dc.html`. The sign-in page (`/`) is the handheld boot-up. Tokens in `src/app.css`.
 - Backend calls only through `src/lib/api.ts` (`api(method, path, body)`, adds X-XSRF-TOKEN, throws `ApiError{status, detail, retryAfter}`).
 - Live events only through `src/lib/events.ts` (`on(type, handler)` returns unsubscribe; one shared EventSource).
 - Imports via `#lib/*` need the emitted extension: `#lib/session.svelte.js`, `#lib/api.js`.
