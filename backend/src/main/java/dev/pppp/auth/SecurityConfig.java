@@ -10,18 +10,19 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
-// Skeleton rules from the design doc. The auth workstream adds the allowlist OidcUserService.
 @Configuration
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain filterChain(HttpSecurity http, AllowlistOidcUserService allowlistOidcUserService) throws Exception {
         return http
                 .authorizeHttpRequests(a -> a
                         .requestMatchers("/", "/assets/**", "/actuator/health/**", "/error").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .anyRequest().hasRole("PLAYER"))
-                .oauth2Login(o -> o.defaultSuccessUrl("/play", true))
+                .oauth2Login(o -> o
+                        .userInfoEndpoint(u -> u.oidcUserService(allowlistOidcUserService))
+                        .defaultSuccessUrl("/play", true))
                 // API callers get 401, not a redirect to Google.
                 .exceptionHandling(e -> e.defaultAuthenticationEntryPointFor(
                         new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
