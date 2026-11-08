@@ -33,7 +33,12 @@ class SettingsApiTest {
                 .andExpect(jsonPath("$.inputsPerSecond").value(5));
         mvc.perform(put("/api/v1/admin/settings/rate-limit").with(csrf()).with(user("a").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"inputsPerSecond\":0}"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("inputsPerSecond must be greater than or equal to 1"));
+        mvc.perform(put("/api/v1/admin/settings/autosave").with(csrf()).with(user("a").roles("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"enabled\":true,\"cron\":\"nope\",\"keep\":3}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Invalid Quartz cron: nope"));
     }
 
     @Test

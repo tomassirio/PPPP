@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class StateController {
     /** tally is the open democracy window, or null. modeVotes counts active players' mode votes. */
-    public record State(EmulatorHost.Power power, String cartridgeId, boolean paused, String mode, long queueDepth,
+    public record State(EmulatorHost.Power power, String cartridgeId, boolean paused, double speed, String mode, long queueDepth,
                         InputScheduler.Tally tally, Map<String, Long> modeVotes) {}
 
     private final EmulatorHost host;
@@ -29,7 +29,7 @@ public class StateController {
     @GetMapping("/api/v1/state")
     public State state() {
         var s = host.status();
-        return new State(s.power(), s.cartridgeId(), s.paused(), modes.current(), inputs.depth(),
+        return new State(s.power(), s.cartridgeId(), s.paused(), s.speed(), modes.current(), inputs.depth(),
                 scheduler.tally(), modes.counts());
     }
 }

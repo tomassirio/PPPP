@@ -18,8 +18,8 @@
 			if (!me) return goto('/');
 			if (!isAdmin(me)) return;
 			off = on('CONSOLE_CHANGED', (s: ConsoleStatus) => setConsole(s));
-			const state = await act('Load console state', () => api<Omit<ConsoleStatus, 'speed'>>('GET', '/state'), undefined, true);
-			if (state) setConsole({ power: state.power, cartridgeId: state.cartridgeId, paused: state.paused });
+			const state = await act('Load console state', () => api<ConsoleStatus>('GET', '/state'), undefined, true);
+			if (state) setConsole({ power: state.power, cartridgeId: state.cartridgeId, paused: state.paused, speed: state.speed });
 		});
 		return () => off?.();
 	});

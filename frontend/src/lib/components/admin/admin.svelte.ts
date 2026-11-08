@@ -4,7 +4,7 @@ export type ConsoleStatus = {
 	power: 'ON' | 'OFF';
 	cartridgeId: string | null;
 	paused: boolean;
-	speed: number | null; // GET /state has no speed; known after the first CONSOLE_CHANGED or console action
+	speed: number | null; // null until GET /state loads
 };
 
 // Shared by the admin panels: console status (cartridge/save-state panels depend on it) and the aria-live notice.
