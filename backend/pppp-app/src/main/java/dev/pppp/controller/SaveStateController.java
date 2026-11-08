@@ -1,10 +1,8 @@
 package dev.pppp.controller;
 
-import dev.pppp.realtime.EventPublisher;
-import dev.pppp.service.ChatService;
-import dev.pppp.emulator.EmulatorHost;
+import dev.pppp.model.SaveState;
 import dev.pppp.service.AutoSave;
-import dev.pppp.service.SaveStore;
+import dev.pppp.service.SaveStateService;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,45 +16,27 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/admin")
 public class SaveStateController {
-    private final SaveStore saves;
+    private final SaveStateService saves;
     private final AutoSave autoSave;
-    private final EmulatorHost host;
-    private final ChatService chat;
-    private final EventPublisher events;
 
-    public SaveStateController(SaveStore saves, AutoSave autoSave, EmulatorHost host, ChatService chat, EventPublisher events) {
+    public SaveStateController(SaveStateService saves, AutoSave autoSave) {
         this.saves = saves;
         this.autoSave = autoSave;
-        this.host = host;
-        this.chat = chat;
-        this.events = events;
     }
 
     @GetMapping("/save-states")
-    public List<SaveStore.SaveState> list() {
-        String cartridgeId = host.status().cartridgeId();
-        return cartridgeId == null ? List.of() : saves.list(cartridgeId);
-    }
+    public List<SaveState> list() { return saves.list(); }
 
     @PostMapping("/save-states")
     @ResponseStatus(HttpStatus.CREATED)
-    public SaveStore.SaveState take() {
-        var state = saves.take(SaveStore.Kind.manual);
-        chat.postSystem("Save state taken (" + state.id() + ")");
-        return state;
-    }
+    public SaveState take() { return saves.takeManual(); }
 
     @PostMapping("/save-states/{id}/load")
-    public SaveStore.SaveState load(@PathVariable String id) {
-        var state = saves.load(id);
-        chat.postSystem("Save state " + id + " loaded");
-        events.publish("CONSOLE_CHANGED", host.status());
-        return state;
-    }
+    public SaveState load(@PathVariable String id) { return saves.load(id); }
 
     @PostMapping("/autosave/run")
     @ResponseStatus(HttpStatus.CREATED)
-    public SaveStore.SaveState runAutosave() {
+    public SaveState runAutosave() {
         var state = autoSave.run();
         if (state == null) throw new IllegalStateException("Console is off");
         return state;

@@ -22,7 +22,7 @@ import dev.pppp.service.ChatService;
 import dev.pppp.emulator.EmulatorHost;
 import dev.pppp.model.Settings;
 import dev.pppp.service.SettingsService;
-import dev.pppp.service.ConsoleStore;
+import dev.pppp.service.ConsoleService;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -68,7 +68,7 @@ class AdminApiTest {
     @Autowired StringRedisTemplate redis;
     @Autowired SettingsService settings;
     @Autowired Scheduler scheduler;
-    @Autowired ConsoleStore consoleStore;
+    @Autowired ConsoleService consoleService;
     @MockitoBean EmulatorHost host;
     @MockitoBean ChatService chat;
 
@@ -162,7 +162,7 @@ class AdminApiTest {
         // A restart re-inserts and powers on.
         reset(host);
         console(EmulatorHost.Power.ON, "blue");
-        consoleStore.restore();
+        consoleService.restore();
         verify(host).insert(eq("blue"), any(), any());
         verify(host).powerOn();
     }
@@ -190,7 +190,7 @@ class AdminApiTest {
                 .andExpect(status().isNotFound());
 
         // Shutdown hook takes an automatic state.
-        consoleStore.saveOnShutdown();
+        consoleService.saveOnShutdown();
         mvc.perform(get("/api/v1/admin/save-states").with(ADMIN))
                 .andExpect(jsonPath("$[0].kind").value("auto"))
                 .andExpect(jsonPath("$.length()").value(2));
