@@ -83,7 +83,13 @@ export function createPlayer() {
 		/** Call from a user gesture (click/key) so the browser lets the AudioContext run. */
 		start() {
 			if (!ctx) {
-				ctx = new AudioContext();
+				// Run the context at the stream's rate (the server always sends 22050 Hz) so chunks play
+				// back to back without each being resampled on its own, which clicks at the seams.
+				try {
+					ctx = new AudioContext({ sampleRate: 22050 });
+				} catch {
+					ctx = new AudioContext(); // browser refuses that rate: per-chunk resampling, may click
+				}
 				gain = ctx.createGain();
 				gain.gain.value = volume;
 				gain.connect(ctx.destination);
