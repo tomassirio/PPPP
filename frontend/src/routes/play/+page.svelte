@@ -9,6 +9,7 @@
 	import GameScreen from '#lib/components/GameScreen.svelte';
 	import Gamepad from '#lib/components/Gamepad.svelte';
 	import ModeCard from '#lib/components/ModeCard.svelte';
+	import SoundControl from '#lib/components/SoundControl.svelte';
 	import UpNext from '#lib/components/UpNext.svelte';
 	import VoteTally from '#lib/components/VoteTally.svelte';
 	import banner from '#lib/assets/banner.webp';
@@ -87,6 +88,7 @@
 		<main>
 			<section class="game" aria-label="Game">
 				<GameScreen power={game.power} paused={game.paused} />
+				<SoundControl />
 				<div class="tabs" role="group" aria-label="Panels">
 					{#each ['play', 'vote', 'chat'] as const as t (t)}
 						<button type="button" aria-pressed={tab === t} onclick={() => (tab = t)}

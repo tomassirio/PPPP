@@ -28,7 +28,7 @@ const KEYS: Record<string, Button> = {
 	Backspace: 'select'
 };
 
-type KeyLike = {
+export type KeyLike = {
 	key: string;
 	repeat?: boolean;
 	ctrlKey?: boolean;
@@ -37,12 +37,18 @@ type KeyLike = {
 	target?: EventTarget | null;
 };
 
-/** The pad button for a keydown, or null when it should be left alone (typing, shortcuts, held keys). */
-export function keyToButton(e: KeyLike): Button | null {
-	if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return null;
+/** True for keydowns a page shortcut must ignore: typing in a field, modifier shortcuts, held keys. */
+export function notForShortcuts(e: KeyLike): boolean {
+	if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return true;
 	const t = e.target as HTMLElement | null;
 	const tag = t?.tagName;
-	if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t?.isContentEditable) return null;
+	return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || !!t?.isContentEditable;
+}
+
+/** The pad button for a keydown, or null when it should be left alone (typing, shortcuts, held keys). */
+export function keyToButton(e: KeyLike): Button | null {
+	if (notForShortcuts(e)) return null;
+	const tag = (e.target as HTMLElement | null)?.tagName;
 	// Enter on a focused button or link already activates it.
 	if (e.key === 'Enter' && (tag === 'BUTTON' || tag === 'A')) return null;
 	return KEYS[e.key] ?? null;
