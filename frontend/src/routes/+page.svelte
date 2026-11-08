@@ -1,12 +1,13 @@
-<!-- Sign-in page: an original handheld that boots into the banner. START (or A, Enter, Space) signs in. -->
+<!-- Sign-in page: an original colour handheld that boots into the banner. START (or A, Enter, Space) signs in. -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { loadMe } from '#lib/session.svelte.js';
-	import banner from '#lib/assets/banner.webp';
+	import pibs from '#lib/assets/banner-pibs.webp';
+	import play from '#lib/assets/banner-play.webp';
 
-	const BOOT_MS = 3300;
+	const BOOT_MS = 2900;
 
 	const denied = $derived(page.url.searchParams.get('error') === 'denied');
 
@@ -77,36 +78,17 @@
 
 <svelte:window {onkeydown} {onkeyup} onpointerdown={skip} onpointerup={release} onblur={release} />
 
-<!-- Maps the banner onto the four LCD greens, and drops soft alpha so edges stay hard. -->
-<svg class="defs" aria-hidden="true" width="0" height="0">
-	<filter id="lcd-ink" color-interpolation-filters="sRGB" x="0" y="0" width="100%" height="100%">
-		<feColorMatrix
-			type="matrix"
-			values="0.3 0.59 0.11 0 0  0.3 0.59 0.11 0 0  0.3 0.59 0.11 0 0  0 0 0 1 0"
-		/>
-		<feComponentTransfer>
-			<feFuncR type="discrete" tableValues="0.059 0.059 0.059 0.059 0.059 0.059 0.059 0.059 0.545 0.545 0.545 0.608 0.608 0.608 0.608 0.608" />
-			<feFuncG type="discrete" tableValues="0.22 0.22 0.22 0.22 0.22 0.22 0.22 0.22 0.675 0.675 0.675 0.737 0.737 0.737 0.737 0.737" />
-			<feFuncB type="discrete" tableValues="0.059 0.059 0.059 0.059 0.059 0.059 0.059 0.059 0.059 0.059 0.059 0.059 0.059 0.059 0.059 0.059" />
-			<feFuncA type="discrete" tableValues="0 1" />
-		</feComponentTransfer>
-	</filter>
-</svg>
-
 <main>
 	<div class="device" class:booting>
 		<div class="shell" aria-hidden="true"></div>
 
 		<div class="bezel">
-			<p class="label" aria-hidden="true">PIBS &amp; PIBETTES</p>
 			<span class="led" aria-hidden="true"></span>
 			<div class="lcd" class:denied>
-				<!-- The banner is one wide image; it is shown as two clipped rows so it is big enough to read. -->
 				<h1>
-					<span class="row"
-						><img class="banner" src={banner} alt="Pibs&amp;PibettesPlayPokemon" width="924" height="111" /></span
+					<img src={pibs} alt="Pibs&amp;Pibettes" width="720" height="131" /><span class="row"
+						><img src={play} alt="PlayPokemon" width="720" height="171" /></span
 					>
-					<span class="row two" aria-hidden="true"><img class="banner" src={banner} alt="" /></span>
 				</h1>
 				<p class="press" aria-hidden="true">PRESS START</p>
 				{#if denied}
@@ -114,6 +96,7 @@
 				{/if}
 				<span class="flash" aria-hidden="true"></span>
 			</div>
+			<p class="label" aria-hidden="true">PIBS <b>&amp;</b> PIBETTES</p>
 		</div>
 
 		<p class="model" aria-hidden="true">PPPP</p>
@@ -124,9 +107,9 @@
 
 		<div class="face" aria-hidden="true">
 			<!-- svelte-ignore a11y_no_static_element_interactions (decorative, hidden from AT) -->
-			<span class="round" class:down={held === 'b'} onpointerdown={() => (held = 'b')}>B</span>
+			<span class="round b" class:down={held === 'b'} onpointerdown={() => (held = 'b')}>B</span>
 			<a
-				class="round"
+				class="round a"
 				class:down={held === 'a'}
 				href="/oauth2/authorization/google"
 				data-sveltekit-reload
@@ -151,18 +134,13 @@
 			>
 		</div>
 
-		<div class="speaker" aria-hidden="true">
-			<span></span><span></span><span></span><span></span><span></span><span></span>
-		</div>
+		<div class="speaker" aria-hidden="true"></div>
 	</div>
 
 	<p class="help">Press START to sign in with Google.</p>
 </main>
 
 <style>
-	.defs {
-		position: absolute;
-	}
 	main {
 		min-height: 100vh;
 		min-height: 100dvh;
@@ -171,10 +149,10 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 28px;
-		padding: 24px 12px;
+		gap: 24px;
+		padding: 20px 12px;
 		overflow: hidden;
-		background: radial-gradient(ellipse 60% 55% at 50% 42%, #1a2228, var(--bg) 75%);
+		background: radial-gradient(ellipse 60% 55% at 50% 42%, #1d1a28, var(--bg) 75%);
 	}
 	p {
 		margin: 0;
@@ -186,15 +164,20 @@
 
 	/* Everything on the device is sized in cqw: 1cqw is 1% of the device width. */
 	.device {
-		--navy: #2c3672;
-		--lcd-0: #0f380f;
-		--lcd-1: #306230;
-		--lcd-2: #8bac0f;
-		--lcd-3: #9bbc0f;
+		/* Shell plastic: change this one line. Also nice: teal #2fa39b, berry #c23a6e,
+		   dandelion #f0c030, kiwi #8fc23a. */
+		--shell: #7a5cc2;
+		--shell-hi: color-mix(in oklab, var(--shell), white 30%);
+		--shell-lo: color-mix(in oklab, var(--shell), black 38%);
+		--guts: color-mix(in oklab, var(--shell), #0a0612 78%);
+		--ink: color-mix(in oklab, var(--shell), #0d0820 72%);
+		--rubber: #2e2935;
+		--pixel: #1f1a33;
 		position: relative;
-		width: min(400px, calc(100vw - 24px), calc((100dvh - 96px) / 1.64));
+		/* 1.58 is the device's height/width; 80px leaves room for the help line. */
+		width: min(410px, calc(100vw - 24px), calc((100dvh - 84px) / 1.58));
 		min-width: 280px;
-		aspect-ratio: 100 / 164;
+		aspect-ratio: 100 / 158;
 		container-type: inline-size;
 		user-select: none;
 		-webkit-user-select: none;
@@ -205,168 +188,180 @@
 		position: absolute;
 	}
 
+	/* Translucent plastic: an opaque tint, the board and screws seen dimly through it, then gloss on top. */
 	.shell {
 		inset: 0;
-		border-radius: 3.5cqw 3.5cqw 19cqw 3.5cqw;
+		border-radius: 6cqw 6cqw 13cqw 13cqw / 6cqw 6cqw 11cqw 11cqw;
 		background:
-			linear-gradient(to bottom, transparent 4.6cqw, rgba(0, 0, 0, 0.16) 4.6cqw 4.9cqw, rgba(255, 255, 255, 0.5) 4.9cqw 5.2cqw, transparent 5.2cqw),
-			linear-gradient(162deg, #dcd8cf 0%, #cbc6bb 55%, #bcb7ab 100%);
+			linear-gradient(100deg, rgba(255, 255, 255, 0.16) 0 18%, transparent 34% 76%, rgba(255, 255, 255, 0.07) 90%),
+			radial-gradient(ellipse 70% 40% at 50% 72%, rgba(20, 0, 40, 0.14), transparent),
+			linear-gradient(175deg, var(--shell-hi), var(--shell) 22%, var(--shell) 70%, color-mix(in oklab, var(--shell), black 14%));
 		box-shadow:
-			inset 0.5cqw 0.6cqw 0.6cqw rgba(255, 255, 255, 0.55),
-			inset -0.6cqw -0.9cqw 1.2cqw rgba(60, 50, 40, 0.18),
-			0 1.4cqw 0 #9a958a,
-			0 1.6cqw 0 #6f6b62,
+			inset 0 0 0 0.45cqw color-mix(in oklab, var(--shell-hi), transparent 30%),
+			inset 0.8cqw 1cqw 1.6cqw rgba(255, 255, 255, 0.22),
+			inset -0.8cqw -1.4cqw 2.4cqw rgba(20, 0, 40, 0.3),
+			0 1.3cqw 0 var(--shell-lo),
+			0 1.5cqw 0 color-mix(in oklab, var(--shell-lo), black 30%),
 			0 4cqw 6cqw rgba(0, 0, 0, 0.55),
 			0 10cqw 14cqw rgba(0, 0, 0, 0.35);
+		overflow: hidden;
 	}
-	/* The two short seams at the top corners. */
+	/* The main board under the controls: outline, traces, a chip, button membranes. */
 	.shell::before {
 		content: '';
 		position: absolute;
-		top: 0;
-		left: 7cqw;
-		right: 7cqw;
-		height: 4.9cqw;
-		border-inline: 0.3cqw solid rgba(0, 0, 0, 0.15);
-		box-shadow:
-			inset 0.3cqw 0 rgba(255, 255, 255, 0.45),
-			0.3cqw 0 rgba(255, 255, 255, 0.45);
+		top: 80cqw;
+		left: 5cqw;
+		right: 5cqw;
+		bottom: 5cqw;
+		border: 0.5cqw solid var(--guts);
+		border-radius: 3cqw 3cqw 9cqw 9cqw;
+		background: repeating-linear-gradient(90deg, transparent 0 3.2cqw, var(--guts) 3.2cqw 3.5cqw) 50% 100% / 70% 22%
+			no-repeat;
+		opacity: 0.38;
+		filter: blur(0.5cqw);
+	}
+	/* Screws and the screen's rear frame, top half. */
+	.shell::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background:
+			radial-gradient(circle at 9% 4.5%, rgba(255, 255, 255, 0.5) 0 0.5cqw, var(--guts) 0.7cqw 1.5cqw, transparent 1.7cqw),
+			radial-gradient(circle at 91% 4.5%, rgba(255, 255, 255, 0.5) 0 0.5cqw, var(--guts) 0.7cqw 1.5cqw, transparent 1.7cqw),
+			radial-gradient(circle at 9% 54%, rgba(255, 255, 255, 0.5) 0 0.5cqw, var(--guts) 0.7cqw 1.5cqw, transparent 1.7cqw),
+			radial-gradient(circle at 91% 54%, rgba(255, 255, 255, 0.5) 0 0.5cqw, var(--guts) 0.7cqw 1.5cqw, transparent 1.7cqw);
+		opacity: 0.28;
+		filter: blur(0.35cqw);
 	}
 
 	.bezel {
-		top: 9cqw;
-		left: 7cqw;
-		width: 86cqw;
-		height: 72cqw;
-		border-radius: 2.5cqw 2.5cqw 12cqw 2.5cqw;
-		background: linear-gradient(170deg, #5f6272, #4c4f5d 70%, #454856);
+		top: 6cqw;
+		left: 6cqw;
+		width: 88cqw;
+		height: 68cqw;
+		border-radius: 3cqw 3cqw 9cqw 9cqw / 3cqw 3cqw 5cqw 5cqw;
+		background: linear-gradient(172deg, #3b3744, #2a2731 55%, #24212a);
 		box-shadow:
 			inset 0 0.3cqw 0.3cqw rgba(255, 255, 255, 0.12),
-			inset 0 -0.4cqw 0.6cqw rgba(0, 0, 0, 0.35),
-			0 0 0 0.3cqw rgba(0, 0, 0, 0.08);
+			inset 0 -0.4cqw 0.6cqw rgba(0, 0, 0, 0.4),
+			0 0 0 0.35cqw rgba(20, 0, 40, 0.25),
+			0 0 2.5cqw 1.6cqw color-mix(in oklab, var(--guts), transparent 78%);
 	}
 	.label {
 		position: absolute;
-		top: 2.4cqw;
-		left: 4cqw;
-		right: 4cqw;
-		display: flex;
-		align-items: center;
-		gap: 2cqw;
-		font: 600 2.3cqw/1 var(--body-font);
-		letter-spacing: 0.22em;
-		color: #b8bccb;
+		left: 0;
+		right: 0;
+		bottom: 2.6cqw;
+		text-align: center;
+		font: italic 700 2.7cqw/1 var(--body-font);
+		letter-spacing: 0.2em;
+		color: #d8d3e6;
 		white-space: nowrap;
 	}
-	.label::before,
-	.label::after {
-		content: '';
-		flex: 1;
-		height: 1.3cqw;
-		background: linear-gradient(#c9a43c 0 0.45cqw, transparent 0.45cqw 0.85cqw, #5a76b8 0.85cqw);
-	}
-	.label::before {
-		flex: 0 0 6cqw;
+	.label b {
+		color: #ffcc1a;
 	}
 	.led {
 		position: absolute;
-		top: 29cqw;
-		left: 5.2cqw;
+		top: 22cqw;
+		left: 4.4cqw;
 		width: 2.4cqw;
 		height: 2.4cqw;
 		border-radius: 50%;
 		background: radial-gradient(circle at 35% 35%, #ffb3a0, #ff3a24 45%, #b3150c);
 		box-shadow:
-			0 0 0 0.35cqw #3a3c47,
-			0 0 1.2cqw 0.5cqw rgba(255, 70, 40, 0.6),
-			0 0 4cqw 1cqw rgba(255, 70, 40, 0.18);
+			0 0 0 0.35cqw #1a181f,
+			0 0 1.2cqw 0.5cqw rgba(255, 70, 40, 0.55),
+			0 0 4cqw 1cqw rgba(255, 70, 40, 0.16);
+	}
+	.led::after {
+		content: 'POWER';
+		position: absolute;
+		top: 3.6cqw;
+		left: 50%;
+		translate: -50% 0;
+		font: 600 1.5cqw/1 var(--body-font);
+		letter-spacing: 0.08em;
+		color: #8f8a9c;
 	}
 
 	.lcd {
 		position: absolute;
-		top: 7.5cqw;
+		top: 5cqw;
 		left: 13cqw;
-		width: 60cqw;
+		width: 62cqw;
 		height: 54cqw;
 		overflow: hidden;
 		border-radius: 0.6cqw;
-		background: radial-gradient(ellipse at 45% 40%, #a6c61a, var(--lcd-3) 55%, #8eae0e);
+		background: radial-gradient(ellipse at 45% 40%, #fffdf6, #f6f1e4 70%, #ece6d6);
 		box-shadow:
-			inset 0.8cqw 0.8cqw 1.2cqw rgba(15, 40, 10, 0.45),
-			inset -0.2cqw -0.2cqw 0.4cqw rgba(15, 40, 10, 0.25),
-			0 0 0 0.4cqw #3d404c;
+			inset 0.6cqw 0.6cqw 1cqw rgba(30, 20, 40, 0.25),
+			0 0 0 0.4cqw #17151c;
 	}
-	/* The unlit panel; fades out as the screen warms up. */
+	/* The unlit panel; fades out as the screen powers on. */
 	.lcd::before {
 		content: '';
 		position: absolute;
 		inset: 0;
-		background: #3a4719;
+		z-index: 2;
+		background: #121116;
 		opacity: 0;
+		pointer-events: none;
 	}
-	/* Dot-matrix grid laid over everything on the glass. */
+	/* Pixel grid over everything on the glass. */
 	.lcd::after {
 		content: '';
 		position: absolute;
 		inset: 0;
+		z-index: 3;
 		pointer-events: none;
 		background:
-			repeating-linear-gradient(to right, rgba(15, 56, 15, 0.07) 0 1px, transparent 1px 3px),
-			repeating-linear-gradient(to bottom, rgba(15, 56, 15, 0.07) 0 1px, transparent 1px 3px);
+			linear-gradient(150deg, rgba(255, 255, 255, 0.14), transparent 40%),
+			repeating-linear-gradient(to right, rgba(40, 30, 60, 0.06) 0 1px, transparent 1px 3px),
+			repeating-linear-gradient(to bottom, rgba(40, 30, 60, 0.06) 0 1px, transparent 1px 3px);
 	}
 	h1 {
 		position: absolute;
-		top: 41%;
-		left: 4cqw;
-		right: 4cqw;
+		top: 40%;
+		left: 0;
+		right: 0;
 		margin: 0;
-		transform: translateY(-50%);
-		/* LCD pixels throw a faint shadow onto the back layer. */
-		filter: drop-shadow(0.35cqw 0.45cqw 0 rgba(15, 56, 15, 0.2));
-	}
-	/* --k maps banner pixels to cqw; 487px is where 'Pibs&Pibettes' ends and 'PlayPokemon' starts. */
-	h1 {
-		--k: calc(52cqw / 487);
+		translate: 0 -50%;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 1cqw;
+		gap: 0.6cqw;
 	}
+	/* Clipped at its top edge only, so PlayPokemon drops in from under Pibs&Pibettes, not through it. */
 	.row {
-		display: block;
-		overflow: hidden;
-		width: calc(487 * var(--k));
-		height: calc(111 * var(--k));
+		clip-path: inset(0 -10cqw -10cqw);
 	}
-	.two {
-		width: calc(437 * var(--k));
-	}
-	.banner {
+	h1 img {
 		display: block;
-		width: calc(924 * var(--k));
-		max-width: none;
+		width: 54cqw;
 		height: auto;
-		filter: url(#lcd-ink);
-	}
-	.two .banner {
-		margin-left: calc(-487 * var(--k));
 	}
 	.press {
 		position: absolute;
-		top: 77%;
+		top: 79%;
 		width: 100%;
 		text-align: center;
 		font: 2.9cqw/1 var(--pixel-font);
-		color: var(--lcd-0);
-		text-shadow: 0.35cqw 0.45cqw 0 rgba(15, 56, 15, 0.2);
-		animation: blink 1.1s steps(1) infinite;
+		color: var(--pixel);
+		/* One running blink; dropping the delay from two whole cycles to 0 when boot ends keeps its phase. */
+		animation:
+			appear 0s var(--on, 0s) both,
+			blink 1.1s steps(1) var(--on, 0s) infinite;
 	}
 	.denied h1 {
-		--k: calc(38cqw / 487);
-		top: 21%;
+		top: 23%;
+	}
+	.denied h1 img {
+		width: 40cqw;
 	}
 	.denied .press {
-		top: 46%;
+		top: 45%;
 	}
 	.textbox {
 		position: absolute;
@@ -375,13 +370,13 @@
 		bottom: 2cqw;
 		padding: 2.6cqw 3cqw 3cqw;
 		font: 2.15cqw/1.75 var(--pixel-font);
-		color: var(--lcd-0);
-		background: #f2f6e2;
-		border: 0.6cqw solid var(--lcd-0);
+		color: var(--pixel);
+		background: #fff;
+		border: 0.6cqw solid var(--pixel);
 		border-radius: 0.8cqw;
 		box-shadow:
-			inset 0 0 0 0.5cqw #f2f6e2,
-			inset 0 0 0 0.8cqw var(--lcd-1);
+			inset 0 0 0 0.5cqw #fff,
+			inset 0 0 0 0.8cqw var(--pixel);
 	}
 	.textbox::after {
 		content: '';
@@ -389,35 +384,38 @@
 		right: 2.6cqw;
 		bottom: 1.6cqw;
 		border: 0.9cqw solid transparent;
-		border-top-color: var(--lcd-0);
+		border-top-color: var(--pixel);
 		border-bottom-width: 0;
 		animation: blink 0.8s steps(1) infinite;
 	}
 	.flash {
 		position: absolute;
 		inset: 0;
-		background: #e4f2a0;
+		z-index: 1;
+		background: #fff;
 		opacity: 0;
 		pointer-events: none;
 	}
 
 	.model {
-		top: 83cqw;
-		left: 8cqw;
-		font: italic 800 5.4cqw/1 var(--body-font);
-		letter-spacing: 0.04em;
-		color: var(--navy);
-		text-shadow: 0 0.2cqw 0 rgba(255, 255, 255, 0.45);
+		top: 78cqw;
+		left: 0;
+		right: 0;
+		text-align: center;
+		font: italic 800 5.6cqw/1 var(--body-font);
+		letter-spacing: 0.06em;
+		color: var(--ink);
+		text-shadow: 0 0.2cqw 0 color-mix(in oklab, var(--shell-hi), transparent 40%);
 	}
 
 	/* Controls */
 	.dpad {
-		top: 95cqw;
-		left: 8cqw;
+		top: 90cqw;
+		left: 7cqw;
 		width: 28cqw;
 		height: 28cqw;
 		border-radius: 50%;
-		background: radial-gradient(circle, rgba(0, 0, 0, 0.12) 0 58%, transparent 70%);
+		background: radial-gradient(circle, rgba(20, 0, 40, 0.22) 0 56%, transparent 68%);
 		transition: transform 60ms;
 		cursor: pointer;
 	}
@@ -435,15 +433,15 @@
 		width: 8.4cqw;
 		height: 24cqw;
 		border-radius: 1.2cqw;
-		background: linear-gradient(135deg, #3a3c43, #212227);
+		background: linear-gradient(135deg, #423b4b, var(--rubber) 50%, #1e1a23);
 		box-shadow:
-			0 0.9cqw 0 #121316,
+			0 0.9cqw 0 #141118,
 			0 1.4cqw 1.6cqw rgba(0, 0, 0, 0.35);
 	}
 	.dpad::after {
 		width: 24cqw;
 		height: 8.4cqw;
-		box-shadow: inset 0 0.25cqw 0 rgba(255, 255, 255, 0.07);
+		box-shadow: inset 0 0.25cqw 0 rgba(255, 255, 255, 0.08);
 	}
 	/* Centre dimple, drawn above both arms. */
 	.dpad span {
@@ -451,7 +449,7 @@
 		width: 4.4cqw;
 		height: 4.4cqw;
 		border-radius: 50%;
-		background: radial-gradient(circle at 40% 35%, #1b1c20, #2c2e34);
+		background: radial-gradient(circle at 40% 35%, #1b181f, #322d39);
 	}
 	.dpad[data-dir='up'] {
 		transform: perspective(60cqw) rotateX(14deg);
@@ -466,28 +464,23 @@
 		transform: perspective(60cqw) rotateY(14deg);
 	}
 
+	/* A and B sit straight on the shell, B low-left and A high-right. */
 	.face {
-		top: 98cqw;
-		left: 53cqw;
-		width: 38cqw;
-		height: 18cqw;
-		border-radius: 9cqw;
-		rotate: -25deg;
-		background: linear-gradient(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.13));
-		box-shadow:
-			inset 0 0.5cqw 0.6cqw rgba(0, 0, 0, 0.14),
-			inset 0 -0.3cqw 0.3cqw rgba(255, 255, 255, 0.35);
+		top: 92cqw;
+		left: 54cqw;
+		width: 40cqw;
+		height: 28cqw;
 	}
 	.round {
 		position: absolute;
-		top: 2.2cqw;
 		width: 13.6cqw;
 		height: 13.6cqw;
 		border-radius: 50%;
-		background: radial-gradient(circle at 38% 32%, #c2477a, #9b2856 45%, #7a1b42);
+		background: radial-gradient(circle at 38% 32%, #5b5266, #38313f 45%, #241f29);
 		box-shadow:
-			inset 0 0.4cqw 0.5cqw rgba(255, 255, 255, 0.18),
-			0 0.9cqw 0 #561130,
+			inset 0 0.4cqw 0.5cqw rgba(255, 255, 255, 0.14),
+			0 0 0 0.9cqw rgba(20, 0, 40, 0.2),
+			0 0.9cqw 0 #16121a,
 			0 1.4cqw 1.6cqw rgba(0, 0, 0, 0.35);
 		/* The letter sits under the button, on the shell. */
 		color: transparent;
@@ -498,48 +491,49 @@
 			transform 50ms,
 			box-shadow 50ms;
 	}
-	.round:first-child {
-		left: 2.2cqw;
+	.b {
+		left: 2cqw;
+		top: 9cqw;
 	}
-	.round:last-child {
-		right: 2.2cqw;
+	.a {
+		right: 2cqw;
+		top: 1cqw;
 	}
 	.round::after {
 		position: absolute;
-		top: 15.6cqw;
+		top: 16cqw;
 		left: 0;
 		right: 0;
 		text-align: center;
 		font: italic 800 3.2cqw/1 var(--body-font);
 		letter-spacing: 0.05em;
-		color: var(--navy);
+		color: var(--ink);
 	}
-	.round:first-child::after {
+	.b::after {
 		content: 'B';
 	}
-	.round:last-child::after {
+	.a::after {
 		content: 'A';
 	}
 
 	.pills {
-		top: 133cqw;
+		top: 129cqw;
 		left: 30cqw;
-		width: 36cqw;
+		width: 40cqw;
 		height: 10cqw;
 		display: flex;
 		justify-content: space-between;
-		rotate: -25deg;
 	}
 	.pill {
 		position: relative;
 		width: 13cqw;
 		height: 3.6cqw;
 		border-radius: 2cqw;
-		background: linear-gradient(#9a9daa, #7c7f8c);
+		background: linear-gradient(#55505d, #3c3742);
 		box-shadow:
-			0 0.6cqw 0 #555864,
+			0 0.6cqw 0 #1f1b24,
 			0 0.9cqw 1cqw rgba(0, 0, 0, 0.3),
-			0 0 0 0.6cqw rgba(0, 0, 0, 0.07);
+			0 0 0 0.6cqw rgba(20, 0, 40, 0.18);
 		color: transparent;
 		font-size: 0;
 		text-decoration: none;
@@ -551,12 +545,12 @@
 	.pill::after {
 		content: 'SELECT';
 		position: absolute;
-		top: 6.2cqw;
+		top: 6cqw;
 		left: 50%;
 		translate: -50% 0;
 		font: italic 800 2.4cqw/1 var(--body-font);
 		letter-spacing: 0.1em;
-		color: var(--navy);
+		color: var(--ink);
 	}
 	a.pill::after {
 		content: 'START';
@@ -569,7 +563,7 @@
 	}
 	a.pill:focus-visible,
 	a.round:focus-visible {
-		outline: 0.8cqw solid var(--navy);
+		outline: 0.8cqw solid #fff;
 		outline-offset: 1cqw;
 	}
 
@@ -577,34 +571,30 @@
 	.round.down {
 		transform: translateY(0.8cqw);
 		box-shadow:
-			0 0.1cqw 0 #561130,
+			inset 0 0.4cqw 0.5cqw rgba(255, 255, 255, 0.14),
+			0 0 0 0.9cqw rgba(20, 0, 40, 0.2),
+			0 0.1cqw 0 #16121a,
 			0 0.3cqw 0.5cqw rgba(0, 0, 0, 0.35);
 	}
 	.pill:active,
 	.pill.down {
 		transform: translateY(0.5cqw);
 		box-shadow:
-			0 0.1cqw 0 #555864,
+			0 0.1cqw 0 #1f1b24,
 			0 0.2cqw 0.3cqw rgba(0, 0, 0, 0.3),
-			0 0 0 0.6cqw rgba(0, 0, 0, 0.07);
+			0 0 0 0.6cqw rgba(20, 0, 40, 0.18);
 	}
 
+	/* Speaker: a cluster of drilled holes, rounded off by a circular mask. */
 	.speaker {
-		top: 136cqw;
-		left: 68cqw;
-		width: 24cqw;
-		height: 18cqw;
-		display: flex;
-		justify-content: space-between;
-		rotate: -28deg;
-	}
-	.speaker span {
-		width: 1.5cqw;
-		border-radius: 1cqw;
-		background: linear-gradient(#8f8a80, #a29d92);
-		box-shadow:
-			inset 0 0.4cqw 0.4cqw rgba(0, 0, 0, 0.35),
-			0 0.2cqw 0 rgba(255, 255, 255, 0.5);
+		top: 129cqw;
+		right: 8cqw;
+		width: 16cqw;
+		height: 16cqw;
+		background: radial-gradient(circle at 50% 40%, #0e0b12 0 0.75cqw, color-mix(in oklab, var(--shell-hi), transparent 50%) 0.85cqw 1cqw, transparent 1.1cqw) 0 0 / 3.2cqw
+			3.2cqw;
+		mask: radial-gradient(circle, #000 0 8cqw, transparent 8.05cqw);
+		rotate: -20deg;
 	}
 
 	@keyframes blink {
@@ -615,50 +605,70 @@
 
 	/* Boot sequence. The resting styles above are the idle state; each step animates *from* off. */
 	.booting .led {
-		animation: led-on 0.15s 0.35s both;
+		animation: led-on 0.15s 0.3s both;
 	}
 	.booting .lcd::before {
-		animation: lcd-warm 0.7s 0.6s both;
+		animation: power 0.55s 0.5s both;
 	}
-	.booting h1 {
-		animation: drop 1.2s steps(18, end) 1.25s both;
+	.booting h1 img {
+		animation: drop 0.6s 1.1s both;
+	}
+	.booting .row img {
+		--from: -105%;
+		animation-delay: 1.5s;
 	}
 	.booting .flash {
-		animation: flash 0.35s 2.55s both;
+		animation: flash 0.3s 2.2s both;
 	}
 	.booting .press {
-		animation:
-			appear 0s 2.9s both,
-			blink 1.1s steps(1) 2.9s infinite;
+		--on: 2.2s;
 	}
 	.booting .textbox {
-		animation: appear 0s 2.9s both;
+		animation: appear 0s 2.2s both;
 	}
 	@keyframes led-on {
 		from {
 			background: #4a1c1a;
-			box-shadow: 0 0 0 0.35cqw #3a3c47;
+			box-shadow: 0 0 0 0.35cqw #1a181f;
 		}
 	}
-	@keyframes lcd-warm {
+	@keyframes power {
 		from {
 			opacity: 1;
 		}
 		30% {
-			opacity: 0.55;
+			opacity: 1;
 		}
-		45% {
+		40% {
+			opacity: 0.15;
+		}
+		52% {
 			opacity: 0.7;
+		}
+		64% {
+			opacity: 0;
+		}
+		74% {
+			opacity: 0.35;
 		}
 	}
 	@keyframes drop {
 		from {
-			transform: translateY(-50%) translateY(-34cqw);
+			translate: 0 var(--from, -48cqw);
+			animation-timing-function: cubic-bezier(0.5, 0, 1, 1);
+		}
+		60% {
+			translate: 0 1.6cqw;
+			animation-timing-function: ease-out;
+		}
+		80% {
+			translate: 0 -0.6cqw;
+			animation-timing-function: ease-in-out;
 		}
 	}
 	@keyframes flash {
 		30% {
-			opacity: 0.85;
+			opacity: 0.9;
 		}
 	}
 	@keyframes appear {
