@@ -1,9 +1,10 @@
 package dev.pppp.service;
 
+import dev.pppp.exception.QueueFullException;
+import dev.pppp.exception.RateLimitedException;
 import java.util.regex.Pattern;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
 
 /** With input.chatCommands on, a chat message that looks like a command is also submitted as input. */
 @Component
@@ -25,7 +26,7 @@ class ChatCommandBridge {
         try {
             inputs.submit(userId, text, 1);
             return true;
-        } catch (ResponseStatusException e) {
+        } catch (IllegalArgumentException | RateLimitedException | QueueFullException e) {
             return false;
         }
     }
