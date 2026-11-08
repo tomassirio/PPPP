@@ -22,7 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * The input queue: inputs:stream entries {user, cmd, repeat} consumed by group "engine", plus an
+ * The input queue: inputs:stream entries {user, cmd, repeat, mode} consumed by group "engine", plus an
  * inputs:status:{id} hash per entry. "Queued" = delivered-but-unacked (being executed) + not yet delivered.
  * Used by InputController and ChatCommandBridge.
  * Throws ResponseStatusException: 400 bad command, 429 rate limited, 503 queue full (with Retry-After).
@@ -61,10 +61,11 @@ public class InputService {
         var id = redis.opsForStream().add(STREAM,
                 Map.of("user", userId,
                         "cmd", CommandParser.serialize(steps),
-                        "repeat", String.valueOf(single ? steps.size() : 1)),
+                        "repeat", String.valueOf(single ? steps.size() : 1),
+                        "mode", mode),
                 XAddOptions.maxlen(STREAM_MAXLEN).approximateTrimming(true)).getValue();
         setStatus(id, "QUEUED", null);
-        redis.opsForZSet().add("players:active", userId, System.currentTimeMillis());
+        modes.markActive(userId);
         return new Accepted(id, mode);
     }
 
