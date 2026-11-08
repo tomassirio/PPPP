@@ -1,5 +1,6 @@
 package dev.pppp.security;
 
+import dev.pppp.model.Role;
 import dev.pppp.service.AllowlistService;
 
 import java.util.ArrayList;
@@ -32,12 +33,12 @@ public class AllowlistOidcUserService implements OAuth2UserService<OidcUserReque
         OidcUser google = delegate.loadUser(request);
         String email = google.getEmail();
         if (email == null || !Boolean.TRUE.equals(google.getEmailVerified())) throw denied("unverified email");
-        AllowlistService.Role role = allowlist.role(email);
+        Role role = allowlist.role(email);
         if (role == null) throw denied("not on the allowlist");
         if (allowlist.isBanned(email)) throw denied("banned");
 
         List<GrantedAuthority> roles = new ArrayList<>(List.of(new SimpleGrantedAuthority("ROLE_PLAYER")));
-        if (role == AllowlistService.Role.ADMIN) roles.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        if (role == Role.ADMIN) roles.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
         return new Principal(roles, google.getIdToken(), google.getUserInfo());
     }
 
