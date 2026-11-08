@@ -5,6 +5,7 @@
 	import { page } from '$app/state';
 	import { loadMe } from '#lib/session.svelte.js';
 	import TitleScene from '#lib/components/TitleScene.svelte';
+	import banner from '#lib/assets/banner.webp';
 
 	const denied = $derived(page.url.searchParams.get('error') === 'denied');
 
@@ -17,7 +18,7 @@
 </script>
 
 <main>
-	<h1><span>Pibs&amp;Pibettes</span><span>PlayPokemon</span></h1>
+	<h1><img src={banner} alt="Pibs&amp;PibettesPlayPokemon" width="924" height="111" /></h1>
 	<p class="tagline">One Game Boy. Eighteen trainers.<span class="wide">&nbsp;Every button counts.</span></p>
 
 	<TitleScene />
@@ -66,15 +67,12 @@
 	}
 	h1 {
 		margin: 0;
-		font-family: var(--pixel-font);
-		font-size: clamp(20px, 4vw, 44px);
-		line-height: 1.3;
-		color: var(--accent);
-		text-shadow: 4px 4px 0 var(--accent-shadow);
-		text-align: center;
+		width: min(100%, 720px);
 	}
-	h1 span {
-		display: inline-block;
+	h1 img {
+		display: block;
+		width: 100%;
+		height: auto;
 	}
 	p {
 		margin: 0;
@@ -157,9 +155,6 @@
 		main {
 			padding: 40px 16px 24px;
 			gap: 20px;
-		}
-		h1 {
-			text-shadow: 3px 3px 0 var(--accent-shadow);
 		}
 		.tagline {
 			font-size: 15px;
