@@ -18,7 +18,7 @@
 
 <main>
 	<h1><span>Pibs&amp;Pibettes</span><span>PlayPokemon</span></h1>
-	<p class="tagline">One Game Boy. Eighteen trainers.<span class="wide"> Every button counts.</span></p>
+	<p class="tagline">One Game Boy. Eighteen trainers.<span class="wide">&nbsp;Every button counts.</span></p>
 
 	<TitleScene />
 
