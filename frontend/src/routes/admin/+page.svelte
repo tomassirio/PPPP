@@ -12,9 +12,12 @@
 	import PeoplePanel from '#lib/components/admin/PeoplePanel.svelte';
 	import '#lib/components/admin/admin.css';
 
+	let loadFailed = $state(false);
+
 	onMount(() => {
 		let off: (() => void) | undefined;
-		loadMe().then(async (me) => {
+		loadMe().catch(() => ((loadFailed = true), null)).then(async (me) => {
+			if (loadFailed) return;
 			if (!me) return goto('/');
 			if (!isAdmin(me)) return;
 			off = on('CONSOLE_CHANGED', (s: ConsoleStatus) => setConsole(s));
@@ -44,5 +47,7 @@
 		</main>
 	{:else if session.me}
 		<section class="panel"><p>Admins only. <a href="/play">Go to play</a></p></section>
+	{:else if loadFailed}
+		<section class="panel" role="alert"><p>Couldn't load your session. The server may be restarting. <a href="/" data-sveltekit-reload>Back to sign in</a></p></section>
 	{/if}
 </div>

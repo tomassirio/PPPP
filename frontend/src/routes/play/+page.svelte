@@ -25,6 +25,7 @@
 	let tab = $state<'play' | 'vote' | 'chat'>('play');
 
 	const me = $derived(session.me);
+	let loadFailed = $state(false);
 	const initials = $derived(
 		(me?.name ?? '')
 			.split(/[\s@.]+/)
@@ -36,9 +37,11 @@
 	const modeLabel = $derived(game.mode === 'DEMOCRACY' ? 'Democracy' : 'Anarchy');
 
 	$effect(() => {
-		loadMe().then((m) => {
-			if (!m) goto('/');
-		});
+		loadMe()
+			.then((m) => {
+				if (!m) goto('/');
+			})
+			.catch(() => (loadFailed = true));
 	});
 
 	// Only once signed in: /state plus the live events that keep it current.
@@ -105,9 +108,28 @@
 			</section>
 		</main>
 	</div>
+{:else if loadFailed}
+	<section class="load-error" role="alert">
+		<p>Couldn't load your session. The server may be restarting.</p>
+		<p><a href="/" data-sveltekit-reload>Back to sign in</a> · <button type="button" onclick={() => location.reload()}>Try again</button></p>
+	</section>
 {/if}
 
 <style>
+	.load-error {
+		max-width: 420px;
+		margin: 96px auto;
+		padding: 0 16px;
+		text-align: center;
+		color: var(--muted);
+	}
+	.load-error button {
+		background: none;
+		border: none;
+		padding: 0;
+		color: var(--accent);
+		text-decoration: underline;
+	}
 	.page {
 		min-height: 100vh;
 	}
