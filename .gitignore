@@ -1,0 +1,10 @@
+target/
+data/
+*.gb
+*.gbc
+*.sav
+*.state
+.idea/
+*.iml
+.DS_Store
+.env
