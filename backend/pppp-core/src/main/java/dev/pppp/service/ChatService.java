@@ -84,6 +84,14 @@ public class ChatService {
         events.publishEvent(new LiveEvent("CHAT_DELETED", Map.of("id", id)));
     }
 
+    /** Removes all SYSTEM and ADMIN lines (players' messages stay), tells browsers via CHAT_CLEARED, logs who did it. */
+    public int clearSystem(String adminId) {
+        int removed = repo.deleteNonUser();
+        events.publishEvent(new LiveEvent("CHAT_CLEARED", Map.of("removed", removed)));
+        postAdmin(adminId + " cleared " + removed + " system messages");
+        return removed;
+    }
+
     public void mute(String userId, int minutes) {
         repo.muteUntil(userId, System.currentTimeMillis() + Duration.ofMinutes(minutes).toMillis());
     }

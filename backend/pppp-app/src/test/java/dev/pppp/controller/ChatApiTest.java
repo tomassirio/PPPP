@@ -172,6 +172,20 @@ class ChatApiTest {
     }
 
     @Test
+    void adminClearsSystemLinesOnly() throws Exception {
+        send("p@y.z", "hello");
+        chat.postSystem("Mode is now ANARCHY");
+        chat.postAdmin("Console reset");
+        mvc.perform(delete("/api/v1/admin/chat/system-messages").with(user("p@y.z").roles("PLAYER")).with(csrf()))
+                .andExpect(status().isForbidden());
+        mvc.perform(delete("/api/v1/admin/chat/system-messages").with(user("a@y.z").roles("ADMIN")).with(csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.removed").value(2));
+        verify(events).publish(eq("CHAT_CLEARED"), any());
+        assertThat(chat.history(null, 50, true)).extracting(ChatMessage::text)
+                .containsExactly("a@y.z cleared 2 system messages", "hello");
+    }
+
+    @Test
     void systemMessagesAreStoredAndNeverThrow() {
         chat.postSystem("Console powered on");
         chat.postSystem(null);

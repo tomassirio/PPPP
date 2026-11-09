@@ -39,6 +39,15 @@
 		autosave = a ?? null;
 	});
 
+	function clearSystem(e: SubmitEvent) {
+		e.preventDefault();
+		act(
+			'Clear system messages',
+			() => api('DELETE', '/admin/chat/system-messages'),
+			'Remove every System and Admin message from chat for everyone, and empty the game event history? Players’ own messages stay. This cannot be undone.'
+		);
+	}
+
 	function save(path: string, body: unknown) {
 		return (e: SubmitEvent) => {
 			e.preventDefault();
@@ -102,4 +111,10 @@
 			<button class="primary">Save autosave</button>
 		</form>
 	{/if}
+
+	<form onsubmit={clearSystem}>
+		<h3>Chat</h3>
+		<p class="hint">Fresh start: removes all System and Admin messages and the game event history. Players’ messages stay.</p>
+		<button class="danger">Clear system messages</button>
+	</form>
 </section>

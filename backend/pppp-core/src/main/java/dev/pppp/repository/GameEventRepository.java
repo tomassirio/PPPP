@@ -37,6 +37,10 @@ public class GameEventRepository {
         return new GameEvent(id.getValue(), e.type(), e.text(), e.details(), e.lastPlayer(), id.getTimestamp());
     }
 
+    public void clear() {
+        redis.delete(STREAM);
+    }
+
     public List<GameEvent> newest(int limit) {
         List<MapRecord<String, Object, Object>> records =
                 redis.opsForStream().reverseRange(STREAM, Range.unbounded(), Limit.limit().count(limit));

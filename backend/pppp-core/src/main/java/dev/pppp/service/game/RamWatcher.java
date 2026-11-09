@@ -70,6 +70,11 @@ public class RamWatcher {
         return repo.newest(limit);
     }
 
+    /** Empties the game event history (a fresh start); the party box keeps showing the current state. */
+    public void clearHistory() {
+        repo.clear();
+    }
+
     @EventListener
     public void onLiveEvent(LiveEvent e) {
         if ("CONSOLE_CHANGED".equals(e.type())) rebaseline = true;
