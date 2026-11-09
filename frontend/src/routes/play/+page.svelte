@@ -395,7 +395,8 @@
 	.tabs {
 		display: none;
 	}
-	.big-toggle {
+	/* Landscape only (beats the phone tab-bar's ".tabs button" rule). */
+	.tabs .big-toggle {
 		display: none;
 	}
 	/* Pokédex side banners only where the side margins are wide enough (see the wide media query). */
@@ -733,7 +734,7 @@
 			right: auto;
 			left: 0;
 		}
-		.big-toggle {
+		.tabs .big-toggle {
 			display: flex;
 		}
 		.big-toggle[aria-pressed='true'] {
