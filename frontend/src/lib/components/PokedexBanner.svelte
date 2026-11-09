@@ -20,7 +20,11 @@
 		{#each numbers as n (n)}
 			{@const name = dex.names[n - 1]}
 			<li class:seen={seen.has(n)} class:owned={owned.has(n)} title="#{pad(n)} {name ?? '???'}">
-				<img src="/api/v1/game/icons/{n}.png" alt={name ? `${name}${owned.has(n) ? ', caught' : ', seen'}` : `#${n}, not seen yet`} loading="lazy" />
+				{#if seen.has(n)}
+					<img src="/api/v1/game/icons/{n}.png" alt="{name}{owned.has(n) ? ', caught' : ', seen'}" loading="lazy" />
+				{:else}
+					<span class="shape" role="img" aria-label="#{n}, not seen yet" style:--src="url(/api/v1/game/icons/{n}.png)"></span>
+				{/if}
 				{#if !seen.has(n)}<span class="unknown" aria-hidden="true">?</span>{/if}
 				{#if owned.has(n)}
 					<svg class="ball" viewBox="0 0 16 16" aria-hidden="true">
@@ -62,16 +66,21 @@
 		align-items: center;
 		justify-content: center;
 	}
-	img {
+	img,
+	.shape {
 		width: 100%;
 		height: 100%;
+	}
+	img {
 		object-fit: contain;
 		image-rendering: pixelated;
-		/* Unseen: only a faint outline of the real sprite. */
-		filter: brightness(0) invert(1) opacity(0.13);
 	}
-	li.seen img {
-		filter: none;
+	/* Unseen: the sprite's shape filled with the text colour, faint, so it works on light and dark themes. */
+	.shape {
+		background: var(--text);
+		opacity: 0.16;
+		-webkit-mask: var(--src) center / contain no-repeat;
+		mask: var(--src) center / contain no-repeat;
 	}
 	.unknown {
 		position: absolute;

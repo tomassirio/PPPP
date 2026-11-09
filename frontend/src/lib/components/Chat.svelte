@@ -191,7 +191,7 @@
 				<span class="who" style:--name={system ? undefined : nameColor(m.user)}>{m.kind === 'ADMIN' ? 'Admin' : m.name}</span>
 				{#if m.command}<span class="tag">command</span>{/if}
 				<span class="text"
-					>{#if system}{#each systemParts(m.text) as part, i (i)}{#if part.mode}<span class="mode {part.mode}">{part.text}</span>{:else if part.town === 'rainbow'}<span class="town rainbow">{part.text}</span>{:else if part.town}<span class="town" style:color={part.town}>{part.text}</span>{:else}{part.text}{/if}{/each}{:else}{m.text}{/if}</span
+					>{#if system}{#each systemParts(m.text) as part, i (i)}{#if part.mode}<span class="mode {part.mode}">{part.text}</span>{:else if part.town === 'rainbow'}<span class="town rainbow">{part.text}</span>{:else if part.town}<span class="town" style:--town={part.town}>{part.text}</span>{:else}{part.text}{/if}{/each}{:else}{m.text}{/if}</span
 				>
 				{#if admin && !system}
 					<span class="mod">
@@ -270,6 +270,8 @@
 	.town {
 		font-style: normal;
 		font-weight: 700;
+		/* Badge colours are tuned for dark; on light they are pulled toward the text colour like chat names. */
+		color: color-mix(in oklab, var(--town, var(--text)), var(--text) var(--name-dim));
 	}
 	.town.rainbow {
 		background: linear-gradient(90deg, #ff6b5b, #ffa53a, #f5c542, #4cd17a, #5cb8ff, #b9a3ff);
