@@ -132,8 +132,10 @@
 				<!-- Phones: Vote and Party are separate tabs; desktop: one column (display: contents). -->
 				<div class="voting" class:off={tab !== 'vote'}>
 					<ModeCard mode={game.mode} bind:votes={game.modeVotes} />
-					{#if game.mode === 'DEMOCRACY'}<VoteTally tally={game.tally} />{/if}
-					<div class="next"><UpNext /></div>
+					<!-- The flexible slot: the open vote in democracy (the queue is only votes then), the queue in anarchy. -->
+					<div class="next">
+						{#if game.mode === 'DEMOCRACY'}<VoteTally tally={game.tally} />{:else}<UpNext />{/if}
+					</div>
 				</div>
 				<div class="party" class:off={tab !== 'party'}><GameStatus /></div>
 			</section>
@@ -275,6 +277,11 @@
 		flex: 1 1 0;
 		contain: size;
 		min-height: 140px;
+	}
+	.next > :global(*) {
+		height: 100%;
+		box-sizing: border-box;
+		overflow-y: auto;
 	}
 	.chat {
 		flex: 1 1 340px;
