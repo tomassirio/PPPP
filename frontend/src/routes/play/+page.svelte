@@ -476,13 +476,14 @@
 			min-height: 0;
 		}
 	}
-	/* Side margins of 200px+: the Pokédex as two banners, 1-76 left and 77-151 right. */
-	@media (min-width: 1840px) and (min-height: 600px) {
+	/* Wide enough for the Pokédex as two banners, 1-76 left and 77-151 right. Each gets at least 150px (the
+	   columns shrink toward their 1100px minimum to make room) and grows into whatever margin is left. */
+	@media (min-width: 1400px) and (min-height: 600px) {
 		.dex {
 			display: block;
 			flex: 1 1 0;
-			min-width: 0;
-			padding: 16px 16px;
+			min-width: 150px;
+			padding: 16px 12px;
 			box-sizing: border-box;
 		}
 		main {
