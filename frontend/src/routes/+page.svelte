@@ -7,6 +7,10 @@
 	import pibs from '#lib/assets/banner-pibs.webp';
 	import play from '#lib/assets/banner-play.webp';
 	import face from '#lib/assets/konami-face.webp';
+	import SignInAbout from '#lib/components/SignInAbout.svelte';
+	import SignInBackdrop from '#lib/components/SignInBackdrop.svelte';
+	import { bootChime, counter, fanfare, loadTeaser, type Teaser } from '#lib/teaser.js';
+
 
 	const BOOT_MS = 2900;
 
@@ -51,9 +55,38 @@
 		if (typed.join() !== KONAMI.join()) return false;
 		typed = [];
 		glitch = true;
+		fanfare();
 		fireworks();
 		setTimeout(() => ((glitch = false), (bursts = [])), 6000);
 		return true;
+	}
+
+	let teaser = $state<Teaser | null>(null);
+
+	// Attract mode: after a while with no input the screen cycles demo slides (party, progress) like an arcade
+	// cabinet; any key or tap brings the title back.
+	const IDLE_MS = 20000;
+	const SLIDE_MS = 4500;
+	let idle = $state(false);
+	let slide = $state(0);
+	let idleTimer: ReturnType<typeof setTimeout>;
+	const slides = $derived(
+		teaser ? (['party', 'progress', 'title'] as const).filter((k) => k !== 'party' || teaser!.party.length) : []
+	);
+	const attract = $derived(idle && !glitch && !denied && slides.length > 0 ? slides[slide % slides.length] : 'title');
+	const badges = $derived(counter(teaser, 'Badges'));
+	const caught = $derived(counter(teaser, 'Pokédex'));
+
+	// Sound is only allowed after a gesture: the first key or tap plays the power-on chime.
+	let chimed = false;
+	function activity() {
+		if (!chimed) {
+			chimed = true;
+			bootChime();
+		}
+		idle = false;
+		clearTimeout(idleTimer);
+		idleTimer = setTimeout(() => ((idle = true), (slide = 0)), IDLE_MS);
 	}
 
 	function skip() {
@@ -79,6 +112,7 @@
 	function onkeydown(e: KeyboardEvent) {
 		const t = e.target as HTMLElement;
 		if (e.metaKey || e.ctrlKey || e.altKey) return;
+		activity();
 		if (t.closest('input, textarea, select, [contenteditable]')) return;
 		// Any key skips the boot; only Enter/Space stop there (no sign-in mid-boot). Arrows, Z and X still count for the code.
 		if (skip() && !ARROWS[e.key] && !FACE_KEYS[e.code]) return e.preventDefault();
@@ -123,11 +157,24 @@
 			.catch(() => {});
 		if (matchMedia('(prefers-reduced-motion: reduce)').matches) booting = false;
 		const t = setTimeout(() => (booting = false), BOOT_MS);
-		return () => clearTimeout(t);
+		// The teaser is public; refreshed while the page is open. Fails quietly (the page works without it).
+		const refresh = () => loadTeaser().then((v) => (teaser = v), () => {});
+		refresh();
+		const poll = setInterval(refresh, 30000);
+		const slides = setInterval(() => idle && slide++, SLIDE_MS);
+		idleTimer = setTimeout(() => (idle = true), IDLE_MS);
+		return () => {
+			clearTimeout(t);
+			clearTimeout(idleTimer);
+			clearInterval(poll);
+			clearInterval(slides);
+		};
 	});
 </script>
 
-<svelte:window {onkeydown} {onkeyup} onpointerdown={skip} onpointerup={release} onblur={release} />
+<svelte:window {onkeydown} {onkeyup} onpointerdown={() => (skip(), activity())} onpointerup={release} onblur={release} />
+
+<SignInBackdrop {teaser} />
 
 <main>
 	<div class="device" class:booting class:glitch>
@@ -141,6 +188,29 @@
 						><img src={play} alt="PlayPokemon" width="720" height="171" /></span
 					>
 				</h1>
+				{#if attract === 'party' && teaser}
+					<div class="attract" aria-hidden="true">
+						<p class="slide-title">OUR TEAM</p>
+						<ul class="team">
+							{#each teaser.party.slice(0, 6) as m, i (i)}
+								<li>
+									{#if m.icon}<img src="/api/v1/game/icons/{m.icon}.png" alt="" />{/if}
+									<span>L{m.level}</span>
+								</li>
+							{/each}
+						</ul>
+					</div>
+				{:else if attract === 'progress' && teaser}
+					<div class="attract" aria-hidden="true">
+						<p class="slide-title">OUR JOURNEY</p>
+						<dl class="journey">
+							{#if badges}<dt>BADGES</dt><dd>{badges.value}/{badges.max}</dd>{/if}
+							{#if caught}<dt>CAUGHT</dt><dd>{caught.value}/{caught.max}</dd>{/if}
+							{#if teaser.playTime}<dt>TIME</dt><dd>{teaser.playTime}</dd>{/if}
+							<dt>ONLINE</dt><dd>{teaser.online}</dd>
+						</dl>
+					</div>
+				{/if}
 				<p class="press" aria-hidden="true">PRESS START TO SIGN IN</p>
 				{#if glitch}
 					<p class="textbox" role="status">A wild MISSINGNO. appeared!</p>
@@ -201,6 +271,8 @@
 		<div class="speaker" aria-hidden="true"></div>
 	</div>
 
+	<SignInAbout {teaser} />
+
 	{#if bursts.length}
 		<div class="fireworks" aria-hidden="true">
 			{#each bursts as b (b.id)}
@@ -230,7 +302,19 @@
 		gap: 24px;
 		padding: 20px 12px;
 		overflow: hidden;
-		background: radial-gradient(ellipse 60% 55% at 50% 42%, var(--glow), var(--bg) 75%);
+		position: relative;
+		z-index: 1; /* above the backdrop */
+	}
+	/* The backdrop is see-through; the page colour sits under it. */
+	:global(body:has(main > .device)) {
+		background: var(--bg);
+	}
+	/* Wide: the about card beside the device. */
+	@media (min-width: 900px) {
+		main {
+			flex-direction: row;
+			gap: 56px;
+		}
 	}
 	p {
 		margin: 0;
@@ -250,8 +334,8 @@
 		--rubber: #2e2935;
 		--pixel: #1f1a33;
 		position: relative;
-		/* 1.67 is the device's height/width; 40px is the page padding. */
-		width: min(410px, calc(100vw - 24px), calc((100dvh - 40px) / 1.67));
+		/* 1.67 is the device's height/width; 40px is the page padding, plus the about strip under it on phones. */
+		width: min(410px, calc(100vw - 24px), calc((100dvh - 40px - var(--below, 0px)) / 1.67));
 		min-width: 280px;
 		aspect-ratio: 100 / 167;
 		container-type: inline-size;
@@ -763,6 +847,71 @@
 			animation: none;
 			opacity: 1;
 			transform: translate(calc(var(--dx) * 0.6), calc(var(--dy) * 0.6));
+		}
+	}
+
+	@media (max-width: 899px) {
+		.device {
+			--below: 100px;
+		}
+		main {
+			gap: 14px;
+		}
+	}
+
+	/* Attract mode slides: drawn on the glass like the title, in the pixel font. */
+	.attract {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 3cqw;
+		padding-bottom: 8cqw;
+		background: inherit;
+		font-family: var(--pixel-font);
+		color: var(--pixel);
+		animation: slide-in 0.35s steps(4) both;
+	}
+	.slide-title {
+		font-size: 3cqw;
+	}
+	.team {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		display: grid;
+		grid-template-columns: repeat(3, 13cqw);
+		gap: 1.5cqw 3cqw;
+	}
+	.team li {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.6cqw;
+		font-size: 1.9cqw;
+	}
+	.team img {
+		width: 11cqw;
+		height: 11cqw;
+		object-fit: contain;
+		image-rendering: pixelated;
+	}
+	.journey {
+		margin: 0;
+		display: grid;
+		grid-template-columns: auto auto;
+		gap: 2cqw 5cqw;
+		font-size: 2.4cqw;
+	}
+	.journey dd {
+		margin: 0;
+		text-align: right;
+	}
+	@keyframes slide-in {
+		from {
+			clip-path: inset(0 100% 0 0);
 		}
 	}
 
