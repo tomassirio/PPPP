@@ -1,15 +1,19 @@
 <!-- D-pad, A/B, Start/Select. Click/tap/keyboard -> POST /api/v1/inputs. Keys: arrows, Z=A, X=B, Enter=Start, Shift/Backspace=Select. -->
 <script lang="ts">
 	import { api, ApiError } from '#lib/api.ts';
-	import { afterArrowRelease, keyToButton, type Button } from '#lib/play.ts';
+	import { afterArrowRelease, formatCommand, keyToButton, type Button } from '#lib/play.ts';
 	import { shellVars } from '#lib/shells.ts';
 	import { currentShell } from '#lib/shell.svelte.ts';
 	import ShellPicker from './ShellPicker.svelte';
+	import Who from './Who.svelte';
+	import { presses, watchPresses } from '#lib/presses.svelte.ts';
 
 	let { mode }: { mode: 'ANARCHY' | 'DEMOCRACY' } = $props();
 
 	// The player's controller shell (colours), remembered in this browser.
 	const shell = $derived(currentShell.value);
+	$effect(() => watchPresses());
+	const gameLast = $derived(presses.recent.at(-1));
 	const vars = $derived(shellVars(shell));
 
 	let lastPress = $state('');
@@ -240,14 +244,24 @@
 	</div>
 </div>
 
-<section class="controls panel" style={vars} class:idle={!lastPress && !status} aria-label="Controls">
+<section class="controls panel" style={vars} class:idle={!lastPress && !status && !gameLast} aria-label="Controls">
 	<div class="head">
 		<h2 class="keys-only">Keyboard</h2>
 		<p class="last" role="status" aria-live="polite">
-			{#if lastPress}<span class="muted">Last press</span><strong class="chip pixel">{lastPress}</strong>{/if}
+			{#if lastPress}<span class="muted label-wide">Last press</span><span class="muted label-phone">You</span><strong
+					class="chip pixel">{lastPress}</strong
+				>{/if}
 			{#if status}<span class:error={statusError} class:muted={!statusError}>{status}</span>{/if}
 		</p>
 	</div>
+	<!-- Phones: the last press the game ran, from anyone. -->
+	{#if gameLast}
+		<p class="game-last">
+			<span class="muted label-phone">In game</span>
+			<strong class="chip pixel">{formatCommand(gameLast.command)}</strong>
+			<Who user={gameLast.user} />
+		</p>
+	{/if}
 	<div class="keys keys-only">
 		<div class="cluster" role="img" aria-label="Arrow keys move">
 			<kbd style:grid-area="up">↑</kbd><kbd style:grid-area="left">←</kbd><kbd style:grid-area="down">↓</kbd><kbd
@@ -379,6 +393,10 @@
 		.pib {
 			display: none; /* the pad is split around the screen there */
 		}
+	}
+	.label-phone,
+	.game-last {
+		display: none;
 	}
 	.picker-corner {
 		position: absolute;
@@ -569,6 +587,28 @@
 			background: var(--pill);
 			color: var(--pill-ink);
 			font-size: 10px;
+		}
+		/* Two lines: what you pressed, and what the game last ran (anyone's). */
+		.label-wide {
+			display: none;
+		}
+		.label-phone {
+			display: inline;
+			min-width: 56px;
+			text-align: right;
+			font-size: 10px;
+			font-weight: 600;
+			letter-spacing: 0.1em;
+			text-transform: uppercase;
+		}
+		.game-last {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 10px;
+			margin: 0;
+			min-height: 30px;
+			font-size: 13px;
 		}
 	}
 	/* Short phones: a tighter pad so it fits under the screen without scrolling. */
