@@ -58,6 +58,39 @@
 		};
 	});
 
+	// Landscape (phone held sideways): Vote/Party/Chat are sheets over the game. The sheet keeps showing the
+	// last of them while it slides out, and a tap outside the sheet and the rail closes it.
+	const LANDSCAPE = '(orientation: landscape) and (max-height: 520px)';
+	let landscape = $state(typeof matchMedia !== 'undefined' && matchMedia(LANDSCAPE).matches);
+	$effect(() => {
+		const q = matchMedia(LANDSCAPE);
+		const onChange = () => (landscape = q.matches);
+		q.addEventListener('change', onChange);
+		return () => q.removeEventListener('change', onChange);
+	});
+	let sheetTab = $state<Tab>('vote');
+	$effect(() => {
+		if (tab !== 'play') sheetTab = tab;
+	});
+	const shown = $derived(landscape && tab === 'play' ? sheetTab : tab); // what the side panels display
+	function closeSheetOnOutsideTap(e: PointerEvent) {
+		if (!landscape || tab === 'play') return;
+		const t = e.target as Element;
+		if (t.closest('.side, .chat, .tabs')) return;
+		e.preventDefault();
+		e.stopPropagation(); // the tap only closes the sheet; it must not also press a game button
+		swallowClick = true; // A/B/Start/Select act on the click that follows
+		setTimeout(() => (swallowClick = false), 500); // no click came (a drag): don't eat the next real one
+		tab = 'play';
+	}
+	let swallowClick = false;
+	function swallowClosingClick(e: MouseEvent) {
+		if (!swallowClick) return;
+		swallowClick = false;
+		e.preventDefault();
+		e.stopPropagation();
+	}
+
 	let unreadChat = $state(0);
 	let newInParty = $state(false);
 	let now = $state(Date.now());
@@ -135,6 +168,8 @@
 	});
 </script>
 
+<svelte:window onpointerdowncapture={closeSheetOnOutsideTap} onclickcapture={swallowClosingClick} />
+
 {#if me}
 	<div class="page" style:--plate={currentShell.value.shell}>
 		<header>
@@ -161,7 +196,7 @@
 					<ChatOverlay hidden={tab === 'chat'} />
 				</div>
 				<nav class="tabs" aria-label="Panels">
-					{#each TABS as t (t.id)}
+					{#each TABS.filter((t) => !(landscape && t.id === 'play')) as t (t.id)}
 						{@const badge = badges[t.id]}
 						<button
 							type="button"
@@ -183,7 +218,7 @@
 			</section>
 			<section class="side" class:off={tab !== 'vote' && tab !== 'party'} aria-label="Mode, votes and party">
 				<!-- Phones: Vote and Party are separate tabs; desktop: one column (display: contents). -->
-				<div class="voting" class:off={tab !== 'vote'}>
+				<div class="voting" class:off={shown !== 'vote'}>
 					<ModeCard mode={game.mode} bind:votes={game.modeVotes} />
 					<!-- The flexible slot: the open vote in democracy (the queue is only votes then), the queue in anarchy. -->
 					<div class="next">
@@ -194,7 +229,7 @@
 						{/if}
 					</div>
 				</div>
-				<div class="party" class:off={tab !== 'party'}>
+				<div class="party" class:off={shown !== 'party'}>
 					<GameStatus />
 				</div>
 			</section>
@@ -729,13 +764,34 @@
 			gap: 10px;
 		}
 		.voting.off,
-		.party.off,
-		.chat.off {
+		.party.off {
 			display: none;
+		}
+		/* Sheets slide in from the right and back out (kept rendered, moved off-screen when closed). */
+		.side,
+		.side.off,
+		.chat,
+		.chat.off {
+			display: flex;
+			flex-direction: column;
+			transition:
+				translate 0.25s ease,
+				visibility 0.25s;
+		}
+		.side.off,
+		.chat.off {
+			translate: calc(100% + 24px) 0;
+			visibility: hidden;
 		}
 		.next {
 			flex: none;
 			height: 220px;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.side,
+		.chat {
+			transition: none;
 		}
 	}
 </style>
