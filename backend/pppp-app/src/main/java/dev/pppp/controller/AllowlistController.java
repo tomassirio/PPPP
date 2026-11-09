@@ -47,12 +47,19 @@ public class AllowlistController {
         OidcUser oidc = auth.getPrincipal() instanceof OidcUser o ? o : null;
         String name = oidc != null && oidc.getFullName() != null ? oidc.getFullName() : id;
         String picture = oidc != null ? oidc.getPicture() : null;
+        allowlist.rememberPicture(id, picture);
         List<String> roles = auth.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .filter(a -> a.startsWith("ROLE_"))
                 .map(a -> a.substring(5))
                 .toList();
         return new Me(id, name, picture, roles, rateLimiter.remaining(id));
+    }
+
+    /** Player id -> Google profile photo URL, for the Up next list. */
+    @GetMapping("/players/pictures")
+    public java.util.Map<String, String> pictures() {
+        return allowlist.pictures();
     }
 
     @GetMapping("/admin/allowlist")

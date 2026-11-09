@@ -57,7 +57,7 @@ class AuthApiTest {
 
     @BeforeEach
     void reset() {
-        redis.delete(List.of("allowlist", "bans", "ratelimit:me@x.com"));
+        redis.delete(List.of("allowlist", "bans", "ratelimit:me@x.com", "users:pictures"));
     }
 
     @Test
@@ -168,6 +168,10 @@ class AuthApiTest {
                 .andExpect(jsonPath("$.picture").value("https://lh3.example/p.jpg"));
         mvc.perform(get("/api/v1/me").with(user("plain@x.com").roles("PLAYER")))
                 .andExpect(jsonPath("$.picture").doesNotExist());
+        // Remembered for the other players (Up next).
+        mvc.perform(get("/api/v1/players/pictures").with(user("other@x.com").roles("PLAYER")))
+                .andExpect(jsonPath("$['pic@x.com']").value("https://lh3.example/p.jpg"))
+                .andExpect(jsonPath("$['plain@x.com']").doesNotExist());
     }
 
     @Test

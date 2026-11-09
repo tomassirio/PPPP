@@ -10,6 +10,25 @@
 	const SHOWN = 5;
 
 	let queue = $state<Queued[]>([]);
+
+	// Player id -> Google photo (GET /players/pictures); refreshed when someone new shows up, at most every 10 s.
+	let pictures = $state<Record<string, string>>({});
+	let picturesAt = 0;
+	async function loadPictures() {
+		if (Date.now() - picturesAt < 10_000) return;
+		picturesAt = Date.now();
+		try {
+			pictures = await api<Record<string, string>>('GET', '/players/pictures');
+		} catch {
+			/* initials instead */
+		}
+	}
+	$effect(() => {
+		const missing = [...queue, ...recent].some((q) => !(q.user in pictures));
+		if (missing || !picturesAt) loadPictures();
+	});
+	let broken = $state<Record<string, boolean>>({});
+	const initials = (user: string) => shortUser(user).slice(0, 2).toUpperCase();
 	let recent = $state<Queued[]>([]);
 	let list = $state<HTMLOListElement>();
 	let stick = true; // false while the reader has scrolled up
@@ -50,6 +69,17 @@
 	});
 </script>
 
+{#snippet who(user: string)}
+	<span class="who">
+		{#if pictures[user] && !broken[user]}
+			<img class="pic" src={pictures[user]} alt="" referrerpolicy="no-referrer" onerror={() => (broken[user] = true)} />
+		{:else}
+			<span class="pic initials" aria-hidden="true">{initials(user)}</span>
+		{/if}
+		<span class="muted">{shortUser(user)}</span>
+	</span>
+{/snippet}
+
 <section class="panel card" aria-labelledby="next-h">
 	<div class="head">
 		<h2 id="next-h">Up next</h2>
@@ -58,7 +88,7 @@
 	{#if queue.length}
 		<ol class="queue">
 			{#each queue.slice(0, SHOWN) as q (q.id)}
-				<li><span class="pixel">{formatCommand(q.command)}</span><span class="muted">{shortUser(q.user)}</span></li>
+				<li><span class="pixel">{formatCommand(q.command)}</span>{@render who(q.user)}</li>
 			{/each}
 			{#if queue.length > SHOWN}<li class="muted">+{queue.length - SHOWN} more</li>{/if}
 		</ol>
@@ -70,7 +100,7 @@
 	{#if recent.length}
 		<ol class="recent" bind:this={list} aria-labelledby="recent-h" onscroll={() => list && (stick = list.scrollHeight - list.scrollTop - list.clientHeight < 30)}>
 			{#each recent as r (r.id)}
-				<li><span class="pixel">{formatCommand(r.command)}</span><span class="muted">{shortUser(r.user)}</span></li>
+				<li><span class="pixel">{formatCommand(r.command)}</span>{@render who(r.user)}</li>
 			{/each}
 		</ol>
 	{:else}
@@ -128,8 +158,31 @@
 	li {
 		display: flex;
 		justify-content: space-between;
+		align-items: center;
 		gap: 12px;
 		font-size: 14px;
+	}
+	.who {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		min-width: 0;
+	}
+	.pic {
+		flex: none;
+		width: 18px;
+		height: 18px;
+		border-radius: 50%;
+		object-fit: cover;
+	}
+	.initials {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: #2a9d8f;
+		color: #fff;
+		font-size: 8px;
+		font-weight: 700;
 	}
 	li .pixel {
 		font-size: 10px;

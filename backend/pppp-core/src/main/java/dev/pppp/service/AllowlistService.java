@@ -55,6 +55,21 @@ public class AllowlistService {
         return repo.role(normalize(email));
     }
 
+    /** Remembers a player's profile photo so others can see it (Up next). Only https URLs; never throws. */
+    public void rememberPicture(String id, String url) {
+        if (url == null || !url.startsWith("https://")) return;
+        try {
+            repo.savePicture(id, url);
+        } catch (RuntimeException e) {
+            // a missing avatar is not worth failing /me over
+        }
+    }
+
+    /** Player id -> profile photo URL, for players who have opened the page since photos were remembered. */
+    public java.util.Map<String, String> pictures() {
+        return repo.pictures();
+    }
+
     public boolean isBanned(String email) {
         return repo.isBanned(normalize(email));
     }
