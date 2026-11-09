@@ -6,6 +6,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -20,12 +22,14 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @Component
 public class EventPublisher {
     private record Stream(Viewer viewer, boolean admin) {}
+    private static final Logger log = LoggerFactory.getLogger(EventPublisher.class);
 
     private final Map<SseEmitter, Stream> emitters = new ConcurrentHashMap<>();
 
     public SseEmitter subscribe(Viewer viewer, boolean admin) {
         var emitter = new SseEmitter(0L);
         emitters.put(emitter, new Stream(viewer, admin));
+        log.info("Stream opened for {} ({} streams)", viewer.id(), emitters.size());
         emitter.onCompletion(() -> drop(emitter));
         emitter.onTimeout(() -> drop(emitter));
         emitter.onError(e -> drop(emitter));
@@ -76,6 +80,9 @@ public class EventPublisher {
     }
 
     private void drop(SseEmitter emitter) {
-        if (emitters.remove(emitter) != null) publish("PRESENCE", viewers());
+        Stream gone = emitters.remove(emitter);
+        if (gone == null) return;
+        log.info("Stream closed for {} ({} streams)", gone.viewer().id(), emitters.size());
+        publish("PRESENCE", viewers());
     }
 }
