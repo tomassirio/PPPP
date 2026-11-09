@@ -5,10 +5,16 @@
 	type SaveState = { id: string; cartridgeId: string; kind: 'manual' | 'auto'; createdAt: string };
 
 	let saves = $state<SaveState[]>([]);
+	const PER_PAGE = 10;
+	let page = $state(0);
+	const pages = $derived(Math.max(1, Math.ceil(saves.length / PER_PAGE)));
+	const shown = $derived(saves.slice(page * PER_PAGE, (page + 1) * PER_PAGE));
 
 	async function load() {
 		const list = await act('Load save states', () => api<SaveState[]>('GET', '/admin/save-states'), undefined, true);
-		if (list) saves = list;
+		if (!list) return;
+		saves = list;
+		page = Math.min(page, Math.max(0, Math.ceil(list.length / PER_PAGE) - 1));
 	}
 
 	// Save states belong to the inserted cartridge: reload when it changes.
@@ -28,11 +34,11 @@
 		<button class="primary" onclick={() => create('Take save state', '/admin/save-states')}>Take now</button>
 		<button onclick={() => create('Run autosave', '/admin/autosave/run')}>Run autosave now</button>
 	</div>
-	<div class="scroll">
+	<div class="scroll saves">
 		<table>
 			<thead><tr><th>Time</th><th>Kind</th><th>ID</th><th></th></tr></thead>
 			<tbody>
-				{#each saves as s (s.id)}
+				{#each shown as s (s.id)}
 					<tr>
 						<td>{new Date(s.createdAt).toLocaleString()}</td>
 						<td>{s.kind}</td>
@@ -51,4 +57,11 @@
 			</tbody>
 		</table>
 	</div>
+	{#if pages > 1}
+		<nav class="row pager" aria-label="Save state pages">
+			<button onclick={() => page--} disabled={page === 0}>Newer</button>
+			<span class="muted" aria-live="polite">Page {page + 1} of {pages} · {saves.length} saves</span>
+			<button onclick={() => page++} disabled={page >= pages - 1}>Older</button>
+		</nav>
+	{/if}
 </section>
