@@ -21,7 +21,7 @@
 	let dir = $state<string | null>(null);
 	let start: HTMLAnchorElement;
 
-	// Konami code (↑↑↓↓←→←→ B A; keys: arrows, X, Z; or taps): a wild MISSINGNO. appears and the shell goes rainbow.
+	// Konami code (↑↑↓↓←→←→ B A; keys: arrows, X, Z; or taps): a wild PIBSIGNO. appears and the shell goes rainbow.
 	const KONAMI = ['up', 'up', 'down', 'down', 'left', 'right', 'left', 'right', 'b', 'a'];
 	let typed: string[] = [];
 	let glitch = $state(false);
@@ -213,7 +213,7 @@
 				{/if}
 				<p class="press" aria-hidden="true">PRESS START TO SIGN IN</p>
 				{#if glitch}
-					<p class="textbox" role="status">A wild MISSINGNO. appeared!</p>
+					<p class="textbox" role="status">A wild PIBSIGNO. appeared!</p>
 				{:else if denied}
 					<p class="textbox" role="alert">You're not on the trainer list. Ask the host to add you.</p>
 				{/if}
