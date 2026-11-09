@@ -40,6 +40,21 @@
 		{ id: 'party', label: 'Party', icon: '<circle cx="12" cy="12" r="9"/><path d="M3 12h6m6 0h6"/><circle cx="12" cy="12" r="3"/>' },
 		{ id: 'chat', label: 'Chat', icon: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>' }
 	];
+	// Keep the phone's screen awake while /play is open and visible (Screen Wake Lock; ignored where unsupported).
+	$effect(() => {
+		if (!me || !('wakeLock' in navigator)) return;
+		let lock: WakeLockSentinel | null = null;
+		const request = () => {
+			if (document.visibilityState === 'visible') navigator.wakeLock.request('screen').then((l) => (lock = l)).catch(() => {});
+		};
+		request();
+		document.addEventListener('visibilitychange', request);
+		return () => {
+			document.removeEventListener('visibilitychange', request);
+			lock?.release();
+		};
+	});
+
 	let unreadChat = $state(0);
 	let newInParty = $state(false);
 	let now = $state(Date.now());
@@ -548,6 +563,73 @@
 			height: 10px;
 			padding: 0;
 			top: 4px;
+		}
+	}
+	/* Phone held sideways: a Game Boy Advance. D-pad left, screen in the middle, A/B right, Select/Start under
+	   the screen; no header or tabs. The pad's own boxes become grid items via display: contents. */
+	@media (orientation: landscape) and (max-height: 520px) {
+		.page {
+			height: 100dvh;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
+		}
+		header,
+		.tabs,
+		.side,
+		.chat,
+		.dex {
+			display: none;
+		}
+		.stage,
+		.game,
+		.pad,
+		.pad.off {
+			display: contents;
+		}
+		main {
+			flex: 1 1 0;
+			min-height: 0;
+			max-width: none;
+			display: grid;
+			grid-template-columns: 1fr auto 1fr;
+			grid-template-rows: 1fr auto;
+			grid-template-areas: 'dpad screen ab' 'dpad meta ab';
+			align-items: center;
+			justify-items: center;
+			gap: 6px 12px;
+			padding: 8px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));
+		}
+		.screen-slot {
+			grid-area: screen;
+			height: calc(100dvh - 16px - 52px);
+			width: calc((100dvh - 16px - 52px - 76px) * 160 / 144 + 32px);
+		}
+		.screen-slot :global(.fit) {
+			container-type: size;
+			--bezel-width: min(100cqw, (100cqh - 76px) * 160 / 144 + 32px);
+		}
+		.pad :global(.shell),
+		.pad :global(.row) {
+			display: contents;
+		}
+		.pad :global(.dpad) {
+			grid-area: dpad;
+		}
+		.pad :global(.ab) {
+			grid-area: ab;
+		}
+		.pad :global(.meta) {
+			grid-area: meta;
+		}
+		.pad :global(.controls),
+		.pad :global(.chip-last) {
+			display: none;
+		}
+		.pad :global(.shells) {
+			position: fixed;
+			top: 10px;
+			right: max(12px, env(safe-area-inset-right));
 		}
 	}
 </style>
