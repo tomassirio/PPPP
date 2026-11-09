@@ -298,9 +298,13 @@
 			min-height: 200px;
 		}
 		.screen-slot :global(.fit) {
-			flex: 1 1 0;
-			min-height: 0;
-			aspect-ratio: auto;
+			container-type: size;
+			/* Largest screen that fits: bezel padding 32px across, 76px of padding + LIVE strip down. */
+			--bezel-width: min(100cqw, (100cqh - 76px) * 160 / 144 + 32px);
+		}
+		/* The column narrows with the screen, so the pad lines up under it. */
+		.game {
+			max-width: clamp(380px, calc((100dvh - 600px) * 160 / 144 + 32px), 560px);
 		}
 		.chat {
 			min-height: 0;

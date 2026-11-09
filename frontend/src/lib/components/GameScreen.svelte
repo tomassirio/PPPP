@@ -73,9 +73,9 @@
 	});
 </script>
 
-<div class="bezel">
-	<!-- Size container: the screen is as big as fits, keeping 160:144. The play page may make this flex. -->
-	<div class="fit">
+<!-- .fit is a size container the play page can stretch; the bezel then hugs the largest 160:144 screen that fits. -->
+<div class="fit">
+	<div class="bezel">
 		<div class="screen">
 			<canvas bind:this={canvas} width="160" height="144" aria-label="Live game screen"></canvas>
 			{#if overlay}
@@ -83,14 +83,21 @@
 			{/if}
 			<p class="sr-only" role="status">{overlay ?? ''}</p>
 		</div>
-	</div>
-	<div class="strip">
-		<span class="live" class:off={!!overlay}>● {overlay ? 'OFFLINE' : 'LIVE'}</span>
-		{@render controls?.()}
+		<div class="strip">
+			<span class="live" class:off={!!overlay}>● {overlay ? 'OFFLINE' : 'LIVE'}</span>
+			{@render controls?.()}
+		</div>
 	</div>
 </div>
 
 <style>
+	.fit {
+		container-type: inline-size;
+		display: flex;
+		justify-content: center;
+		align-items: flex-start;
+		height: 100%;
+	}
 	.bezel {
 		background: #3b3f45;
 		border-radius: 10px;
@@ -99,20 +106,13 @@
 		flex-direction: column;
 		gap: 8px;
 		box-sizing: border-box;
-		height: 100%;
-	}
-	.fit {
-		width: 100%;
-		aspect-ratio: 160 / 144;
-		container-type: size;
-		display: flex;
-		align-items: center;
-		justify-content: center;
+		/* 100% normally; the play page sets --bezel-width when it gives .fit a fixed height. */
+		width: var(--bezel-width, 100%);
 	}
 	.screen {
 		position: relative;
 		aspect-ratio: 160 / 144;
-		width: min(100cqw, 100cqh * 160 / 144);
+		width: 100%;
 		background: #cadc9f;
 		border-radius: 2px;
 		overflow: hidden;
