@@ -156,7 +156,7 @@
 		}
 	}
 	/* Phones: the header pill already shows the mode, so just the switch vote: line, bar, two equal buttons. */
-	@media (max-width: 760px) {
+	@media (max-width: 760px), (orientation: landscape) and (max-height: 520px) {
 		.card {
 			padding: 12px 16px;
 			gap: 10px;

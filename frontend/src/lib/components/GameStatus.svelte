@@ -297,7 +297,7 @@
 	}
 	/* Phones: the whole box fits the Party tab without scrolling: a 3x2 party of compact slots (no species line),
 	   Next Gym in the Badges header, gaps instead of rules. */
-	@media (max-width: 760px) {
+	@media (max-width: 760px), (orientation: landscape) and (max-height: 520px) {
 		.card {
 			padding: 12px 14px;
 			gap: 8px;

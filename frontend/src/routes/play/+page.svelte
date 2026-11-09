@@ -865,7 +865,7 @@
 		.side,
 		.chat {
 			position: fixed;
-			top: 8px;
+			top: 60px; /* below the mode pill and account corners */
 			right: max(8px, env(safe-area-inset-right));
 			bottom: 8px;
 			z-index: 30;
@@ -883,8 +883,15 @@
 			flex-direction: column;
 			overflow: hidden;
 		}
+		/* Sheets are fixed, not scrolled, like the portrait tabs: only lists inside scroll. */
+		.side {
+			overflow: hidden;
+			gap: 10px;
+		}
 		.voting,
 		.party {
+			flex: 1 1 0;
+			min-height: 0;
 			display: flex;
 			flex-direction: column;
 			gap: 10px;
@@ -909,9 +916,10 @@
 			translate: calc(100% + 24px) 0;
 			visibility: hidden;
 		}
-		.next {
-			flex: none;
-			height: 220px;
+		.voting .next {
+			flex: 1 1 0;
+			min-height: 0;
+			height: auto;
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
