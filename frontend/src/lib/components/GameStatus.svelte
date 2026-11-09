@@ -100,7 +100,7 @@
 			<hr />
 			<div class="dex">
 				<h2 id="dex-h">Pokédex</h2>
-				<p class="muted"><strong>{dex.value}</strong> / {dex.max} owned{#if seen} · {seen.value} seen{/if}</p>
+				<p class="muted"><strong>{dex.value}</strong> / {dex.max} owned{#if seen}{' · '}{seen.value} seen{/if}</p>
 			</div>
 		{/if}
 	</section>
