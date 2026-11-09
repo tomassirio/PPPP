@@ -135,7 +135,9 @@
 	</div>
 	<div class="keys keys-only">
 		<div class="cluster" role="img" aria-label="Arrow keys move">
-			<kbd class="up">↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd>
+			<kbd style:grid-area="up">↑</kbd><kbd style:grid-area="left">←</kbd><kbd style:grid-area="down">↓</kbd><kbd
+				style:grid-area="right">→</kbd
+			>
 		</div>
 		<ul class="map">
 			<li><kbd>Z</kbd><span class="mini round pixel">A</span></li>
@@ -277,30 +279,44 @@
 	.keys {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		gap: 16px;
+		justify-content: center;
+		gap: 40px;
 	}
 	/* Inverted T, like a real keyboard. */
 	.cluster {
 		display: grid;
-		grid-template-columns: repeat(3, 24px);
+		grid-template-columns: repeat(3, 26px);
+		grid-template-rows: repeat(2, 24px);
+		grid-template-areas: '. up .' 'left down right';
 		gap: 3px;
 	}
-	.cluster .up {
-		grid-column: 2;
+	.cluster kbd {
+		width: 26px;
+		min-width: 0;
+		height: 24px;
+		padding: 0;
 	}
+	/* Two key -> button pairs per row; keys right-aligned against their button. */
 	.map {
 		margin: 0;
 		padding: 0;
 		list-style: none;
 		display: grid;
-		grid-template-columns: repeat(2, auto);
-		gap: 6px 18px;
+		grid-template-columns: auto auto auto auto;
+		align-items: center;
+		gap: 8px 10px;
 	}
 	.map li {
-		display: flex;
-		align-items: center;
-		gap: 8px;
+		display: contents;
+	}
+	.map kbd {
+		justify-self: end;
+	}
+	.map .mini {
+		justify-self: start;
+	}
+	.map li:nth-child(odd) .mini {
+		margin-right: 18px;
 	}
 	kbd {
 		min-width: 24px;
