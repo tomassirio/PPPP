@@ -70,6 +70,11 @@
 	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
 	gap: 10px;
 }
+/* A label that wraps to two lines must not push its input down: inputs sit at the bottom of their cell, so a
+   row of fields lines up whatever the label lengths. */
+.admin .grid > label:not(.check) {
+	justify-content: space-between;
+}
 .admin label {
 	display: flex;
 	flex-direction: column;
@@ -286,9 +291,15 @@
 
 /* Phones: People as stacked rows, tables as wrapped lines, settings in two columns. */
 @media (max-width: 760px) {
+	/* Console actions: a 2x2 grid of equal buttons. */
+	.admin .row.actions {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
 	.admin .people {
 		display: flex;
 		flex-direction: column;
+		align-items: stretch; /* the desktop grid centres; on phones everything is left-aligned like the rest */
 		gap: 12px;
 	}
 	.admin .people .person {
