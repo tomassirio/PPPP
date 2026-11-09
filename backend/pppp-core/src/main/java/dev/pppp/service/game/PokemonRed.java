@@ -164,7 +164,7 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
                 new GameSummary.Counter("Badges", Integer.bitCount(s.badges()), 8),
                 new GameSummary.Counter("Pokédex", owned(s), DEX_SIZE),
                 new GameSummary.Counter("Seen", s.seen().get(0, DEX_SIZE).cardinality(), DEX_SIZE)), party, badges,
-                collection(s), s.playMinutes() < 60 ? String.format("%dh %02dm", s.playHours(), s.playMinutes()) : null);
+                collection(s), playTime(s.playHours(), s.playMinutes()));
     }
 
     private GameSummary.Collection collection(State s) {
@@ -244,6 +244,13 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
         if (dex == DEX_SIZE) return 0x01; // Mew
         int id = speciesByDex[dex];
         return id <= 0x1E ? 0x09 : id <= 0x49 ? 0x0A : id <= 0x73 ? 0x0B : id <= 0x98 ? 0x0C : 0x0D;
+    }
+
+    /** "4h 26m", or with days once a day has passed: "2d 5h 07m". The game's clock stops at 255:59. */
+    static String playTime(int hours, int minutes) {
+        if (minutes >= 60) return null; // not a valid clock (mid-write)
+        return hours < 24 ? String.format("%dh %02dm", hours, minutes)
+                : String.format("%dd %dh %02dm", hours / 24, hours % 24, minutes);
     }
 
     private static int owned(State s) {

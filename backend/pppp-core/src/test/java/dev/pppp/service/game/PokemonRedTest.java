@@ -74,6 +74,14 @@ class PokemonRedTest {
     }
 
     @Test
+    void playTimeShowsDaysOnceADayHasPassed() {
+        assertThat(PokemonRed.playTime(4, 26)).isEqualTo("4h 26m");
+        assertThat(PokemonRed.playTime(53, 7)).isEqualTo("2d 5h 07m");
+        assertThat(PokemonRed.playTime(255, 59)).isEqualTo("10d 15h 59m");
+        assertThat(PokemonRed.playTime(1, 99)).isNull();
+    }
+
+    @Test
     void starterPokedexPreviewIsNotACatch() {
         var start = red.read(ram());
         mem[off(0xD2F7)] = 0b0100_1011; // the game flags 1, 2, 4 and 7 while showing a starter's entry

@@ -270,7 +270,8 @@
 	}
 	/* Pokédex | Time played, split by a vertical rule. */
 	.split {
-		display: flex;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); /* equal halves: the rule sits in the middle */
 		gap: 16px;
 	}
 	.dex {
