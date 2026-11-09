@@ -26,9 +26,12 @@
 		setTimeout(() => (now = Date.now()), seconds * 1000 + 10);
 	}
 
+	let inFlight = false;
+
 	async function send(command: string) {
 		if (Date.now() < blockedUntil) return;
 		lastPress = command.toUpperCase();
+		inFlight = true;
 		try {
 			await api('POST', '/inputs', { command, repeat: 1 });
 			say(mode === 'DEMOCRACY' ? 'Voted' : 'Sent', false);
@@ -45,6 +48,8 @@
 			} else {
 				say(`Not sent: ${e.detail}`);
 			}
+		} finally {
+			inFlight = false;
 		}
 	}
 
@@ -52,19 +57,54 @@
 	let held = $state<Button | null>(null);
 	let heldTimer: ReturnType<typeof setTimeout> | undefined;
 
+	/*
+	 * Holding an arrow key in anarchy keeps walking: one press every REPEAT_MS. The buffer is one press in flight
+	 * per player: a repeat waits until the server accepted the previous one, and pauses while it says slow down
+	 * or queue full. The browser's own key auto-repeat is ignored. Democracy is one vote per window: no repeats.
+	 */
+	const REPEAT_MS = 250;
+	const ARROWS: Button[] = ['up', 'down', 'left', 'right'];
+	let repeating: Button | null = null;
+	let repeatTimer: ReturnType<typeof setInterval> | undefined;
+
+	function startRepeat(b: Button) {
+		stopRepeat();
+		repeating = b;
+		repeatTimer = setInterval(() => {
+			if (!inFlight && Date.now() >= blockedUntil) send(b);
+		}, REPEAT_MS);
+	}
+
+	function stopRepeat() {
+		clearInterval(repeatTimer);
+		repeating = null;
+	}
+
+	$effect(() => stopRepeat); // leaving the page
+
 	function onkeydown(e: KeyboardEvent) {
 		const b = keyToButton(e);
-		if (!b) return;
+		if (!b) {
+			if (e.repeat && repeating) e.preventDefault(); // auto-repeat of the held arrow: no page scroll
+			return;
+		}
 		e.preventDefault();
 		held = b;
 		clearTimeout(heldTimer);
-		heldTimer = setTimeout(() => (held = null), 1000); // in case the keyup never arrives (focus lost)
 		send(b);
+		if (mode === 'ANARCHY' && ARROWS.includes(b)) startRepeat(b);
+		else heldTimer = setTimeout(() => (held = null), 1000); // in case the keyup never arrives (focus lost)
 	}
 
-	function onkeyup() {
+	function onkeyup(e: KeyboardEvent) {
+		if (repeating && e.key.startsWith('Arrow')) stopRepeat(); // even if focus moved into a text field meanwhile
 		clearTimeout(heldTimer);
 		heldTimer = setTimeout(() => (held = null), 120); // a quick tap still shows
+	}
+
+	function onblur() {
+		stopRepeat();
+		held = null;
 	}
 
 	const dpad: { b: Button; label: string; path: string; area: string; key: string }[] = [
@@ -75,7 +115,7 @@
 	];
 </script>
 
-<svelte:window {onkeydown} {onkeyup} />
+<svelte:window {onkeydown} {onkeyup} {onblur} />
 
 <div class="shell">
 	<div class="row">
