@@ -6,6 +6,7 @@
 	import { loadMe } from '#lib/session.svelte.js';
 	import pibs from '#lib/assets/banner-pibs.webp';
 	import play from '#lib/assets/banner-play.webp';
+	import face from '#lib/assets/konami-face.webp';
 
 	const BOOT_MS = 2900;
 
@@ -20,6 +21,29 @@
 	const KONAMI = ['up', 'up', 'down', 'down', 'left', 'right', 'left', 'right', 'b', 'a'];
 	let typed: string[] = [];
 	let glitch = $state(false);
+
+	// Fireworks: bursts at random spots, each a ring of stars and little faces flying out.
+	type Spark = { face: boolean; dx: number; dy: number; hue: number };
+	type Burst = { id: number; x: number; y: number; delay: number; sparks: Spark[] };
+	let bursts = $state<Burst[]>([]);
+	let burstId = 0;
+
+	function fireworks() {
+		bursts = Array.from({ length: 7 }, (_, i) => {
+			const n = 12;
+			return {
+				id: burstId++,
+				x: 10 + Math.random() * 80,
+				y: 10 + Math.random() * 60,
+				delay: i * 0.45,
+				sparks: Array.from({ length: n }, (_, k) => {
+					const angle = (k / n) * 2 * Math.PI + Math.random() * 0.3;
+					const dist = 90 + Math.random() * 70;
+					return { face: k % 3 === 0, dx: Math.cos(angle) * dist, dy: Math.sin(angle) * dist, hue: Math.random() * 360 };
+				})
+			};
+		});
+	}
 	let eatClick = false;
 
 	function input(key: string) {
@@ -27,7 +51,8 @@
 		if (typed.join() !== KONAMI.join()) return false;
 		typed = [];
 		glitch = true;
-		setTimeout(() => (glitch = false), 6000);
+		fireworks();
+		setTimeout(() => ((glitch = false), (bursts = [])), 6000);
 		return true;
 	}
 
@@ -170,6 +195,22 @@
 	</div>
 
 	<p class="help">Press START to sign in with Google.</p>
+
+	{#if bursts.length}
+		<div class="fireworks" aria-hidden="true">
+			{#each bursts as b (b.id)}
+				<div class="burst" style:left="{b.x}%" style:top="{b.y}%" style:--delay="{b.delay}s">
+					{#each b.sparks as sp, k (k)}
+						{#if sp.face}
+							<img class="spark face" src={face} alt="" style:--dx="{sp.dx}px" style:--dy="{sp.dy}px" />
+						{:else}
+							<span class="spark" style:--dx="{sp.dx}px" style:--dy="{sp.dy}px" style:color="hsl({sp.hue} 95% 60%)">★</span>
+						{/if}
+					{/each}
+				</div>
+			{/each}
+		</div>
+	{/if}
 </main>
 
 <style>
@@ -667,6 +708,45 @@
 	.glitch .shell {
 		animation: rainbow 1.2s linear infinite;
 	}
+	.fireworks {
+		position: fixed;
+		inset: 0;
+		z-index: 50;
+		pointer-events: none;
+		overflow: hidden;
+	}
+	.burst {
+		position: absolute;
+	}
+	/* Each spark starts at the burst's centre, flies out to (--dx, --dy), drifts down a little and fades. */
+	.spark {
+		position: absolute;
+		translate: -50% -50%;
+		font-size: 22px;
+		line-height: 1;
+		text-shadow: 0 0 8px currentColor;
+		opacity: 0;
+		animation: spark 1.6s cubic-bezier(0.15, 0.8, 0.3, 1) var(--delay) both;
+	}
+	.spark.face {
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		box-shadow: 0 0 0 2px #fff, 0 0 12px rgb(255 255 255 / 0.7);
+	}
+	@keyframes spark {
+		0% {
+			opacity: 1;
+			transform: translate(0, 0) scale(0.3) rotate(0deg);
+		}
+		70% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+			transform: translate(var(--dx), calc(var(--dy) + 40px)) scale(1) rotate(200deg);
+		}
+	}
 	@keyframes rainbow {
 		to {
 			filter: hue-rotate(360deg);
@@ -676,6 +756,12 @@
 		.glitch .shell {
 			animation: none;
 			filter: hue-rotate(180deg);
+		}
+		/* No flying: the faces and stars just appear around each burst, then go with the egg. */
+		.spark {
+			animation: none;
+			opacity: 1;
+			transform: translate(calc(var(--dx) * 0.6), calc(var(--dy) * 0.6));
 		}
 	}
 
