@@ -17,7 +17,7 @@
 	let dir = $state<string | null>(null);
 	let start: HTMLAnchorElement;
 
-	// Konami code (↑↑↓↓←→←→ B A, keys or taps): a wild MISSINGNO. appears and the shell goes rainbow.
+	// Konami code (↑↑↓↓←→←→ B A; keys: arrows, X, Z; or taps): a wild MISSINGNO. appears and the shell goes rainbow.
 	const KONAMI = ['up', 'up', 'down', 'down', 'left', 'right', 'left', 'right', 'b', 'a'];
 	let typed: string[] = [];
 	let glitch = $state(false);
@@ -86,8 +86,8 @@
 			e.preventDefault();
 			dir = ARROWS[e.key];
 			if (!e.repeat) input(dir);
-		} else if ((e.key === 'a' || e.key === 'b') && !e.repeat) {
-			input(e.key);
+		} else if ((e.key === 'z' || e.key === 'x') && !e.repeat) {
+			input(e.key === 'z' ? 'a' : 'b'); // Z is A, X is B, as on /play
 		}
 	}
 
@@ -194,15 +194,13 @@
 		<div class="speaker" aria-hidden="true"></div>
 	</div>
 
-	<p class="help">Press START to sign in with Google.</p>
-
 	{#if bursts.length}
 		<div class="fireworks" aria-hidden="true">
 			{#each bursts as b (b.id)}
 				<div class="burst" style:left="{b.x}%" style:top="{b.y}%" style:--delay="{b.delay}s">
 					{#each b.sparks as sp, k (k)}
 						{#if sp.face}
-							<img class="spark face" src={face} alt="" style:--dx="{sp.dx}px" style:--dy="{sp.dy}px" />
+							<img class="spark me" src={face} alt="" style:--dx="{sp.dx}px" style:--dy="{sp.dy}px" />
 						{:else}
 							<span class="spark" style:--dx="{sp.dx}px" style:--dy="{sp.dy}px" style:color="hsl({sp.hue} 95% 60%)">★</span>
 						{/if}
@@ -230,10 +228,6 @@
 	p {
 		margin: 0;
 	}
-	.help {
-		font-size: 14px;
-		color: var(--muted);
-	}
 
 	/* Everything on the device is sized in cqw: 1cqw is 1% of the device width. */
 	.device {
@@ -249,8 +243,8 @@
 		--rubber: #2e2935;
 		--pixel: #1f1a33;
 		position: relative;
-		/* 1.67 is the device's height/width; 84px leaves room for the help line. */
-		width: min(410px, calc(100vw - 24px), calc((100dvh - 84px) / 1.67));
+		/* 1.67 is the device's height/width; 40px is the page padding. */
+		width: min(410px, calc(100vw - 24px), calc((100dvh - 40px) / 1.67));
 		min-width: 280px;
 		aspect-ratio: 100 / 167;
 		container-type: inline-size;
@@ -728,7 +722,7 @@
 		opacity: 0;
 		animation: spark 1.6s cubic-bezier(0.15, 0.8, 0.3, 1) var(--delay) both;
 	}
-	.spark.face {
+	.spark.me {
 		width: 40px;
 		height: 40px;
 		border-radius: 50%;
