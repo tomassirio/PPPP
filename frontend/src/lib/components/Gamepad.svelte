@@ -1,7 +1,7 @@
 <!-- D-pad, A/B, Start/Select. Click/tap/keyboard -> POST /api/v1/inputs. Keys: arrows, Z=A, X=B, Enter=Start, Shift/Backspace=Select. -->
 <script lang="ts">
 	import { api, ApiError } from '#lib/api.ts';
-	import { keyToButton, type Button } from '#lib/play.ts';
+	import { afterArrowRelease, keyToButton, type Button } from '#lib/play.ts';
 	import { SHELLS, saveShell, savedShell, shellVars } from '#lib/shells.ts';
 
 	let { mode }: { mode: 'ANARCHY' | 'DEMOCRACY' } = $props();
@@ -136,10 +136,11 @@
 		if (e.key.startsWith('Arrow')) {
 			const b = e.key.slice(5).toLowerCase() as Button;
 			heldArrows = heldArrows.filter((x) => x !== b);
-			const back = heldArrows.at(-1);
-			if (back && repeating === b && mode === 'ANARCHY') {
-				startRepeat(back, 0); // still holding another arrow: keep walking that way
-				held = back;
+			const next = afterArrowRelease(heldArrows, repeating, b);
+			if (next === 'keep') return; // let go of an arrow already switched away from: keep walking
+			if (next && mode === 'ANARCHY') {
+				startRepeat(next, 0); // still holding another arrow: keep walking that way
+				held = next;
 				return;
 			}
 			if (repeating) stopRepeat(); // even if focus moved into a text field meanwhile
