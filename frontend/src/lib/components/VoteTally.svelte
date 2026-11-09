@@ -1,8 +1,10 @@
 <!-- Open democracy window: live tally bars and countdown. Fed by /state.tally and VOTE_TALLY. -->
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { tallyRows, type Tally } from '#lib/play.ts';
 
-	let { tally }: { tally: Tally | null } = $props();
+	/** children: shown at the bottom of the card, taking its remaining height (the play page puts Last pressed there). */
+	let { tally, children }: { tally: Tally | null; children?: Snippet } = $props();
 
 	let now = $state(Date.now());
 	$effect(() => {
@@ -34,7 +36,11 @@
 	{:else}
 		<p class="muted">No vote open. Press a button to start one.</p>
 	{/if}
-	<p class="muted">Press a button on the pad to vote. Repeat counts merge by median.</p>
+	{#if children}
+		{@render children()}
+	{:else}
+		<p class="muted">Press a button on the pad to vote. Repeat counts merge by median.</p>
+	{/if}
 </section>
 
 <style>
@@ -43,6 +49,13 @@
 		display: flex;
 		flex-direction: column;
 		gap: 14px;
+		box-sizing: border-box;
+		height: 100%;
+		min-height: 0;
+		overflow-y: auto; /* many buttons voted on a short screen: scroll inside, never over the party box */
+	}
+	.card > :not(:last-child) {
+		flex: none;
 	}
 	.head {
 		display: flex;

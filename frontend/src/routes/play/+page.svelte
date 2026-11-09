@@ -136,8 +136,7 @@
 					<!-- The flexible slot: the open vote in democracy (the queue is only votes then), the queue in anarchy. -->
 					<div class="next">
 						{#if game.mode === 'DEMOCRACY'}
-							<div class="vote"><VoteTally tally={game.tally} /></div>
-							<section class="panel last-card" aria-label="Last pressed"><LastPressed /></section>
+							<VoteTally tally={game.tally}><LastPressed /></VoteTally>
 						{:else}
 							<UpNext />
 						{/if}
@@ -284,26 +283,10 @@
 		contain: size;
 		min-height: 140px;
 	}
-	/* Anarchy: Up next fills the slot. Democracy: the vote at its size, Last pressed takes the rest. */
-	.next {
-		display: flex;
-		flex-direction: column;
-		gap: 16px;
-	}
+	/* One card fills the slot: Up next (anarchy) or This vote with Last pressed inside (democracy). */
 	.next > :global(*) {
-		flex: 1 1 0;
-		min-height: 0;
+		height: 100%;
 		box-sizing: border-box;
-		overflow-y: auto;
-	}
-	.next > .vote {
-		flex: none;
-	}
-	.last-card {
-		padding: 16px 20px;
-		display: flex;
-		flex-direction: column;
-		min-height: 90px;
 	}
 	.chat {
 		flex: 1 1 340px;

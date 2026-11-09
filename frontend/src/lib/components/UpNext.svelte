@@ -61,6 +61,10 @@
 		height: 100%;
 		min-height: 0;
 	}
+	/* Only Last pressed gives up height when the card is short; the queue part never shrinks away. */
+	.card > :not(:last-child) {
+		flex: none;
+	}
 	.head {
 		display: flex;
 		justify-content: space-between;
