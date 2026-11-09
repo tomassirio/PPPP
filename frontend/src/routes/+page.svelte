@@ -16,6 +16,21 @@
 	let dir = $state<string | null>(null);
 	let start: HTMLAnchorElement;
 
+	// Konami code (↑↑↓↓←→←→ B A, keys or taps): a wild MISSINGNO. appears and the shell goes rainbow.
+	const KONAMI = ['up', 'up', 'down', 'down', 'left', 'right', 'left', 'right', 'b', 'a'];
+	let typed: string[] = [];
+	let glitch = $state(false);
+	let eatClick = false;
+
+	function input(key: string) {
+		typed = [...typed, key].slice(-KONAMI.length);
+		if (typed.join() !== KONAMI.join()) return false;
+		typed = [];
+		glitch = true;
+		setTimeout(() => (glitch = false), 6000);
+		return true;
+	}
+
 	function skip() {
 		if (!booting) return false;
 		booting = false;
@@ -45,6 +60,9 @@
 		} else if (ARROWS[e.key]) {
 			e.preventDefault();
 			dir = ARROWS[e.key];
+			if (!e.repeat) input(dir);
+		} else if ((e.key === 'a' || e.key === 'b') && !e.repeat) {
+			input(e.key);
 		}
 	}
 
@@ -58,6 +76,7 @@
 		const x = e.clientX - r.left - r.width / 2;
 		const y = e.clientY - r.top - r.height / 2;
 		dir = Math.abs(x) > Math.abs(y) ? (x < 0 ? 'left' : 'right') : y < 0 ? 'up' : 'down';
+		input(dir);
 	}
 
 	function release() {
@@ -79,7 +98,7 @@
 <svelte:window {onkeydown} {onkeyup} onpointerdown={skip} onpointerup={release} onblur={release} />
 
 <main>
-	<div class="device" class:booting>
+	<div class="device" class:booting class:glitch>
 		<div class="shell" aria-hidden="true"></div>
 
 		<div class="bezel">
@@ -90,8 +109,10 @@
 						><img src={play} alt="PlayPokemon" width="720" height="171" /></span
 					>
 				</h1>
-				<p class="press" aria-hidden="true">PRESS START</p>
-				{#if denied}
+				<p class="press" aria-hidden="true">PRESS START TO SIGN IN</p>
+				{#if glitch}
+					<p class="textbox" role="status">A wild MISSINGNO. appeared!</p>
+				{:else if denied}
 					<p class="textbox" role="alert">You're not on the trainer list. Ask the host to add you.</p>
 				{/if}
 				<span class="flash" aria-hidden="true"></span>
@@ -107,14 +128,25 @@
 
 		<div class="face" aria-hidden="true">
 			<!-- svelte-ignore a11y_no_static_element_interactions (decorative, hidden from AT) -->
-			<span class="round b" class:down={held === 'b'} onpointerdown={() => (held = 'b')}>B</span>
+			<span class="round b" class:down={held === 'b'} onpointerdown={() => {
+					held = 'b';
+					input('b');
+				}}>B</span>
 			<a
 				class="round a"
 				class:down={held === 'a'}
 				href="/oauth2/authorization/google"
 				data-sveltekit-reload
 				tabindex="-1"
-				onpointerdown={() => (held = 'a')}>A</a
+				onpointerdown={() => {
+					held = 'a';
+					eatClick = input('a');
+				}}
+				onclick={(e) => {
+					// The A that finishes the code shows the egg instead of signing in.
+					if (eatClick) e.preventDefault();
+					eatClick = false;
+				}}>A</a
 			>
 		</div>
 
@@ -362,7 +394,7 @@
 		top: 79%;
 		width: 100%;
 		text-align: center;
-		font: 2.9cqw/1 var(--pixel-font);
+		font: 2.3cqw/1 var(--pixel-font); /* 22 square glyphs fit the 57cqw glass */
 		color: var(--pixel);
 		/* One running blink; dropping the delay from two whole cycles to 0 when boot ends keeps its phase. */
 		animation:
@@ -626,6 +658,25 @@
 		background:
 			var(--hole) 0 0 / 6cqw 2.85cqw,
 			var(--hole) 3cqw 1.42cqw / 6cqw 2.85cqw;
+	}
+
+	/* Konami egg: the press prompt makes way for the textbox; the shell cycles through every colour. */
+	.glitch .press {
+		visibility: hidden;
+	}
+	.glitch .shell {
+		animation: rainbow 1.2s linear infinite;
+	}
+	@keyframes rainbow {
+		to {
+			filter: hue-rotate(360deg);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.glitch .shell {
+			animation: none;
+			filter: hue-rotate(180deg);
+		}
 	}
 
 	@keyframes blink {
