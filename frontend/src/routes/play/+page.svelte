@@ -551,7 +551,7 @@
 			width: 100%;
 			max-width: none;
 			margin: 0;
-			padding: 8px 12px 0;
+			padding: 8px 6px 0;
 			gap: 8px;
 		}
 		.game {
@@ -560,11 +560,18 @@
 		.screen-slot {
 			order: 0;
 			flex: none;
-			height: min(calc((100vw - 24px - 32px) * 144 / 160 + 76px), 46dvh);
+			/* The screen is width-bound here, so every pixel of gutter is screen height: thin gutters, and a thin
+			   bezel (4px sides, 6px top, 6px under the strip). Width 100vw - 12px gutter - 8px bezel; height adds
+			   6 + 4 gap + 28 strip + 6 = 44px. */
+			height: min(calc((100vw - 12px - 8px) * 144 / 160 + 44px), 50dvh);
 		}
 		.screen-slot :global(.fit) {
 			container-type: size;
-			--bezel-width: min(100cqw, (100cqh - 76px) * 160 / 144 + 32px);
+			--bezel-width: min(100cqw, (100cqh - 44px) * 160 / 144 + 8px);
+		}
+		.screen-slot :global(.fit .bezel) {
+			padding: 6px 4px;
+			gap: 4px;
 		}
 		.pad,
 		.side,
@@ -611,7 +618,7 @@
 			order: 2;
 			flex: none;
 			display: flex;
-			margin: 0 -12px;
+			margin: 0 -6px;
 			padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
 			border-top: 1px solid var(--border);
 			background: var(--panel);
