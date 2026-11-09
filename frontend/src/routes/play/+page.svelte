@@ -8,6 +8,7 @@
 	import Chat from '#lib/components/Chat.svelte';
 	import GameScreen from '#lib/components/GameScreen.svelte';
 	import GameStatus from '#lib/components/GameStatus.svelte';
+	import GameToasts from '#lib/components/GameToasts.svelte';
 	import PokedexBanner from '#lib/components/PokedexBanner.svelte';
 	import Gamepad from '#lib/components/Gamepad.svelte';
 	import ModeCard from '#lib/components/ModeCard.svelte';
@@ -138,6 +139,7 @@
 					<GameScreen power={game.power} paused={game.paused}>
 						{#snippet controls()}<SoundControl />{/snippet}
 					</GameScreen>
+					<GameToasts />
 				</div>
 				<nav class="tabs" aria-label="Panels">
 					{#each TABS as t (t.id)}
@@ -271,6 +273,9 @@
 		flex-direction: column;
 		gap: 16px;
 		min-width: 0;
+	}
+	.screen-slot {
+		position: relative;
 	}
 	.pad {
 		display: flex;
