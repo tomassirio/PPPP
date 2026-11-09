@@ -4,11 +4,13 @@
 type Handler = (data: any) => void;
 
 const handlers = new Map<string, Set<Handler>>();
+const openHandlers = new Set<() => void>();
 let source: EventSource | null = null;
 
 function ensureSource() {
 	if (source) return;
 	source = new EventSource('/api/v1/events');
+	source.addEventListener('open', () => openHandlers.forEach((h) => h()));
 	for (const type of handlers.keys()) attach(type);
 }
 
@@ -28,4 +30,14 @@ export function on(type: string, handler: Handler): () => void {
 	handlers.get(type)!.add(handler);
 	ensureSource();
 	return () => handlers.get(type)?.delete(handler);
+}
+
+/**
+ * Runs on every (re)connect of the stream. Snapshots fetched before the stream was registered (e.g. GET
+ * /presence) can be stale and events sent meanwhile missed, so re-fetch here.
+ */
+export function onOpen(handler: () => void): () => void {
+	openHandlers.add(handler);
+	ensureSource();
+	return () => openHandlers.delete(handler);
 }

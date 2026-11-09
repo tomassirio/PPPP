@@ -1,16 +1,30 @@
 <!-- "N online" in the top bar; hover, focus or tap shows who. Live via PRESENCE events. -->
 <script lang="ts">
 	import { api } from '#lib/api.ts';
-	import { on } from '#lib/events.ts';
+	import { on, onOpen } from '#lib/events.ts';
 
 	type Viewer = { id: string; name: string; picture: string | null };
 	let viewers = $state<Viewer[]>([]);
 	let open = $state(false);
 	let broken = $state(new Set<string>());
 
+	function load() {
+		api<Viewer[]>('GET', '/presence')
+			.then((v) => {
+				viewers = v;
+			})
+			.catch(() => {});
+	}
+
 	$effect(() => {
-		api<Viewer[]>('GET', '/presence').then((v) => (viewers = v)).catch(() => {});
-		return on('PRESENCE', (v: Viewer[]) => (viewers = v));
+		load();
+		const offs = [
+			on('PRESENCE', (v: Viewer[]) => {
+				viewers = v;
+			}),
+			onOpen(load) // our own stream is registered by now, so the list includes us
+		];
+		return () => offs.forEach((off) => off());
 	});
 
 	const initials = (name: string) =>
@@ -82,11 +96,13 @@
 		display: none;
 		position: absolute;
 		top: 100%;
-		left: 0;
+		right: 0; /* open leftward from the button's right edge, so it never runs off the window */
 		z-index: 10;
 		margin: 0;
 		padding: 8px;
 		min-width: 220px;
+		max-width: calc(100vw - 32px);
+		box-sizing: border-box;
 		max-height: 320px;
 		overflow-y: auto;
 		list-style: none;
