@@ -26,6 +26,17 @@
 	});
 	let tab = $state<'play' | 'vote' | 'chat'>('play');
 
+	// The screen frame sizes itself to the height left over; on desktop the controller matches its width.
+	let screenSlot = $state<HTMLDivElement>();
+	let frameWidth = $state(0);
+	$effect(() => {
+		const frame = screenSlot?.querySelector('.bezel');
+		if (!frame) return;
+		const watch = new ResizeObserver(([e]) => (frameWidth = Math.round(e.borderBoxSize[0].inlineSize)));
+		watch.observe(frame);
+		return () => watch.disconnect();
+	});
+
 	const me = $derived(session.me);
 	let loadFailed = $state(false);
 	let pictureFailed = $state(false);
@@ -93,8 +104,8 @@
 		</header>
 
 		<main>
-			<section class="game" aria-label="Game">
-				<div class="screen-slot">
+			<section class="game" aria-label="Game" style:--frame-w={frameWidth ? `${frameWidth}px` : null}>
+				<div class="screen-slot" bind:this={screenSlot}>
 					<GameScreen power={game.power} paused={game.paused}>
 						{#snippet controls()}<SoundControl />{/snippet}
 					</GameScreen>
@@ -310,6 +321,12 @@
 		.pad :global(.shell) {
 			padding: 16px 24px;
 			gap: 16px;
+		}
+		.pad {
+			width: var(--frame-w, 100%);
+			min-width: min(380px, 100%); /* d-pad + A/B need this much on very short windows */
+			max-width: 100%;
+			align-self: center;
 		}
 		.chat {
 			min-height: 0;

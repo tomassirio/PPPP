@@ -47,11 +47,23 @@
 		}
 	}
 
+	/** The button the keyboard is holding, drawn pressed like a click or tap. */
+	let held = $state<Button | null>(null);
+	let heldTimer: ReturnType<typeof setTimeout> | undefined;
+
 	function onkeydown(e: KeyboardEvent) {
 		const b = keyToButton(e);
 		if (!b) return;
 		e.preventDefault();
+		held = b;
+		clearTimeout(heldTimer);
+		heldTimer = setTimeout(() => (held = null), 1000); // in case the keyup never arrives (focus lost)
 		send(b);
+	}
+
+	function onkeyup() {
+		clearTimeout(heldTimer);
+		heldTimer = setTimeout(() => (held = null), 120); // a quick tap still shows
 	}
 
 	function submitCompound(e: SubmitEvent) {
@@ -70,7 +82,7 @@
 	];
 </script>
 
-<svelte:window {onkeydown} />
+<svelte:window {onkeydown} {onkeyup} />
 
 <div class="shell">
 	<div class="row">
@@ -79,6 +91,7 @@
 				<button
 					type="button"
 					class="dir"
+					class:held={held === d.b}
 					style:grid-area={d.area}
 					aria-label={d.label}
 					disabled={blocked}
@@ -100,19 +113,19 @@
 			<div class="hub"></div>
 		</div>
 		<div class="ab">
-			<button type="button" class="round pixel b" aria-label="B button" disabled={blocked} onclick={() => send('b')}
+			<button type="button" class="round pixel b" class:held={held === 'b'} aria-label="B button" disabled={blocked} onclick={() => send('b')}
 				>B</button
 			>
-			<button type="button" class="round pixel" aria-label="A button" disabled={blocked} onclick={() => send('a')}
+			<button type="button" class="round pixel" class:held={held === 'a'} aria-label="A button" disabled={blocked} onclick={() => send('a')}
 				>A</button
 			>
 		</div>
 	</div>
 	<div class="meta">
-		<button type="button" class="pill" aria-label="Select" disabled={blocked} onclick={() => send('select')}
+		<button type="button" class="pill" class:held={held === 'select'} aria-label="Select" disabled={blocked} onclick={() => send('select')}
 			>SELECT</button
 		>
-		<button type="button" class="pill" aria-label="Start" disabled={blocked} onclick={() => send('start')}
+		<button type="button" class="pill" class:held={held === 'start'} aria-label="Start" disabled={blocked} onclick={() => send('start')}
 			>START</button
 		>
 	</div>
@@ -194,7 +207,8 @@
 	}
 	.dir:active:not(:disabled),
 	.round:active:not(:disabled),
-	.pill:active:not(:disabled) {
+	.pill:active:not(:disabled),
+	.held:not(:disabled) {
 		filter: brightness(0.8);
 	}
 	.ab {
