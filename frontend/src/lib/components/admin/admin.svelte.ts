@@ -1,4 +1,4 @@
-import { ApiError } from '#lib/api.ts';
+import { api, ApiError } from '#lib/api.ts';
 
 export type ConsoleStatus = {
 	power: 'ON' | 'OFF';
@@ -44,4 +44,10 @@ export async function act<T>(
 		notice.error = true;
 		return undefined;
 	}
+}
+
+/** Re-reads console status from GET /state (page load, and after a ROM upload). */
+export async function loadConsole() {
+	const s = await act('Load console state', () => api<ConsoleStatus>('GET', '/state'), undefined, true);
+	if (s) setConsole({ power: s.power, cartridgeId: s.cartridgeId, paused: s.paused, speed: s.speed });
 }

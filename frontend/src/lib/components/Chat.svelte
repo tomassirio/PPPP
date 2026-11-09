@@ -4,7 +4,7 @@
 	import { api, ApiError } from '../api';
 	import { on } from '../events';
 	import { session, isAdmin } from '../session.svelte';
-	import { merge, remove, nameColor, type ChatMessage } from '../chat/messages';
+	import { merge, modeParts, remove, nameColor, type ChatMessage } from '../chat/messages';
 
 	const PAGE = 50;
 	const MAX = 300;
@@ -20,6 +20,24 @@
 	let list: HTMLUListElement;
 
 	const admin = $derived(isAdmin(session.me));
+
+	// Per-viewer preference: hide SYSTEM lines so only people chatting show.
+	let showSystem = $state(read() !== '0');
+	function read() {
+		try {
+			return localStorage.getItem('chat.showSystem');
+		} catch {
+			return null;
+		}
+	}
+	$effect(() => {
+		try {
+			localStorage.setItem('chat.showSystem', showSystem ? '1' : '0');
+		} catch {
+			// storage blocked: preference lasts this page only
+		}
+	});
+	const shown = $derived(showSystem ? messages : messages.filter((m) => m.kind !== 'SYSTEM'));
 
 	const nearBottom = () => list.scrollHeight - list.scrollTop - list.clientHeight < 60;
 
@@ -120,6 +138,7 @@
 >
 	<header>
 		<h2>Chat</h2>
+		<label class="toggle"><input type="checkbox" bind:checked={showSystem} /> System messages</label>
 		{#if admin}
 			<label class="mute-pick">
 				Mute for
@@ -140,12 +159,14 @@
 				</button>
 			</li>
 		{/if}
-		{#each messages as m (m.id)}
+		{#each shown as m (m.id)}
 			{@const system = m.kind === 'SYSTEM'}
 			<li class:system class:mine={m.user === session.me?.id} title={time(m.at)}>
 				<span class="who" style:color={system ? undefined : nameColor(m.user)}>{m.name}</span>
 				{#if m.command}<span class="tag">command</span>{/if}
-				<span class="text">{m.text}</span>
+				<span class="text"
+					>{#if system}{#each modeParts(m.text) as part, i (i)}{#if part === 'ANARCHY' || part === 'DEMOCRACY'}<span class="mode {part.toLowerCase()}">{part}</span>{:else}{part}{/if}{/each}{:else}{m.text}{/if}</span
+				>
 				{#if admin && !system}
 					<span class="mod">
 						<button type="button" onclick={() => del(m)} aria-label="Delete message from {m.name}">Delete</button>
@@ -201,6 +222,27 @@
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: var(--muted);
+	}
+	.toggle {
+		margin-left: auto;
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 12px;
+		color: var(--muted);
+	}
+	.toggle input {
+		accent-color: var(--accent);
+	}
+	.mode {
+		font-style: normal;
+		font-weight: 700;
+	}
+	.anarchy {
+		color: var(--anarchy);
+	}
+	.democracy {
+		color: var(--democracy);
 	}
 	.mute-pick {
 		font-size: 12px;
@@ -299,7 +341,8 @@
 	}
 	button:focus-visible,
 	textarea:focus-visible,
-	select:focus-visible {
+	select:focus-visible,
+	input:focus-visible {
 		outline: 2px solid var(--accent);
 		outline-offset: 2px;
 	}

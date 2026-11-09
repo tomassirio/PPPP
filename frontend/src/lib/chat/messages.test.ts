@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compareIds, merge, remove, type ChatMessage } from './messages';
+import { compareIds, merge, modeParts, remove, type ChatMessage } from './messages';
 
 const msg = (id: string): ChatMessage => ({
 	id,
@@ -29,5 +29,10 @@ describe('chat messages', () => {
 
 	it('removes by id', () => {
 		expect(ids(remove([msg('1-0'), msg('2-0')], '1-0'))).toEqual(['2-0']);
+	});
+
+	it('splits out mode names', () => {
+		expect(modeParts('Mode is now ANARCHY')).toEqual(['Mode is now ', 'ANARCHY']);
+		expect(modeParts('DEMOCRACY wins over ANARCHY!')).toEqual(['DEMOCRACY', ' wins over ', 'ANARCHY', '!']);
 	});
 });

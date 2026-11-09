@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { api } from '#lib/api.ts';
-	import { act, consoleStatus, setConsole, type ConsoleStatus } from './admin.svelte';
+	import { act, consoleStatus, loadConsole, setConsole, type ConsoleStatus } from './admin.svelte';
 
 	type Cartridge = { id: string; title: string; size: number; cgb: boolean };
 
@@ -16,13 +16,14 @@
 
 	async function upload(e: SubmitEvent) {
 		e.preventDefault();
+		const form = e.currentTarget as HTMLFormElement; // currentTarget is null once we await
 		const f = file?.[0];
 		if (!f) return;
-		const form = new FormData();
-		form.append('file', f);
-		if (await act(`Upload ${f.name}`, () => api('POST', '/admin/cartridges', form))) {
-			(e.currentTarget as HTMLFormElement).reset();
-			await load();
+		const body = new FormData();
+		body.append('file', f);
+		if (await act(`Upload ${f.name}`, () => api('POST', '/admin/cartridges', body))) {
+			form.reset();
+			await Promise.all([load(), loadConsole()]);
 		}
 	}
 

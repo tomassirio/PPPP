@@ -76,7 +76,7 @@
 			<div class="brand">
 				<img class="logo" src={banner} alt="Pibs&amp;PibettesPlayPokemon" width="924" height="111" />
 				<span class="pixel short">pppp</span>
-				<span class="pill">Mode: {modeLabel}</span>
+				<span class="pill {game.mode.toLowerCase()}">Mode: {modeLabel}</span>
 			</div>
 			<div class="user">
 				{#if isAdmin(me)}<a href="/admin">Admin</a>{/if}
@@ -168,6 +168,14 @@
 		padding: 6px 10px;
 		border-radius: 999px;
 		background: var(--border);
+	}
+	.pill.anarchy {
+		background: var(--anarchy);
+		color: var(--ink);
+	}
+	.pill.democracy {
+		background: var(--democracy);
+		color: var(--ink);
 	}
 	.avatar {
 		width: 36px;
