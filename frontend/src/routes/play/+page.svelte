@@ -9,6 +9,8 @@
 	import GameScreen from '#lib/components/GameScreen.svelte';
 	import GameStatus from '#lib/components/GameStatus.svelte';
 	import GameToasts from '#lib/components/GameToasts.svelte';
+	import ChatOverlay from '#lib/components/ChatOverlay.svelte';
+	import ChatOverlayToggle from '#lib/components/ChatOverlayToggle.svelte';
 	import PokedexBanner from '#lib/components/PokedexBanner.svelte';
 	import Gamepad from '#lib/components/Gamepad.svelte';
 	import ModeCard from '#lib/components/ModeCard.svelte';
@@ -152,9 +154,10 @@
 			<section class="game" aria-label="Game" style:--frame-w={frameWidth ? `${frameWidth}px` : null}>
 				<div class="screen-slot" bind:this={screenSlot}>
 					<GameScreen power={game.power} paused={game.paused}>
-						{#snippet controls()}<SoundControl />{/snippet}
+						{#snippet controls()}<span class="bezel-controls"><ChatOverlayToggle /><SoundControl /></span>{/snippet}
 					</GameScreen>
 					<GameToasts />
+					<ChatOverlay hidden={tab === 'chat'} />
 				</div>
 				<nav class="tabs" aria-label="Panels">
 					{#each TABS as t (t.id)}
@@ -289,6 +292,11 @@
 	}
 	.screen-slot {
 		position: relative;
+	}
+	.bezel-controls {
+		display: flex;
+		align-items: center;
+		gap: 4px;
 	}
 	.pad {
 		display: flex;
