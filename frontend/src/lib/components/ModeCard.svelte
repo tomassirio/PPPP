@@ -30,7 +30,7 @@
 <section class="panel card" aria-labelledby="mode-h">
 	<h2 id="mode-h">Mode</h2>
 	<div>
-		<p class="mode">{label(mode)}</p>
+		<p class="mode {mode.toLowerCase()}">{label(mode)}</p>
 		<p class="muted">
 			{dem ? 'Each window runs the most-voted button.' : 'Every press runs in arrival order.'}
 		</p>
@@ -48,11 +48,11 @@
 			aria-valuemin="0"
 			aria-valuemax="100"
 		>
-			<div style:width="{pct}%"></div>
+			<div class={other.toLowerCase()} style:width="{pct}%"></div>
 		</div>
 	</div>
 	<div class="actions">
-		<button type="button" class="primary" onclick={() => vote(other)}>Vote {other.toLowerCase()}</button>
+		<button type="button" class="primary {other.toLowerCase()}" onclick={() => vote(other)}>Vote {other.toLowerCase()}</button>
 		<button type="button" class="ghost" onclick={() => vote(mode)}>Keep {label(mode)}</button>
 	</div>
 	{#if error}<p class="muted" role="alert">{error}</p>{/if}
@@ -106,7 +106,6 @@
 	}
 	.bar div {
 		height: 8px;
-		background: var(--accent);
 		transition: width 0.3s;
 	}
 	.actions {
@@ -127,11 +126,24 @@
 	}
 	.primary {
 		border: none;
-		background: var(--accent);
 		color: var(--ink);
 	}
 	.primary:hover {
-		background: var(--accent-hover);
+		filter: brightness(1.12);
+	}
+	p.anarchy {
+		color: var(--anarchy);
+	}
+	p.democracy {
+		color: var(--democracy);
+	}
+	button.anarchy,
+	.bar div.anarchy {
+		background: var(--anarchy);
+	}
+	button.democracy,
+	.bar div.democracy {
+		background: var(--democracy);
 	}
 	.ghost {
 		border: 1px solid #3a4851;

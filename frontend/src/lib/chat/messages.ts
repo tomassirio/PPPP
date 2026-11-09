@@ -34,3 +34,6 @@ export function nameColor(user: string): string {
 	for (const c of user) h = (h * 31 + c.charCodeAt(0)) | 0;
 	return NAME_COLORS[Math.abs(h) % NAME_COLORS.length];
 }
+
+/** Splits text so the mode names can be coloured; rejoined parts equal the input. */
+export const modeParts = (text: string) => text.split(/\b(ANARCHY|DEMOCRACY)\b/).filter(Boolean);
