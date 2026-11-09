@@ -43,4 +43,16 @@ class GameApiTest {
         mvc.perform(get("/api/v1/game/state").with(user("x@y.z").roles("PLAYER"))).andExpect(status().isNoContent());
         mvc.perform(get("/api/v1/game/icons/25.png").with(user("x@y.z").roles("PLAYER"))).andExpect(status().isNotFound());
     }
+
+    @Test
+    void teaserIsPublicAndAnonymous() throws Exception {
+        mvc.perform(get("/api/v1/public/teaser"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.online").isNumber())
+                .andExpect(jsonPath("$.party").isArray());
+        mvc.perform(get("/api/v1/public/screen.png")).andExpect(status().isNoContent());
+        mvc.perform(get("/api/v1/game/icons/25.png")).andExpect(status().isNotFound());
+        mvc.perform(get("/api/v1/game/state")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/v1/presence")).andExpect(status().isUnauthorized());
+    }
 }
