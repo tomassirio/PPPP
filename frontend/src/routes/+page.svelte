@@ -99,7 +99,7 @@
 			<p class="label" aria-hidden="true">PIBS <b>&amp;</b> PIBETTES</p>
 		</div>
 
-		<p class="model" aria-hidden="true">PPPP</p>
+		<p class="logo" aria-hidden="true">Pibtendo</p>
 
 		<div class="dpad" data-dir={dir} aria-hidden="true" onpointerdown={aim}>
 			<span></span>
@@ -170,14 +170,16 @@
 		--shell-hi: color-mix(in oklab, var(--shell), white 30%);
 		--shell-lo: color-mix(in oklab, var(--shell), black 38%);
 		--guts: color-mix(in oklab, var(--shell), #0a0612 78%);
-		--ink: color-mix(in oklab, var(--shell), #0d0820 72%);
+		/* Moulded marks: a shade darker than the plastic, with a lit lower lip. */
+		--emboss: color-mix(in oklab, var(--shell), black 22%);
+		--emboss-hi: color-mix(in oklab, var(--shell-hi), transparent 35%);
 		--rubber: #2e2935;
 		--pixel: #1f1a33;
 		position: relative;
-		/* 1.58 is the device's height/width; 80px leaves room for the help line. */
-		width: min(410px, calc(100vw - 24px), calc((100dvh - 84px) / 1.58));
+		/* 1.67 is the device's height/width; 84px leaves room for the help line. */
+		width: min(410px, calc(100vw - 24px), calc((100dvh - 84px) / 1.67));
 		min-width: 280px;
-		aspect-ratio: 100 / 158;
+		aspect-ratio: 100 / 167;
 		container-type: inline-size;
 		user-select: none;
 		-webkit-user-select: none;
@@ -206,20 +208,18 @@
 			0 10cqw 14cqw rgba(0, 0, 0, 0.35);
 		overflow: hidden;
 	}
-	/* The main board under the controls: outline, traces, a chip, button membranes. */
+	/* Parts seen through the plastic: the D-pad and button membrane rings, the speaker cone. */
 	.shell::before {
 		content: '';
 		position: absolute;
-		top: 80cqw;
-		left: 5cqw;
-		right: 5cqw;
-		bottom: 5cqw;
-		border: 0.5cqw solid var(--guts);
-		border-radius: 3cqw 3cqw 9cqw 9cqw;
-		background: repeating-linear-gradient(90deg, transparent 0 3.2cqw, var(--guts) 3.2cqw 3.5cqw) 50% 100% / 70% 22%
-			no-repeat;
-		opacity: 0.38;
-		filter: blur(0.5cqw);
+		inset: 0;
+		background:
+			radial-gradient(circle at 20.7cqw 110.6cqw, transparent 14.4cqw, var(--guts) 14.8cqw 15.6cqw, transparent 16cqw),
+			radial-gradient(circle at 67cqw 113cqw, transparent 7.6cqw, var(--guts) 8cqw 8.6cqw, transparent 9cqw),
+			radial-gradient(circle at 85cqw 107cqw, transparent 7.6cqw, var(--guts) 8cqw 8.6cqw, transparent 9cqw),
+			radial-gradient(circle at 83cqw 147.5cqw, var(--guts) 0 2.4cqw, transparent 2.8cqw 14.6cqw, var(--guts) 15cqw 15.8cqw, transparent 16.2cqw);
+		opacity: 0.26;
+		filter: blur(0.35cqw);
 	}
 	/* Screws and the screen's rear frame, top half. */
 	.shell::after {
@@ -236,11 +236,12 @@
 	}
 
 	.bezel {
-		top: 6cqw;
-		left: 6cqw;
-		width: 88cqw;
-		height: 68cqw;
-		border-radius: 3cqw 3cqw 9cqw 9cqw / 3cqw 3cqw 5cqw 5cqw;
+		top: 6.8cqw;
+		left: 5.8cqw;
+		width: 88.4cqw;
+		height: 76cqw;
+		/* The bottom-right corner sweeps round more than the others. */
+		border-radius: 2.6cqw 2.6cqw 9cqw 3.4cqw / 2.6cqw 2.6cqw 6cqw 3.4cqw;
 		background: linear-gradient(172deg, #3b3744, #2a2731 55%, #24212a);
 		box-shadow:
 			inset 0 0.3cqw 0.3cqw rgba(255, 255, 255, 0.12),
@@ -252,10 +253,10 @@
 		position: absolute;
 		left: 0;
 		right: 0;
-		bottom: 2.6cqw;
+		top: 65.6cqw;
 		text-align: center;
-		font: italic 700 2.7cqw/1 var(--body-font);
-		letter-spacing: 0.2em;
+		font: italic 800 4.6cqw/1 var(--body-font);
+		letter-spacing: 0.02em;
 		color: #d8d3e6;
 		white-space: nowrap;
 	}
@@ -264,10 +265,10 @@
 	}
 	.led {
 		position: absolute;
-		top: 22cqw;
-		left: 4.4cqw;
-		width: 2.4cqw;
-		height: 2.4cqw;
+		top: 22.2cqw;
+		left: 2.4cqw;
+		width: 2cqw;
+		height: 2cqw;
 		border-radius: 50%;
 		background: radial-gradient(circle at 35% 35%, #ffb3a0, #ff3a24 45%, #b3150c);
 		box-shadow:
@@ -275,23 +276,37 @@
 			0 0 1.2cqw 0.5cqw rgba(255, 70, 40, 0.55),
 			0 0 4cqw 1cqw rgba(255, 70, 40, 0.16);
 	}
+	/* Three arcs after the LED, POWER centred under the pair. */
+	.led::before,
+	.led::after {
+		position: absolute;
+		color: #8f8a9c;
+		white-space: nowrap;
+	}
+	.led::before {
+		content: ')))';
+		top: 50%;
+		left: 3cqw;
+		translate: 0 -50%;
+		scale: 1 1.25;
+		font: 700 2.8cqw/1 var(--body-font);
+		letter-spacing: 0.25cqw;
+	}
 	.led::after {
 		content: 'POWER';
-		position: absolute;
 		top: 3.6cqw;
-		left: 50%;
+		left: 5cqw;
 		translate: -50% 0;
-		font: 600 1.5cqw/1 var(--body-font);
-		letter-spacing: 0.08em;
-		color: #8f8a9c;
+		font: 500 2.1cqw/1 var(--body-font);
+		letter-spacing: 0.04em;
 	}
 
 	.lcd {
 		position: absolute;
-		top: 5cqw;
-		left: 13cqw;
-		width: 62cqw;
-		height: 54cqw;
+		top: 9.4cqw;
+		left: 15cqw;
+		width: 57cqw;
+		height: 50cqw;
 		overflow: hidden;
 		border-radius: 0.6cqw;
 		background: radial-gradient(ellipse at 45% 40%, #fffdf6, #f6f1e4 70%, #ece6d6);
@@ -339,7 +354,7 @@
 	}
 	h1 img {
 		display: block;
-		width: 54cqw;
+		width: 50cqw;
 		height: auto;
 	}
 	.press {
@@ -358,7 +373,7 @@
 		top: 23%;
 	}
 	.denied h1 img {
-		width: 40cqw;
+		width: 36cqw;
 	}
 	.denied .press {
 		top: 45%;
@@ -397,25 +412,32 @@
 		pointer-events: none;
 	}
 
-	.model {
-		top: 78cqw;
-		left: 0;
-		right: 0;
-		text-align: center;
-		font: italic 800 5.6cqw/1 var(--body-font);
-		letter-spacing: 0.06em;
-		color: var(--ink);
-		text-shadow: 0 0.2cqw 0 color-mix(in oklab, var(--shell-hi), transparent 40%);
+	/* Embossed oval logo: the shell's own colour, raised edge lit from above. */
+	.logo {
+		top: 89cqw;
+		left: 35.6cqw;
+		width: 28.8cqw;
+		height: 6.4cqw;
+		box-sizing: border-box;
+		display: grid;
+		place-items: center;
+		border-radius: 3.2cqw;
+		border: 0.45cqw solid var(--emboss);
+		box-shadow:
+			0 0.25cqw 0 -0.05cqw var(--emboss-hi),
+			inset 0 0.25cqw 0 -0.05cqw var(--emboss-hi);
+		font: italic 800 4cqw/1 var(--body-font);
+		letter-spacing: 0.01em;
+		color: var(--emboss);
+		text-shadow: 0 0.2cqw 0 var(--emboss-hi);
 	}
 
 	/* Controls */
 	.dpad {
-		top: 90cqw;
-		left: 7cqw;
-		width: 28cqw;
-		height: 28cqw;
-		border-radius: 50%;
-		background: radial-gradient(circle, rgba(20, 0, 40, 0.22) 0 56%, transparent 68%);
+		top: 98.4cqw;
+		left: 8.5cqw;
+		width: 24.4cqw;
+		height: 24.4cqw;
 		transition: transform 60ms;
 		cursor: pointer;
 	}
@@ -427,29 +449,40 @@
 		top: 50%;
 		translate: -50% -50%;
 	}
+	/* Each arm carries its two little embossed arrows. */
 	.dpad::before,
 	.dpad::after {
 		content: '';
 		width: 8.4cqw;
-		height: 24cqw;
-		border-radius: 1.2cqw;
-		background: linear-gradient(135deg, #423b4b, var(--rubber) 50%, #1e1a23);
+		height: 24.4cqw;
+		border-radius: 1cqw;
+		background:
+			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 84 244'%3E%3Cg fill='%23000' fill-opacity='.32' stroke='%23fff' stroke-opacity='.1' stroke-width='2'%3E%3Cpath d='M42 18 53 34H31z'/%3E%3Cpath d='M42 226 53 210H31z'/%3E%3C/g%3E%3C/svg%3E")
+				center / 100% 100%,
+			linear-gradient(135deg, #4a4550, var(--rubber) 50%, #26232b);
 		box-shadow:
-			0 0.9cqw 0 #141118,
-			0 1.4cqw 1.6cqw rgba(0, 0, 0, 0.35);
+			0 0.8cqw 0 #141118,
+			0 1.3cqw 1.6cqw rgba(0, 0, 0, 0.35);
 	}
 	.dpad::after {
-		width: 24cqw;
+		width: 24.4cqw;
 		height: 8.4cqw;
+		background:
+			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 244 84'%3E%3Cg fill='%23000' fill-opacity='.32' stroke='%23fff' stroke-opacity='.1' stroke-width='2'%3E%3Cpath d='M18 42 34 31V53z'/%3E%3Cpath d='M226 42 210 31V53z'/%3E%3C/g%3E%3C/svg%3E")
+				center / 100% 100%,
+			linear-gradient(135deg, #4a4550, var(--rubber) 50%, #26232b);
 		box-shadow: inset 0 0.25cqw 0 rgba(255, 255, 255, 0.08);
 	}
-	/* Centre dimple, drawn above both arms. */
+	/* Concave centre: shadow falls on the upper-left of the dip. */
 	.dpad span {
 		z-index: 1;
-		width: 4.4cqw;
-		height: 4.4cqw;
+		width: 4.2cqw;
+		height: 4.2cqw;
 		border-radius: 50%;
-		background: radial-gradient(circle at 40% 35%, #1b181f, #322d39);
+		background: radial-gradient(circle at 60% 65%, #46414d, #2c2831 70%);
+		box-shadow:
+			inset 0.3cqw 0.4cqw 0.5cqw rgba(0, 0, 0, 0.45),
+			0 0.1cqw 0 rgba(255, 255, 255, 0.06);
 	}
 	.dpad[data-dir='up'] {
 		transform: perspective(60cqw) rotateX(14deg);
@@ -464,27 +497,32 @@
 		transform: perspective(60cqw) rotateY(14deg);
 	}
 
-	/* A and B sit straight on the shell, B low-left and A high-right. */
+	/* A and B sit straight on the shell, B low-left and A high-right, letters moulded into the caps. */
 	.face {
-		top: 92cqw;
-		left: 54cqw;
-		width: 40cqw;
-		height: 28cqw;
+		top: 100cqw;
+		left: 60cqw;
+		width: 32cqw;
+		height: 20cqw;
 	}
 	.round {
 		position: absolute;
-		width: 13.6cqw;
-		height: 13.6cqw;
+		width: 12cqw;
+		height: 12cqw;
+		display: grid;
+		place-items: center;
 		border-radius: 50%;
-		background: radial-gradient(circle at 38% 32%, #5b5266, #38313f 45%, #241f29);
+		background: radial-gradient(circle at 38% 32%, #56505e, #3a3540 45%, #28242d);
 		box-shadow:
-			inset 0 0.4cqw 0.5cqw rgba(255, 255, 255, 0.14),
-			0 0 0 0.9cqw rgba(20, 0, 40, 0.2),
-			0 0.9cqw 0 #16121a,
-			0 1.4cqw 1.6cqw rgba(0, 0, 0, 0.35);
-		/* The letter sits under the button, on the shell. */
-		color: transparent;
-		font-size: 0;
+			inset 0 0.4cqw 0.5cqw rgba(255, 255, 255, 0.12),
+			inset 0 -0.3cqw 0.5cqw rgba(0, 0, 0, 0.3),
+			0 0 0 0.5cqw rgba(20, 0, 40, 0.14),
+			0 0.8cqw 0 #16121a,
+			0 1.3cqw 1.6cqw rgba(0, 0, 0, 0.35);
+		font: italic 600 5cqw/1 Georgia, 'Times New Roman', serif;
+		color: #2b2730;
+		text-shadow:
+			0 0.15cqw 0 rgba(255, 255, 255, 0.14),
+			0 -0.1cqw 0 rgba(0, 0, 0, 0.5);
 		text-decoration: none;
 		cursor: pointer;
 		transition:
@@ -492,48 +530,32 @@
 			box-shadow 50ms;
 	}
 	.b {
-		left: 2cqw;
-		top: 9cqw;
+		left: 1cqw;
+		top: 7cqw;
 	}
 	.a {
-		right: 2cqw;
+		left: 19cqw;
 		top: 1cqw;
-	}
-	.round::after {
-		position: absolute;
-		top: 16cqw;
-		left: 0;
-		right: 0;
-		text-align: center;
-		font: italic 800 3.2cqw/1 var(--body-font);
-		letter-spacing: 0.05em;
-		color: var(--ink);
-	}
-	.b::after {
-		content: 'B';
-	}
-	.a::after {
-		content: 'A';
 	}
 
 	.pills {
-		top: 129cqw;
-		left: 30cqw;
-		width: 40cqw;
+		top: 137.4cqw;
+		left: 37.9cqw;
+		width: 24.2cqw;
 		height: 10cqw;
 		display: flex;
 		justify-content: space-between;
 	}
 	.pill {
 		position: relative;
-		width: 13cqw;
-		height: 3.6cqw;
-		border-radius: 2cqw;
-		background: linear-gradient(#55505d, #3c3742);
+		width: 9.6cqw;
+		height: 3.2cqw;
+		border-radius: 1.6cqw;
+		background: linear-gradient(#4f4a56, #35313b);
 		box-shadow:
-			0 0.6cqw 0 #1f1b24,
-			0 0.9cqw 1cqw rgba(0, 0, 0, 0.3),
-			0 0 0 0.6cqw rgba(20, 0, 40, 0.18);
+			0 0.5cqw 0 #1f1b24,
+			0 0.8cqw 1cqw rgba(0, 0, 0, 0.3),
+			0 0 0 0.45cqw rgba(20, 0, 40, 0.14);
 		color: transparent;
 		font-size: 0;
 		text-decoration: none;
@@ -542,15 +564,17 @@
 			transform 50ms,
 			box-shadow 50ms;
 	}
+	/* Labels embossed in the shell under each pill. */
 	.pill::after {
 		content: 'SELECT';
 		position: absolute;
-		top: 6cqw;
+		top: 5cqw;
 		left: 50%;
 		translate: -50% 0;
-		font: italic 800 2.4cqw/1 var(--body-font);
-		letter-spacing: 0.1em;
-		color: var(--ink);
+		font: 600 2.4cqw/1 var(--body-font);
+		letter-spacing: 0.06em;
+		color: var(--emboss);
+		text-shadow: 0 0.15cqw 0 var(--emboss-hi);
 	}
 	a.pill::after {
 		content: 'START';
@@ -569,32 +593,39 @@
 
 	.round:active,
 	.round.down {
-		transform: translateY(0.8cqw);
+		transform: translateY(0.7cqw);
 		box-shadow:
-			inset 0 0.4cqw 0.5cqw rgba(255, 255, 255, 0.14),
-			0 0 0 0.9cqw rgba(20, 0, 40, 0.2),
+			inset 0 0.4cqw 0.5cqw rgba(255, 255, 255, 0.12),
+			inset 0 -0.3cqw 0.5cqw rgba(0, 0, 0, 0.3),
+			0 0 0 0.5cqw rgba(20, 0, 40, 0.14),
 			0 0.1cqw 0 #16121a,
 			0 0.3cqw 0.5cqw rgba(0, 0, 0, 0.35);
 	}
 	.pill:active,
 	.pill.down {
-		transform: translateY(0.5cqw);
+		transform: translateY(0.4cqw);
 		box-shadow:
 			0 0.1cqw 0 #1f1b24,
 			0 0.2cqw 0.3cqw rgba(0, 0, 0, 0.3),
-			0 0 0 0.6cqw rgba(20, 0, 40, 0.18);
+			0 0 0 0.45cqw rgba(20, 0, 40, 0.14);
 	}
 
-	/* Speaker: a cluster of drilled holes, rounded off by a circular mask. */
+	/* Speaker: staggered columns of drilled holes, the patch's corners rounded off. */
 	.speaker {
-		top: 129cqw;
-		right: 8cqw;
-		width: 16cqw;
-		height: 16cqw;
-		background: radial-gradient(circle at 50% 40%, #0e0b12 0 0.75cqw, color-mix(in oklab, var(--shell-hi), transparent 50%) 0.85cqw 1cqw, transparent 1.1cqw) 0 0 / 3.2cqw
-			3.2cqw;
-		mask: radial-gradient(circle, #000 0 8cqw, transparent 8.05cqw);
-		rotate: -20deg;
+		--hole: radial-gradient(
+			circle,
+			#0e0b12 0 0.55cqw,
+			color-mix(in oklab, var(--shell-hi), transparent 45%) 0.6cqw 0.8cqw,
+			transparent 0.85cqw
+		);
+		top: 136cqw;
+		left: 72.4cqw;
+		width: 21.6cqw;
+		height: 23cqw;
+		border-radius: 3cqw 5cqw 7cqw 5cqw;
+		background:
+			var(--hole) 0 0 / 6cqw 2.85cqw,
+			var(--hole) 3cqw 1.42cqw / 6cqw 2.85cqw;
 	}
 
 	@keyframes blink {
