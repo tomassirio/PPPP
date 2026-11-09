@@ -20,7 +20,9 @@ let offs: (() => void)[] = [];
 
 function refresh() {
 	api<GameSummary | undefined>('GET', '/game/state')
-		.then((s) => (game.summary = s ?? null))
+		.then((s) => {
+			game.summary = s ?? null;
+		})
 		.catch(() => {});
 }
 
@@ -29,7 +31,9 @@ export function watchGame(): () => void {
 	if (watchers++ === 0) {
 		refresh();
 		offs = [
-			on('GAME_STATE', (s: GameSummary) => (game.summary = s)),
+			on('GAME_STATE', (s: GameSummary) => {
+				game.summary = s;
+			}),
 			on('CONSOLE_CHANGED', refresh) // another cartridge may have no profile
 		];
 	}
