@@ -46,6 +46,8 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
     private final int[] speciesByDex = new int[DEX_SIZE + 1];
     private final byte[] rom;
     private final Map<Integer, byte[]> icons = new ConcurrentHashMap<>();
+    /** ROM offsets of the colour hack's per-Pokémon palette ids and its palettes; -1 when the ROM has none. */
+    private final int monsterPalettes, superPalettes;
 
     /** "POKEMON RED" with the non-Japanese destination code; the Japanese release has other addresses. */
     static boolean matches(byte[] rom) {
@@ -56,6 +58,8 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
 
     PokemonRed(byte[] rom) {
         this.rom = rom;
+        this.monsterPalettes = findMonsterPalettes(rom);
+        this.superPalettes = monsterPalettes < 0 ? -1 : findSuperPalettes(rom);
         for (int id = 1; id <= SPECIES_COUNT; id++) {
             speciesNames[id] = titleCase(text(rom, ROM_MON_NAMES + (id - 1) * 10, 10));
             dexNumber[id] = rom[ROM_DEX_ORDER + id - 1] & 0xFF;
@@ -177,8 +181,54 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
         return icons.computeIfAbsent(id, dex -> {
             int stats = dex == DEX_SIZE ? ROM_MEW_BASE_STATS : ROM_BASE_STATS + (dex - 1) * BASE_STATS_SIZE;
             int pointer = (rom[stats + 0x0B] & 0xFF) | (rom[stats + 0x0C] & 0xFF) << 8;
-            return GenOnePic.png(rom, picBank(dex, stats) * 0x4000 + pointer - 0x4000, 1);
+            return GenOnePic.png(rom, picBank(dex, stats) * 0x4000 + pointer - 0x4000, 1, palette(dex));
         });
+    }
+
+    /**
+     * The Pokémon's 4 colours (ARGB) from a colour hack such as drenn1/pokered-gbc, or null (grey). There,
+     * MonsterPalettes holds a palette id per Pokédex number (0 = MissingNo, PAL_MEWMON = $10) and SuperPalettes
+     * 4 RGB555 colours (8 bytes) per id.
+     */
+    private int[] palette(int dex) {
+        if (superPalettes < 0) return null;
+        int at = superPalettes + (rom[monsterPalettes + dex] & 0xFF) * 8;
+        if (at + 8 > rom.length) return null;
+        int[] argb = new int[4];
+        for (int i = 0; i < 4; i++) {
+            int c = (rom[at + 2 * i] & 0xFF) | (rom[at + 2 * i + 1] & 0xFF) << 8;
+            argb[i] = 0xFF000000 | (c & 31) << 19 | (c >> 5 & 31) << 11 | (c >> 10 & 31) << 3;
+        }
+        return argb;
+    }
+
+    /** pokered-gbc's gen-2 table: PAL_MEWMON, then one palette per Pokémon ($25, $26, ... for #1, #2, ...). */
+    private static int findMonsterPalettes(byte[] rom) {
+        byte[] start = new byte[1 + DEX_SIZE];
+        start[0] = 0x10;
+        for (int i = 1; i <= DEX_SIZE; i++) start[i] = (byte) (0x24 + i);
+        return indexOf(rom, start);
+    }
+
+    /** SuperPalettes' address from LoadSGBPalette: ld h,0 / add hl,hl x3 / ld de,SuperPalettes / add hl,de. */
+    private static int findSuperPalettes(byte[] rom) {
+        for (int i = 0; i + 9 < rom.length; i++) {
+            if (rom[i] == 0x26 && rom[i + 1] == 0 && rom[i + 2] == 0x29 && rom[i + 3] == 0x29 && rom[i + 4] == 0x29
+                    && rom[i + 5] == 0x11 && rom[i + 8] == 0x19) {
+                int addr = (rom[i + 6] & 0xFF) | (rom[i + 7] & 0xFF) << 8;
+                if (addr >= 0x4000 && addr < 0x8000) return (i / 0x4000) * 0x4000 + addr - 0x4000;
+            }
+        }
+        return -1;
+    }
+
+    private static int indexOf(byte[] rom, byte[] needle) {
+        outer:
+        for (int i = 0; i + needle.length <= rom.length; i++) {
+            for (int j = 0; j < needle.length; j++) if (rom[i + j] != needle[j]) continue outer;
+            return i;
+        }
+        return -1;
     }
 
     /**

@@ -15,6 +15,7 @@
 </script>
 
 {#if dex}
+	<div class="fit">
 	<ol class="banner" aria-label="Pokédex {from} to {to}" style:--rows={Math.ceil(numbers.length / 4)}>
 		{#each numbers as n (n)}
 			{@const name = dex.names[n - 1]}
@@ -32,58 +33,55 @@
 			</li>
 		{/each}
 	</ol>
+	</div>
 {/if}
 
 <style>
-	/* Square tiles, 4 across, as big as the banner's height allows. */
-	.banner {
+	/* .fit is the size container: square cells, 4 across, as big as its height allows; no tiles. */
+	.fit {
 		container-type: size;
 		height: 100%;
+	}
+	.banner {
 		margin: 0;
 		padding: 0;
 		list-style: none;
 		display: grid;
-		--cell: min(calc((100cqw - 3 * 6px) / 4), calc((100cqh - (var(--rows) - 1) * 6px) / var(--rows)));
+		--gap: 4px;
+		--cell: min(calc((100cqw - 3 * var(--gap)) / 4), calc((100cqh - (var(--rows) - 1) * var(--gap)) / var(--rows)));
 		grid-template-columns: repeat(4, var(--cell));
 		grid-auto-rows: var(--cell);
-		gap: 6px;
+		gap: var(--gap);
 		justify-content: center;
 		align-content: center;
+		height: 100%;
 	}
 	li {
 		position: relative;
-		border-radius: 6px;
-		background: var(--panel);
-		border: 1px solid var(--border);
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		overflow: hidden;
 	}
 	img {
-		width: 88%;
-		height: 88%;
+		width: 100%;
+		height: 100%;
 		object-fit: contain;
 		image-rendering: pixelated;
 		/* Unseen: only a faint outline of the real sprite. */
-		filter: brightness(0) invert(1) opacity(0.14);
-	}
-	li.seen {
-		background: #e2f3d6;
-		border-color: transparent;
+		filter: brightness(0) invert(1) opacity(0.13);
 	}
 	li.seen img {
 		filter: none;
 	}
 	.unknown {
 		position: absolute;
-		font: 700 calc(var(--cell) * 0.38) / 1 var(--pixel-font);
+		font: 700 calc(var(--cell) * 0.34) / 1 var(--pixel-font);
 		color: var(--muted);
 	}
 	.ball {
 		position: absolute;
-		right: 2px;
-		bottom: 2px;
+		right: 0;
+		bottom: 0;
 		width: 30%;
 		height: 30%;
 	}

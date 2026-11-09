@@ -13,8 +13,10 @@ import javax.imageio.ImageIO;
 final class GenOnePic {
     private static final int[] TABLE2_0 = {0x0, 0x1, 0x3, 0x2, 0x7, 0x6, 0x4, 0x5, 0xf, 0xe, 0xc, 0xd, 0x8, 0x9, 0xb, 0xa};
     private static final int[] TABLE2_1 = {0xf, 0xe, 0xc, 0xd, 0x8, 0x9, 0xb, 0xa, 0x0, 0x1, 0x3, 0x2, 0x7, 0x6, 0x4, 0x5};
-    /** DMG shades: color 0 is transparent, 1-3 light to dark. */
+    /** DMG shades: color 0 is transparent (outside the sprite), 1-3 light to dark. */
     private static final int[] SHADES = {0x00000000, 0xFFA8A8A8, 0xFF555555, 0xFF000000};
+    /** Colour 0 inside the outline: white body, so sprites read on dark backgrounds too. */
+    private static final int WHITE = 0xFFF8F8F8;
 
     private final byte[] rom;
     private int bit; // absolute bit position in rom
@@ -25,14 +27,25 @@ final class GenOnePic {
         this.bit = offset * 8;
     }
 
-    /** PNG of the picture at that ROM offset, scaled by an integer factor. */
+    /** PNG of the picture at that ROM offset in grey shades, scaled by an integer factor. */
     static byte[] png(byte[] rom, int offset, int scale) {
+        return png(rom, offset, scale, null);
+    }
+
+    /** As {@link #png(byte[], int, int)} with colours 0-3 from palette (ARGB), or grey when it is null. */
+    static byte[] png(byte[] rom, int offset, int scale, int[] palette) {
         GenOnePic p = new GenOnePic(rom, offset);
         int[][] pixels = p.decompress();
         int h = pixels.length, w = pixels[0].length;
+        boolean[][] outside = outside(pixels);
         BufferedImage img = new BufferedImage(w * scale, h * scale, BufferedImage.TYPE_INT_ARGB);
         for (int y = 0; y < h * scale; y++) {
-            for (int x = 0; x < w * scale; x++) img.setRGB(x, y, SHADES[pixels[y / scale][x / scale]]);
+            for (int x = 0; x < w * scale; x++) {
+                int c = pixels[y / scale][x / scale];
+                int argb = c == 0 && outside[y / scale][x / scale] ? 0
+                        : palette != null ? palette[c] : c == 0 ? WHITE : SHADES[c];
+                img.setRGB(x, y, argb);
+            }
         }
         var out = new ByteArrayOutputStream();
         try {
@@ -41,6 +54,32 @@ final class GenOnePic {
             throw new UncheckedIOException(e);
         }
         return out.toByteArray();
+    }
+
+    /** Colour-0 pixels connected to the border: the background, drawn transparent. */
+    private static boolean[][] outside(int[][] px) {
+        int h = px.length, w = px[0].length;
+        boolean[][] out = new boolean[h][w];
+        java.util.ArrayDeque<int[]> todo = new java.util.ArrayDeque<>();
+        for (int x = 0; x < w; x++) {
+            todo.add(new int[] {x, 0});
+            todo.add(new int[] {x, h - 1});
+        }
+        for (int y = 0; y < h; y++) {
+            todo.add(new int[] {0, y});
+            todo.add(new int[] {w - 1, y});
+        }
+        while (!todo.isEmpty()) {
+            int[] p = todo.poll();
+            int x = p[0], y = p[1];
+            if (x < 0 || y < 0 || x >= w || y >= h || out[y][x] || px[y][x] != 0) continue;
+            out[y][x] = true;
+            todo.add(new int[] {x + 1, y});
+            todo.add(new int[] {x - 1, y});
+            todo.add(new int[] {x, y + 1});
+            todo.add(new int[] {x, y - 1});
+        }
+        return out;
     }
 
     private int readBit() {
