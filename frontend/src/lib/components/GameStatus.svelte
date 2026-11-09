@@ -100,7 +100,7 @@
 			<hr />
 			<div class="dex">
 				<h2 id="dex-h">Pokédex</h2>
-				<p><span class="pixel">{dex.value}</span><span class="muted"> / {dex.max} owned{#if seen} · {seen.value} seen{/if}</span></p>
+				<p class="muted"><strong>{dex.value}</strong> / {dex.max} owned{#if seen} · {seen.value} seen{/if}</p>
 			</div>
 		{/if}
 	</section>
@@ -287,9 +287,9 @@
 		flex-direction: column;
 		gap: 6px;
 	}
-	.dex .pixel {
-		font-size: 12px;
-		color: var(--accent);
+	.dex strong {
+		color: var(--text);
+		font-weight: 600;
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.bar span {

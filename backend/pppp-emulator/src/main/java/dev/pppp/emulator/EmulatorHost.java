@@ -369,7 +369,9 @@ public class EmulatorHost {
     }
 
     private GameboyConfiguration config() {
+        // Always a Game Boy Color: original Game Boy carts get the CGB boot ROM's colour palette.
         return new GameboyConfiguration(rom)
+                .setGameboyType(eu.rekawek.coffeegb.core.GameboyType.CGB)
                 .setExecutionMode(eu.rekawek.coffeegb.core.ExecutionMode.PERFORMANCE)
                 .setBatteryStorage(BatteryStorage.direct(batterySave), null);
     }

@@ -42,8 +42,8 @@ class ChatController {
 
     @GetMapping("/chat/messages")
     List<ChatMessage> history(@RequestParam(required = false) String before,
-                              @RequestParam(defaultValue = "50") int limit) {
-        return chat.history(before, limit);
+                              @RequestParam(defaultValue = "50") int limit, Authentication auth) {
+        return chat.history(before, limit, CurrentUser.isAdmin(auth));
     }
 
     @DeleteMapping("/admin/chat/messages/{id}")

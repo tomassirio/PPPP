@@ -89,7 +89,7 @@ public class ConsoleService {
         EmulatorHost.Status s = host.status();
         if (s.cartridgeId() == null) state.clear();
         else state.save(s.cartridgeId(), s.power().name());
-        chat.postSystem(message);
+        chat.postAdmin(message);
         events.publishEvent(new LiveEvent("CONSOLE_CHANGED", s));
         return s;
     }

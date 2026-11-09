@@ -155,14 +155,27 @@ class ChatApiTest {
         mvc.perform(delete("/api/v1/admin/chat/messages/" + id).with(user("a@y.z").roles("ADMIN")).with(csrf()))
                 .andExpect(status().isNoContent());
         verify(events).publish("CHAT_DELETED", Map.of("id", id));
-        assertThat(chat.history(null, 50)).isEmpty();
+        assertThat(chat.history(null, 50, true)).isEmpty();
+    }
+
+    @Test
+    void adminMessagesOnlyReachAdmins() throws Exception {
+        chat.postSystem("Mode is now DEMOCRACY");
+        for (int i = 0; i < 3; i++) chat.postAdmin("Console reset " + i);
+        verify(events, org.mockito.Mockito.times(3)).publishToAdmins(eq("CHAT_MESSAGE"), any());
+        mvc.perform(get("/api/v1/chat/messages?limit=2").with(user("p@y.z").roles("PLAYER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].kind").value("SYSTEM"));
+        mvc.perform(get("/api/v1/chat/messages?limit=2").with(user("a@y.z").roles("PLAYER", "ADMIN")))
+                .andExpect(jsonPath("$[0].kind").value("ADMIN"));
     }
 
     @Test
     void systemMessagesAreStoredAndNeverThrow() {
         chat.postSystem("Console powered on");
         chat.postSystem(null);
-        assertThat(chat.history(null, 50)).singleElement()
+        assertThat(chat.history(null, 50, true)).singleElement()
                 .satisfies(m -> assertThat(m.kind()).isEqualTo("SYSTEM"));
         verify(events).publish(eq("CHAT_MESSAGE"), any());
     }
@@ -187,6 +200,6 @@ class ChatApiTest {
         send("j@y.z", "b").andExpect(status().isCreated()).andExpect(jsonPath("$.command").value(false));
         send("i@y.z", "hello there").andExpect(jsonPath("$.command").value(false));
         verify(inputs, never()).submit(eq("i@y.z"), anyString(), anyInt());
-        assertThat(chat.history(null, 50)).anySatisfy(m -> assertThat(m.command()).isTrue());
+        assertThat(chat.history(null, 50, true)).anySatisfy(m -> assertThat(m.command()).isTrue());
     }
 }

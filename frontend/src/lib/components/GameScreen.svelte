@@ -74,12 +74,15 @@
 </script>
 
 <div class="bezel">
-	<div class="screen">
-		<canvas bind:this={canvas} width="160" height="144" aria-label="Live game screen"></canvas>
-		{#if overlay}
-			<div class="overlay pixel" aria-hidden="true">{overlay}</div>
-		{/if}
-		<p class="sr-only" role="status">{overlay ?? ''}</p>
+	<!-- Size container: the screen is as big as fits, keeping 160:144. The play page may make this flex. -->
+	<div class="fit">
+		<div class="screen">
+			<canvas bind:this={canvas} width="160" height="144" aria-label="Live game screen"></canvas>
+			{#if overlay}
+				<div class="overlay pixel" aria-hidden="true">{overlay}</div>
+			{/if}
+			<p class="sr-only" role="status">{overlay ?? ''}</p>
+		</div>
 	</div>
 	<div class="strip">
 		<span class="live" class:off={!!overlay}>● {overlay ? 'OFFLINE' : 'LIVE'}</span>
@@ -95,11 +98,21 @@
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
+		box-sizing: border-box;
+		height: 100%;
+	}
+	.fit {
+		width: 100%;
+		aspect-ratio: 160 / 144;
+		container-type: size;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 	.screen {
 		position: relative;
 		aspect-ratio: 160 / 144;
-		width: 100%;
+		width: min(100cqw, 100cqh * 160 / 144);
 		background: #cadc9f;
 		border-radius: 2px;
 		overflow: hidden;

@@ -21,7 +21,7 @@
 
 	const admin = $derived(isAdmin(session.me));
 
-	// Per-viewer preference: hide SYSTEM lines so only people chatting show.
+	// Per-viewer preference: hide SYSTEM (and, for admins, ADMIN) lines so only people chatting show.
 	let showSystem = $state(read() !== '0');
 	function read() {
 		try {
@@ -37,7 +37,8 @@
 			// storage blocked: preference lasts this page only
 		}
 	});
-	const shown = $derived(showSystem ? messages : messages.filter((m) => m.kind !== 'SYSTEM'));
+	const isSystem = (m: ChatMessage) => m.kind === 'SYSTEM' || m.kind === 'ADMIN';
+	const shown = $derived(showSystem ? messages : messages.filter((m) => !isSystem(m)));
 
 	const nearBottom = () => list.scrollHeight - list.scrollTop - list.clientHeight < 60;
 	/** True while the reader sits at the bottom; only their own scrolling changes it. */
@@ -181,9 +182,9 @@
 			</li>
 		{/if}
 		{#each shown as m (m.id)}
-			{@const system = m.kind === 'SYSTEM'}
+			{@const system = isSystem(m)}
 			<li class:system class:mine={m.user === session.me?.id} title={time(m.at)}>
-				<span class="who" style:color={system ? undefined : nameColor(m.user)}>{m.name}</span>
+				<span class="who" style:color={system ? undefined : nameColor(m.user)}>{m.kind === 'ADMIN' ? 'Admin' : m.name}</span>
 				{#if m.command}<span class="tag">command</span>{/if}
 				<span class="text"
 					>{#if system}{#each modeParts(m.text) as part, i (i)}{#if part === 'ANARCHY' || part === 'DEMOCRACY'}<span class="mode {part.toLowerCase()}">{part}</span>{:else}{part}{/if}{/each}{:else}{m.text}{/if}</span

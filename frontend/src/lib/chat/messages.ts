@@ -5,7 +5,7 @@ export type ChatMessage = {
 	user: string;
 	name: string;
 	text: string;
-	kind: string; // 'USER' | 'SYSTEM'
+	kind: string; // 'USER' | 'SYSTEM' (everyone) | 'ADMIN' (admins only)
 	command: boolean;
 	at: number;
 };

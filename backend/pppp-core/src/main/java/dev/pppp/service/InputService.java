@@ -76,7 +76,7 @@ public class InputService {
         ids.forEach(id -> queue.setStatus(id, "DROPPED", null));
         if (!undelivered.isEmpty()) queue.markDeliveredThrough(undelivered.getLast().id());
         // Pending ones are acked by the scheduler when it sees DROPPED.
-        chat.postSystem(adminId + " flushed the input queue (" + ids.size() + " dropped)");
+        chat.postAdmin(adminId + " flushed the input queue (" + ids.size() + " dropped)");
         return ids.size();
     }
 }

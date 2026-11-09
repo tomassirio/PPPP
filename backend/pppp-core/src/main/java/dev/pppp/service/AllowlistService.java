@@ -95,13 +95,13 @@ public class AllowlistService {
         String id = normalize(email);
         repo.ban(id);
         events.publishEvent(new UserRevokedEvent(id));
-        chat.postSystem(id + " was banned");
+        chat.postAdmin(id + " was banned");
     }
 
     public void unban(String email) {
         String id = normalize(email);
         if (!repo.unban(id)) throw new NotFoundException(id + " is not banned");
-        chat.postSystem(id + " was unbanned");
+        chat.postAdmin(id + " was unbanned");
     }
 
 

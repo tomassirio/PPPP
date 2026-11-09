@@ -1,6 +1,8 @@
 package dev.pppp.controller;
 
 import dev.pppp.realtime.EventPublisher;
+import dev.pppp.security.CurrentUser;
+import org.springframework.security.core.Authentication;
 
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,7 +18,7 @@ public class EventsController {
     }
 
     @GetMapping(path = "/api/v1/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter events() {
-        return events.subscribe();
+    public SseEmitter events(Authentication auth) {
+        return events.subscribe(CurrentUser.isAdmin(auth));
     }
 }

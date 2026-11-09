@@ -94,9 +94,11 @@
 
 		<main>
 			<section class="game" aria-label="Game">
-				<GameScreen power={game.power} paused={game.paused}>
-					{#snippet controls()}<SoundControl />{/snippet}
-				</GameScreen>
+				<div class="screen-slot">
+					<GameScreen power={game.power} paused={game.paused}>
+						{#snippet controls()}<SoundControl />{/snippet}
+					</GameScreen>
+				</div>
 				<div class="tabs" role="group" aria-label="Panels">
 					{#each ['play', 'vote', 'chat'] as const as t (t)}
 						<button type="button" aria-pressed={tab === t} onclick={() => (tab = t)}
@@ -227,8 +229,7 @@
 	}
 	.game {
 		flex: 1 1 520px;
-		/* Screen + pad (~390px besides the screen) fit under the header: width follows viewport height. */
-		max-width: clamp(360px, calc((100dvh - 510px) * 10 / 9 + 32px), 560px);
+		max-width: 560px;
 		display: flex;
 		flex-direction: column;
 		gap: 16px;
@@ -250,7 +251,7 @@
 	.next {
 		flex: 1 1 0;
 		contain: size;
-		min-height: 180px;
+		min-height: 140px;
 	}
 	.chat {
 		flex: 1 1 340px;
@@ -267,6 +268,43 @@
 	}
 	.tabs {
 		display: none;
+	}
+
+	/* Desktop: the page is exactly one screen tall and never scrolls. The game screen takes the height the
+	   controller leaves; a column that still doesn't fit (very short windows) scrolls inside itself. */
+	@media (min-width: 1100px) and (min-height: 600px) {
+		.page {
+			height: 100dvh;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
+		}
+		header {
+			flex: none;
+		}
+		main {
+			flex: 1 1 0;
+			min-height: 0;
+			width: 100%;
+			flex-wrap: nowrap;
+		}
+		.game,
+		.side {
+			min-height: 0;
+			overflow-y: auto;
+		}
+		.screen-slot {
+			flex: 1 1 0;
+			min-height: 200px;
+		}
+		.screen-slot :global(.fit) {
+			flex: 1 1 0;
+			min-height: 0;
+			aspect-ratio: auto;
+		}
+		.chat {
+			min-height: 0;
+		}
 	}
 	:global(.page :focus-visible) {
 		outline: 3px solid var(--accent);
