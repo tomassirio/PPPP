@@ -41,11 +41,12 @@
 		type="button"
 		aria-expanded={open}
 		aria-controls="presence-list"
+		aria-label="{viewers.length} online"
 		onclick={() => (open = !open)}
 		onkeydown={(e) => e.key === 'Escape' && (open = false)}
 	>
 		<span class="dot" aria-hidden="true"></span>
-		{viewers.length} online
+		{viewers.length}<span class="word"> online</span>
 	</button>
 	<ul id="presence-list" aria-label="Connected players">
 		{#each viewers as v (v.id)}
@@ -84,6 +85,15 @@
 	button:focus-visible {
 		outline: 3px solid var(--accent-text);
 		outline-offset: 2px;
+	}
+	/* Phones: just the dot and the count. */
+	@media (max-width: 760px) {
+		.word {
+			display: none;
+		}
+		button {
+			padding: 0 10px;
+		}
 	}
 	.dot {
 		width: 8px;

@@ -18,6 +18,7 @@
 	import LastPressed from '#lib/components/LastPressed.svelte';
 	import VoteTally from '#lib/components/VoteTally.svelte';
 	import banner from '#lib/assets/banner.webp';
+	import ppppLogo from '#lib/assets/pppp-logo.png';
 
 	let game = $state<GameState>({
 		power: 'OFF',
@@ -83,8 +84,8 @@
 		<header>
 			<div class="brand">
 				<img class="logo" src={banner} alt="Pibs&amp;PibettesPlayPokemon" width="924" height="111" />
-				<span class="pixel short">pppp</span>
-				<span class="pill {game.mode.toLowerCase()}">Mode: {modeLabel}</span>
+				<img class="short" src={ppppLogo} alt="PPPP" width="240" height="104" />
+				<span class="pill {game.mode.toLowerCase()}"><span class="pill-label">Mode: </span>{modeLabel}</span>
 			</div>
 			<div class="user">
 				<Presence />
@@ -180,10 +181,12 @@
 		height: 36px;
 		width: auto;
 	}
+	/* Phones: the PPPP badge instead of the long banner. */
 	.short {
 		display: none;
-		font-size: 11px;
-		color: var(--accent-text);
+		height: 30px;
+		width: auto;
+		border-radius: 6px;
 	}
 	.pill {
 		font-size: 13px;
@@ -345,19 +348,28 @@
 	}
 
 	@media (max-width: 760px) {
+		/* One row: badge + mode on the left, online + account menu on the right. */
 		header {
 			padding: 8px 16px;
 			gap: 8px;
+			flex-wrap: nowrap;
 		}
 		.logo {
 			display: none;
 		}
 		.short {
-			display: inline;
+			display: block;
 		}
 		.brand,
 		.user {
-			gap: 10px;
+			gap: 8px;
+			flex-wrap: nowrap;
+		}
+		.user {
+			margin-left: auto;
+		}
+		.pill-label {
+			display: none;
 		}
 		.pill {
 			font-size: 12px;

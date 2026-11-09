@@ -145,6 +145,8 @@
 		right: 0;
 		z-index: 20;
 		min-width: 220px;
+		max-width: calc(100vw - 32px);
+		box-sizing: border-box;
 		padding: 8px;
 		display: flex;
 		flex-direction: column;
