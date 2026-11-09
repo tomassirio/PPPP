@@ -2,18 +2,16 @@
 <script lang="ts">
 	import { api, ApiError } from '#lib/api.ts';
 	import { afterArrowRelease, keyToButton, type Button } from '#lib/play.ts';
-	import { SHELLS, saveShell, savedShell, shellVars } from '#lib/shells.ts';
+	import { SHELLS, shellVars } from '#lib/shells.ts';
+	import { currentShell, pickShell } from '#lib/shell.svelte.ts';
 
 	let { mode }: { mode: 'ANARCHY' | 'DEMOCRACY' } = $props();
 
 	// The player's controller shell (colours), remembered in this browser.
-	let shell = $state(savedShell());
+	const shell = $derived(currentShell.value);
 	const vars = $derived(shellVars(shell));
 	let picker = $state<HTMLDetailsElement>();
-	function pick(id: string) {
-		shell = SHELLS.find((s) => s.id === id) ?? SHELLS[0];
-		saveShell(shell.id);
-	}
+	const pick = pickShell;
 
 	let lastPress = $state('');
 	let status = $state('');

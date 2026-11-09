@@ -33,8 +33,9 @@
 	.overlay-toggle:hover {
 		color: #d6dade;
 	}
+	/* On: the player's plate colour (set on the play page), else the accent. */
 	.overlay-toggle[aria-pressed='true'] {
-		color: var(--accent);
+		color: var(--plate, var(--accent));
 	}
 	.overlay-toggle:focus-visible {
 		outline: 3px solid var(--accent-text);

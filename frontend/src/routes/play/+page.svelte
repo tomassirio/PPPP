@@ -4,6 +4,7 @@
 	import { api } from '#lib/api.ts';
 	import { on } from '#lib/events.ts';
 	import { loadMe, session } from '#lib/session.svelte.ts';
+	import { currentShell } from '#lib/shell.svelte.ts';
 	import type { GameState } from '#lib/play.ts';
 	import Chat from '#lib/components/Chat.svelte';
 	import GameScreen from '#lib/components/GameScreen.svelte';
@@ -135,7 +136,7 @@
 </script>
 
 {#if me}
-	<div class="page">
+	<div class="page" style:--plate={currentShell.value.shell}>
 		<header>
 			<div class="brand">
 				<img class="logo" src={banner} alt="Pibs&amp;PibettesPlayPokemon" width="924" height="111" />
@@ -552,8 +553,9 @@
 			font-weight: 600;
 			color: var(--muted);
 		}
+		/* The selected tab in the player's plate colour (pulled toward the text colour on light, like names). */
 		.tabs button[aria-pressed='true'] {
-			color: var(--accent-text);
+			color: color-mix(in oklab, var(--plate, var(--accent-text)), var(--text) var(--name-dim));
 		}
 		.badge {
 			position: absolute;
@@ -670,7 +672,7 @@
 			color: var(--muted);
 		}
 		.tabs button[aria-pressed='true'] {
-			color: var(--accent-text);
+			color: color-mix(in oklab, var(--plate, var(--accent-text)), var(--text) var(--name-dim));
 			background: var(--bg);
 		}
 		.tabs button span:not(.badge) {
