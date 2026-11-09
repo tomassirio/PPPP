@@ -148,7 +148,9 @@
 		}
 	}
 
-	const time = (at: number) => new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+	/** "9 Nov, 11:46" in the viewer's locale. */
+	const time = (at: number) =>
+		new Date(at).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 </script>
 
 <!-- Keys typed or pressed anywhere in chat must never reach the game's keyboard controls. -->
@@ -275,8 +277,11 @@
 		-webkit-background-clip: text;
 		color: transparent;
 	}
+	/* First in the line but floated right, so long messages wrap under it. */
 	.ts {
-		margin-right: 6px;
+		float: right;
+		margin-left: 8px;
+		line-height: 20px;
 		font-size: 11px;
 		font-style: normal;
 		font-variant-numeric: tabular-nums;
