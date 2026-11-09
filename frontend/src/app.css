@@ -7,6 +7,12 @@
 	--muted: #a3ada8;
 	--accent: #f2c14e;
 	--accent-hover: #ffd77a;
+	--accent-text: #f2c14e; /* accent used as text/outline; darker in light mode */
+	--accent-text-hover: #ffd77a;
+	--border-strong: #3a4851;
+	--name-dim: 0%; /* how much chat name colours are pulled toward --text (pastels need it on light) */
+	--glow: #1d1a28; /* sign-in backdrop behind the handheld */
+	--pad-edge: transparent; /* outline for the beige gamepad on light backgrounds */
 	--ink: #1d1f1c;
 	--grass: #9bbc0f;
 	--danger: #e76f51;
@@ -15,6 +21,42 @@
 	--pixel-font: 'Press Start 2P', monospace;
 	--body-font: Inter, system-ui, sans-serif;
 	color-scheme: dark;
+}
+
+/* Light theme: data-theme="light", or the OS preference when the user picked Auto (no data-theme). */
+:root[data-theme='light'] {
+	--bg: #f4f1e8;
+	--panel: #ffffff;
+	--border: #dcd6c6;
+	--border-strong: #c2bba8;
+	--text: #1d1f1c;
+	--muted: #5d6460;
+	--accent-text: #8a5a00;
+	--accent-text-hover: #6b4500;
+	--grass: #4d7a00;
+	--danger: #c0432a;
+	--name-dim: 50%;
+	--pad-edge: #c2bba8;
+	--glow: #e6e0f2;
+	color-scheme: light;
+}
+@media (prefers-color-scheme: light) {
+	:root:not([data-theme='dark']) {
+		--bg: #f4f1e8;
+		--panel: #ffffff;
+		--border: #dcd6c6;
+		--border-strong: #c2bba8;
+		--text: #1d1f1c;
+		--muted: #5d6460;
+		--accent-text: #8a5a00;
+		--accent-text-hover: #6b4500;
+		--grass: #4d7a00;
+		--danger: #c0432a;
+		--name-dim: 50%;
+		--pad-edge: #c2bba8;
+		--glow: #e6e0f2;
+		color-scheme: light;
+	}
 }
 
 html,
@@ -26,10 +68,10 @@ body {
 }
 
 a {
-	color: var(--accent);
+	color: var(--accent-text);
 }
 a:hover {
-	color: var(--accent-hover);
+	color: var(--accent-text-hover);
 }
 
 button {

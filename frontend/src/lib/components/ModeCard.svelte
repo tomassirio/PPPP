@@ -121,7 +121,7 @@
 		font-size: 14px;
 	}
 	button:focus-visible {
-		outline: 3px solid var(--accent);
+		outline: 3px solid var(--accent-text);
 		outline-offset: 2px;
 	}
 	.primary {
@@ -146,7 +146,7 @@
 		background: var(--democracy);
 	}
 	.ghost {
-		border: 1px solid #3a4851;
+		border: 1px solid var(--border-strong);
 		background: transparent;
 		color: var(--text);
 	}

@@ -146,6 +146,7 @@
 <style>
 	.shell {
 		background: #d8d3c4;
+		box-shadow: inset 0 0 0 1px var(--pad-edge);
 		border-radius: 16px 16px 48px 16px;
 		padding: 24px;
 		display: flex;
@@ -181,7 +182,7 @@
 	}
 	button:focus-visible,
 	input:focus-visible {
-		outline: 3px solid var(--accent);
+		outline: 3px solid var(--accent-text);
 		outline-offset: 2px;
 	}
 	.dir {
@@ -252,7 +253,7 @@
 		height: 40px;
 		box-sizing: border-box;
 		background: var(--bg);
-		border: 1px solid #3a4851;
+		border: 1px solid var(--border-strong);
 		border-radius: 8px;
 		color: var(--text);
 		padding: 0 12px;
