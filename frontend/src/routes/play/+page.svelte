@@ -647,6 +647,16 @@
 	/* Phone held sideways: a Game Boy Advance. D-pad left, screen in the middle, A/B right, Select/Start under
 	   the screen; no header or tabs. The pad's own boxes become grid items via display: contents. */
 	@media (orientation: landscape) and (max-height: 520px) {
+		/* One rule for alignment: the screen is centred, everything else is centred in the gutter beside it
+		   (d-pad over the rail on the left, A/B over Select/Start on the right; the bottom pair share a centre line). */
+		.page {
+			--screen-w: calc((100dvh - 16px - 76px) * 160 / 144 + 32px);
+			--gutter: max(0px, calc((100vw - var(--screen-w)) / 2));
+			--bottom-row: 37px; /* centre line of the rail and Select/Start, from the bottom */
+		}
+		.page.big {
+			--gutter: min(260px, 34vw); /* the screen fills everything; controls use the outer band */
+		}
 		.page {
 			height: 100dvh;
 			display: flex;
@@ -713,20 +723,21 @@
 		.pad :global(.ab) {
 			position: fixed;
 			z-index: 20;
-			top: 56%;
-			translate: 0 -50%;
+			top: 50%;
+			translate: -50% -50%;
 		}
 		.pad :global(.dpad) {
-			left: max(28px, env(safe-area-inset-left));
+			left: calc(var(--gutter) / 2);
 		}
 		.pad :global(.ab) {
-			right: max(28px, env(safe-area-inset-right));
+			left: calc(100vw - var(--gutter) / 2);
 		}
 		.pad :global(.meta) {
 			position: fixed;
 			z-index: 20;
-			right: max(20px, env(safe-area-inset-right));
-			bottom: 12px;
+			left: calc(100vw - var(--gutter) / 2);
+			bottom: var(--bottom-row);
+			translate: -50% 50%;
 			gap: 8px;
 		}
 		.pad :global(.controls) {
@@ -796,8 +807,9 @@
 		   with the game still visible. Play closes it. */
 		.tabs {
 			position: fixed;
-			left: max(8px, env(safe-area-inset-left));
-			bottom: 8px;
+			left: max(8px, calc(var(--gutter) / 2));
+			bottom: var(--bottom-row);
+			translate: max(-50%, calc(8px - var(--gutter) / 2)) 50%;
 			z-index: 31;
 			display: flex;
 			gap: 2px;
