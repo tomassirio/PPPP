@@ -8,6 +8,7 @@
 	import Chat from '#lib/components/Chat.svelte';
 	import GameScreen from '#lib/components/GameScreen.svelte';
 	import GameStatus from '#lib/components/GameStatus.svelte';
+	import PokedexBanner from '#lib/components/PokedexBanner.svelte';
 	import Gamepad from '#lib/components/Gamepad.svelte';
 	import ModeCard from '#lib/components/ModeCard.svelte';
 	import SoundControl from '#lib/components/SoundControl.svelte';
@@ -103,6 +104,8 @@
 			</div>
 		</header>
 
+		<div class="stage">
+			<aside class="dex" aria-label="Pokédex, first half"><PokedexBanner from={1} to={76} /></aside>
 		<main>
 			<section class="game" aria-label="Game" style:--frame-w={frameWidth ? `${frameWidth}px` : null}>
 				<div class="screen-slot" bind:this={screenSlot}>
@@ -134,6 +137,8 @@
 				<Chat />
 			</section>
 		</main>
+			<aside class="dex" aria-label="Pokédex, second half"><PokedexBanner from={77} to={151} /></aside>
+		</div>
 	</div>
 {:else if loadFailed}
 	<section class="load-error" role="alert">
@@ -283,6 +288,13 @@
 	.tabs {
 		display: none;
 	}
+	/* Pokédex side banners only where the side margins are wide enough (see the wide media query). */
+	.stage {
+		display: contents;
+	}
+	.dex {
+		display: none;
+	}
 	.voting,
 	.party {
 		display: contents;
@@ -300,8 +312,13 @@
 		header {
 			flex: none;
 		}
-		main {
+		.stage {
+			display: flex;
 			flex: 1 1 0;
+			min-height: 0;
+		}
+		main {
+			flex: 1 1 auto;
 			min-height: 0;
 			width: 100%;
 			flex-wrap: nowrap;
@@ -337,6 +354,19 @@
 		}
 		.chat {
 			min-height: 0;
+		}
+	}
+	/* Side margins of 200px+: the Pokédex as two banners, 1-76 left and 77-151 right. */
+	@media (min-width: 1840px) and (min-height: 600px) {
+		.dex {
+			display: block;
+			flex: 1 1 0;
+			min-width: 0;
+			padding: 16px 16px;
+			box-sizing: border-box;
+		}
+		main {
+			flex: 0 1 1440px;
 		}
 	}
 	:global(.page :focus-visible) {

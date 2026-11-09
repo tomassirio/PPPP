@@ -1,37 +1,13 @@
 <!-- Party and badges read from the game's RAM: GET /api/v1/game/state, kept current by GAME_STATE.
      Hidden for games without a profile. Sprites come from the ROM via /api/v1/game/icons/{id}.png. -->
 <script lang="ts">
-	import { api } from '#lib/api.ts';
-	import { on } from '#lib/events.ts';
-
-	/** Shape of GameSummary (backend model). */
-	type Member = { name: string; species: string; level: number; hp: number; maxHp: number; status: string | null; icon: number };
-	type Summary = {
-		game: string;
-		counters: { label: string; value: number; max: number }[];
-		party: Member[];
-		badges: { name: string; place: string; earned: boolean }[];
-	};
+	import { game, watchGame, type Member } from '#lib/game.svelte.ts';
 
 	const badgeArt = import.meta.glob('../assets/badges/*.png', { eager: true, import: 'default' }) as Record<string, string>;
 	const art = (name: string) => badgeArt[`../assets/badges/${name.toLowerCase()}.png`];
 
-	let summary = $state<Summary | null>(null);
-
-	function refresh() {
-		api<Summary | undefined>('GET', '/game/state')
-			.then((s) => (summary = s ?? null))
-			.catch(() => {});
-	}
-
-	$effect(() => {
-		refresh();
-		const offs = [
-			on('GAME_STATE', (s: Summary) => (summary = s)),
-			on('CONSOLE_CHANGED', refresh) // another cartridge may have no profile
-		];
-		return () => offs.forEach((off) => off());
-	});
+	const summary = $derived(game.summary);
+	$effect(() => watchGame());
 
 	const slots = $derived(summary ? [...summary.party, ...Array(Math.max(0, 6 - summary.party.length)).fill(null)] : []);
 	const earned = $derived(summary?.badges.filter((b) => b.earned).length ?? 0);

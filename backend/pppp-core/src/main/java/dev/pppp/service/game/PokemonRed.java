@@ -156,7 +156,18 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
         return new GameSummary("Pokémon Red", List.of(
                 new GameSummary.Counter("Badges", Integer.bitCount(s.badges()), 8),
                 new GameSummary.Counter("Pokédex", owned(s), DEX_SIZE),
-                new GameSummary.Counter("Seen", s.seen().get(0, DEX_SIZE).cardinality(), DEX_SIZE)), party, badges);
+                new GameSummary.Counter("Seen", s.seen().get(0, DEX_SIZE).cardinality(), DEX_SIZE)), party, badges,
+                collection(s));
+    }
+
+    private GameSummary.Collection collection(State s) {
+        // Owned implies seen, even if a glitch or the starter preview left the seen flag off.
+        BitSet seen = s.seen().get(0, DEX_SIZE);
+        seen.or(s.owned().get(0, DEX_SIZE));
+        List<String> names = new ArrayList<>(DEX_SIZE);
+        for (int i = 0; i < DEX_SIZE; i++) names.add(seen.get(i) ? namesByDex[i + 1] : null);
+        return new GameSummary.Collection(DEX_SIZE, seen.stream().map(i -> i + 1).boxed().toList(),
+                s.owned().get(0, DEX_SIZE).stream().map(i -> i + 1).boxed().toList(), names);
     }
 
     /** The front sprite of Pokédex number id, decompressed from the ROM. */

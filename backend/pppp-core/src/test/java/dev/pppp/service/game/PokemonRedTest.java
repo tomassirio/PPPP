@@ -65,6 +65,10 @@ class PokemonRedTest {
         assertThat(summary.party().getFirst().icon()).isEqualTo(2); // Ivysaur's Pokédex number
         assertThat(summary.badges()).extracting(b -> b.earned()).containsExactly(true, false, false, false, false, false, false, false);
         assertThat(summary.badges().getFirst().place()).isEqualTo("Pewter Gym");
+        assertThat(summary.collection().owned()).containsExactly(1, 2);
+        assertThat(summary.collection().seen()).containsExactly(1, 2); // owned counts as seen
+        assertThat(summary.collection().names().get(1)).isEqualTo("Ivysaur");
+        assertThat(summary.collection().names().get(15)).isNull(); // unseen: not given away
     }
 
     @Test
