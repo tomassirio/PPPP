@@ -68,6 +68,23 @@
 		q.addEventListener('change', onChange);
 		return () => q.removeEventListener('change', onChange);
 	});
+	// Landscape big screen: the screen fills the height and the controls float over it, translucent.
+	let bigScreen = $state(read('pppp.bigScreen') === 'on');
+	function read(key: string) {
+		try {
+			return localStorage.getItem(key);
+		} catch {
+			return null;
+		}
+	}
+	function toggleBigScreen() {
+		bigScreen = !bigScreen;
+		try {
+			localStorage.setItem('pppp.bigScreen', bigScreen ? 'on' : 'off');
+		} catch {
+			/* private mode: not remembered */
+		}
+	}
 	let sheetTab = $state<Tab>('vote');
 	$effect(() => {
 		if (tab !== 'play') sheetTab = tab;
@@ -76,7 +93,7 @@
 	function closeSheetOnOutsideTap(e: PointerEvent) {
 		if (!landscape || tab === 'play') return;
 		const t = e.target as Element;
-		if (t.closest('.side, .chat, .tabs')) return;
+		if (t.closest('.side, .chat, .tabs, header, .shells')) return; // sheet, rail, corners, colour picker
 		e.preventDefault();
 		e.stopPropagation(); // the tap only closes the sheet; it must not also press a game button
 		swallowClick = true; // A/B/Start/Select act on the click that follows
@@ -171,7 +188,7 @@
 <svelte:window onpointerdowncapture={closeSheetOnOutsideTap} onclickcapture={swallowClosingClick} />
 
 {#if me}
-	<div class="page" style:--plate={currentShell.value.shell}>
+	<div class="page" class:big={bigScreen} style:--plate={currentShell.value.shell}>
 		<header>
 			<div class="brand">
 				<img class="logo" src={banner} alt="Pibs&amp;PibettesPlayPokemon" width="924" height="111" />
@@ -211,6 +228,11 @@
 							{#if badge}<span class="badge" aria-hidden="true">{typeof badge === 'number' ? (badge > 99 ? '99+' : badge) : ''}</span>{/if}
 						</button>
 					{/each}
+					<button type="button" class="big-toggle" aria-pressed={bigScreen} aria-label="Big screen" title="Big screen" onclick={toggleBigScreen}>
+						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+							><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg
+						>
+					</button>
 				</nav>
 				<div class="pad" class:off={tab !== 'play'}>
 					<Gamepad mode={game.mode} />
@@ -371,6 +393,9 @@
 		min-height: 0;
 	}
 	.tabs {
+		display: none;
+	}
+	.big-toggle {
 		display: none;
 	}
 	/* Pokédex side banners only where the side margins are wide enough (see the wide media query). */
@@ -624,9 +649,26 @@
 			flex-direction: column;
 			overflow: hidden;
 		}
-		header,
 		.dex,
-		.off {
+		.off,
+		.logo,
+		.short {
+			display: none;
+		}
+		/* Mode pill top-left, online + account menu top-right, floating over the corners. */
+		header {
+			position: fixed;
+			inset: 8px max(12px, env(safe-area-inset-right)) auto max(12px, env(safe-area-inset-left));
+			z-index: 32;
+			padding: 0;
+			border: none;
+			background: none;
+			pointer-events: none;
+		}
+		header > * {
+			pointer-events: auto;
+		}
+		.pill-label {
 			display: none;
 		}
 		.stage,
@@ -646,7 +688,7 @@
 			align-items: center;
 			justify-items: center;
 			gap: 6px 12px;
-			padding: 8px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));
+			padding: 8px max(20px, env(safe-area-inset-right)) 8px max(20px, env(safe-area-inset-left));
 		}
 		.screen-slot {
 			grid-area: screen;
@@ -661,11 +703,14 @@
 		.pad :global(.row) {
 			display: contents;
 		}
+		/* Controls hug the sides. */
 		.pad :global(.dpad) {
 			grid-area: dpad;
+			justify-self: start;
 		}
 		.pad :global(.ab) {
 			grid-area: ab;
+			justify-self: end;
 		}
 		.pad :global(.meta) {
 			grid-area: meta;
@@ -673,10 +718,59 @@
 		.pad :global(.controls) {
 			display: none;
 		}
+		/* Colour picker next to the rail (bottom-left), opening upward. */
 		.pad :global(.shells) {
 			position: fixed;
-			top: 10px;
-			right: max(12px, env(safe-area-inset-right));
+			top: auto;
+			right: auto;
+			bottom: 17px;
+			left: calc(max(8px, env(safe-area-inset-left)) + 186px);
+			z-index: 31;
+		}
+		.pad :global(.shells fieldset) {
+			top: auto;
+			bottom: 32px;
+			right: auto;
+			left: 0;
+		}
+		.big-toggle {
+			display: flex;
+		}
+		.big-toggle[aria-pressed='true'] {
+			color: color-mix(in oklab, var(--plate, var(--accent-text)), var(--text) var(--name-dim));
+			background: var(--bg);
+		}
+		/* Big screen: the screen takes the full height (still 160:144) and the controls float over it. */
+		.big main {
+			grid-template-columns: 1fr;
+			grid-template-rows: 1fr;
+			grid-template-areas: 'screen';
+		}
+		.big .screen-slot {
+			height: calc(100dvh - 16px);
+			width: calc((100dvh - 16px - 76px) * 160 / 144 + 32px);
+		}
+		.big .pad :global(.dpad),
+		.big .pad :global(.ab),
+		.big .pad :global(.meta) {
+			position: fixed;
+			z-index: 20;
+			opacity: 0.55;
+		}
+		.big .pad :global(.dpad) {
+			left: max(24px, env(safe-area-inset-left));
+			top: 50%;
+			translate: 0 -50%;
+		}
+		.big .pad :global(.ab) {
+			right: max(24px, env(safe-area-inset-right));
+			top: 50%;
+			translate: 0 -50%;
+		}
+		.big .pad :global(.meta) {
+			left: 50%;
+			bottom: 10px;
+			translate: -50% 0;
 		}
 		/* Other tabs: an icon rail in the bottom-left corner; Vote, Party and Chat open as a sheet on the right,
 		   with the game still visible. Play closes it. */
