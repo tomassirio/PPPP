@@ -298,17 +298,27 @@
 	/* Phones: the whole box fits the Party tab without scrolling: a 3x2 party of compact slots (no species line),
 	   Next Gym in the Badges header, gaps instead of rules. */
 	@media (max-width: 760px), (orientation: landscape) and (max-height: 520px) {
+		/* Fill the tab/sheet: the party rows take the spare height, the rest keeps its own. */
 		.card {
+			flex: 1 1 0;
+			min-height: 0;
+			box-sizing: border-box;
 			padding: 12px 14px;
 			gap: 8px;
 		}
+		.card > :not(.party) {
+			flex: none;
+		}
 		.party {
+			flex: 1 1 0;
+			min-height: 0;
 			grid-template-columns: repeat(3, minmax(0, 1fr));
+			grid-auto-rows: minmax(46px, 1fr);
 			gap: 6px;
 		}
 		.mon,
 		.empty {
-			height: 46px;
+			height: auto;
 		}
 		.mon {
 			gap: 6px;
@@ -332,12 +342,12 @@
 			display: inline;
 		}
 		.sprite {
-			width: 34px;
-			height: 34px;
+			width: 40px;
+			height: 40px;
 		}
 		.sprite img {
-			width: 32px;
-			height: 32px;
+			width: 38px;
+			height: 38px;
 		}
 	}
 </style>
