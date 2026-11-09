@@ -126,13 +126,11 @@ jobs:
             --namespace "$NAMESPACE" \
             --set image.repository="ghcr.io/${{ github.repository_owner }}/pppp-frontend" \
             --set image.tag="$IMAGE_TAG" \
-            --set-string ingress.host="${{ vars.PUBLIC_URL }}" \
             --wait --timeout 5m
-          echo "Live at https://${{ vars.PUBLIC_URL }}"
 
       - name: Show state on failure
         if: failure()
         run: |
-          kubectl get pods,svc,ingress,pvc -n "$NAMESPACE" || true
+          kubectl get pods,svc,pvc -n "$NAMESPACE" || true
           kubectl logs -l app=pppp-backend -n "$NAMESPACE" --tail=100 || true
           kubectl logs -l app=pppp-frontend -n "$NAMESPACE" --tail=50 || true

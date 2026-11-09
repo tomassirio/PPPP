@@ -10,15 +10,6 @@ backend:
   service: pppp-backend
   port: 8080
 
-ingress:
-  className: nginx
-  host: pppp.example.com  # overridden by pipeline from vars.PUBLIC_URL
-  annotations:
-    # SSE and the screen/audio WebSockets stay open for the whole session.
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
-    nginx.ingress.kubernetes.io/proxy-body-size: 9m
-
 resources:
   limits:
     cpu: 200m
