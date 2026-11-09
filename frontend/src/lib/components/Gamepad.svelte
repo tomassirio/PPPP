@@ -224,6 +224,7 @@
 			<p class="current">{shell.name}</p>
 		</fieldset>
 	</details>
+	<p class="pib" aria-hidden="true">Pibtendo</p>
 	<div class="row">
 		<div class="dpad">
 			{#each dpad as d (d.b)}
@@ -388,6 +389,29 @@
 		font-size: 12px;
 		font-weight: 700;
 		letter-spacing: 0.08em;
+	}
+	/* The Pibtendo oval from the sign-in handheld, embossed in the shell's own colour. */
+	.pib {
+		align-self: center;
+		margin: -8px 0 -4px;
+		padding: 3px 14px;
+		border-radius: 999px;
+		--emboss: color-mix(in oklab, var(--shell), black 28%);
+		--emboss-hi: color-mix(in oklab, var(--shell), white 40%);
+		border: 2px solid var(--emboss);
+		box-shadow:
+			0 1px 0 0 var(--emboss-hi),
+			inset 0 1px 0 0 var(--emboss-hi);
+		font: italic 800 13px/1 var(--body-font);
+		letter-spacing: 0.01em;
+		color: var(--emboss);
+		text-shadow: 0 1px 0 var(--emboss-hi);
+		user-select: none;
+	}
+	@media (orientation: landscape) and (max-height: 520px) {
+		.pib {
+			display: none; /* the pad is split around the screen there */
+		}
 	}
 	/* Colour picker: a swatch in the shell's corner opening a grid of shells. */
 	.shells {
