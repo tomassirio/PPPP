@@ -813,11 +813,29 @@
 		opacity: 0;
 		animation: spark 1.6s cubic-bezier(0.15, 0.8, 0.3, 1) var(--delay) both;
 	}
+	/* Faces stay upright (the stars spin; a spun face ends upside down), with a little wobble instead. */
 	.spark.me {
+		animation-name: spark-face;
 		width: 40px;
 		height: 40px;
 		border-radius: 50%;
 		box-shadow: 0 0 0 2px #fff, 0 0 12px rgb(255 255 255 / 0.7);
+	}
+	@keyframes spark-face {
+		0% {
+			opacity: 1;
+			transform: translate(0, 0) scale(0.3) rotate(-12deg);
+		}
+		50% {
+			transform: translate(calc(var(--dx) * 0.8), calc(var(--dy) * 0.8 + 10px)) scale(0.9) rotate(12deg);
+		}
+		70% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+			transform: translate(var(--dx), calc(var(--dy) + 40px)) scale(1) rotate(0deg);
+		}
 	}
 	@keyframes spark {
 		0% {
@@ -843,7 +861,8 @@
 			filter: hue-rotate(180deg);
 		}
 		/* No flying: the faces and stars just appear around each burst, then go with the egg. */
-		.spark {
+		.spark,
+		.spark.me {
 			animation: none;
 			opacity: 1;
 			transform: translate(calc(var(--dx) * 0.6), calc(var(--dy) * 0.6));
