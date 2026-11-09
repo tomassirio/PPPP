@@ -2,8 +2,18 @@
 <script lang="ts">
 	import { api, ApiError } from '#lib/api.ts';
 	import { keyToButton, type Button } from '#lib/play.ts';
+	import { SHELLS, saveShell, savedShell, shellVars } from '#lib/shells.ts';
 
 	let { mode }: { mode: 'ANARCHY' | 'DEMOCRACY' } = $props();
+
+	// The player's controller shell (colours), remembered in this browser.
+	let shell = $state(savedShell());
+	const vars = $derived(shellVars(shell));
+	let picker = $state<HTMLDetailsElement>();
+	function pick(id: string) {
+		shell = SHELLS.find((s) => s.id === id) ?? SHELLS[0];
+		saveShell(shell.id);
+	}
 
 	let lastPress = $state('');
 	let status = $state('');
@@ -83,6 +93,10 @@
 	$effect(() => stopRepeat); // leaving the page
 
 	function onkeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape' && picker?.open) {
+			picker.open = false;
+			return;
+		}
 		const b = keyToButton(e);
 		if (!b) {
 			if (e.repeat && repeating) e.preventDefault(); // auto-repeat of the held arrow: no page scroll
@@ -102,6 +116,10 @@
 		heldTimer = setTimeout(() => (held = null), 120); // a quick tap still shows
 	}
 
+	function onclick(e: MouseEvent) {
+		if (picker?.open && !picker.contains(e.target as Node)) picker.open = false;
+	}
+
 	function onblur() {
 		stopRepeat();
 		held = null;
@@ -115,9 +133,36 @@
 	];
 </script>
 
-<svelte:window {onkeydown} {onkeyup} {onblur} />
+<svelte:window {onkeydown} {onkeyup} {onblur} {onclick} />
 
-<div class="shell">
+<div class="shell" style={vars}>
+	<details class="shells" bind:this={picker}>
+		<summary aria-label="Controller colour: {shell.name}" title="Controller colour: {shell.name}">
+			<span class="swatch" style:background={shell.shell}></span>
+		</summary>
+		<fieldset>
+			<legend>Controller colour</legend>
+			<div class="grid">
+				{#each SHELLS as s (s.id)}
+					<label title={s.name}>
+						<input
+							type="radio"
+							name="shell"
+							value={s.id}
+							checked={s.id === shell.id}
+							onchange={() => {
+								pick(s.id);
+								if (picker) picker.open = false;
+							}}
+						/>
+						<span class="swatch" style:background={s.shell}><span class="dot" style:background={s.ab}></span></span>
+						<span class="sr-only">{s.name}</span>
+					</label>
+				{/each}
+			</div>
+			<p class="current">{shell.name}</p>
+		</fieldset>
+	</details>
 	<div class="row">
 		<div class="dpad">
 			{#each dpad as d (d.b)}
@@ -136,7 +181,7 @@
 						height="22"
 						viewBox="0 0 24 24"
 						fill="none"
-						stroke="#edebe3"
+						stroke="currentColor"
 						stroke-width="2.5"
 						stroke-linecap="round"
 						stroke-linejoin="round"
@@ -165,7 +210,7 @@
 	</div>
 </div>
 
-<section class="controls panel" class:idle={!lastPress && !status} aria-label="Controls">
+<section class="controls panel" style={vars} class:idle={!lastPress && !status} aria-label="Controls">
 	<div class="head">
 		<h2 class="keys-only">Keyboard</h2>
 		<p class="last" role="status" aria-live="polite">
@@ -190,7 +235,8 @@
 
 <style>
 	.shell {
-		background: #d8d3c4;
+		position: relative;
+		background: var(--shell);
 		box-shadow: inset 0 0 0 1px var(--pad-edge);
 		border-radius: 16px 16px 48px 16px;
 		padding: 24px;
@@ -213,7 +259,7 @@
 	}
 	.hub {
 		grid-area: hub;
-		background: #2b2d42;
+		background: var(--dpad);
 	}
 	button {
 		border: none;
@@ -230,7 +276,8 @@
 		outline-offset: 2px;
 	}
 	.dir {
-		background: #2b2d42;
+		background: var(--dpad);
+		color: var(--dpad-ink);
 		border-radius: 6px;
 		display: flex;
 		align-items: center;
@@ -253,8 +300,8 @@
 		width: 64px;
 		height: 64px;
 		border-radius: 50%;
-		background: #bc4b51;
-		color: #fff;
+		background: var(--ab);
+		color: var(--ab-ink);
 		font-size: 14px;
 	}
 	.round.b {
@@ -269,11 +316,110 @@
 		min-width: 88px;
 		height: 44px;
 		border-radius: 22px;
-		background: #8d8a80;
-		color: var(--ink);
+		background: var(--pill);
+		color: var(--pill-ink);
 		font-size: 12px;
 		font-weight: 700;
 		letter-spacing: 0.08em;
+	}
+	/* Colour picker: a swatch in the shell's corner opening a grid of shells. */
+	.shells {
+		position: absolute;
+		top: 10px;
+		right: 12px;
+		z-index: 5;
+	}
+	.shells summary {
+		list-style: none;
+		cursor: pointer;
+		border-radius: 50%;
+	}
+	.shells summary::-webkit-details-marker {
+		display: none;
+	}
+	.shells summary:focus-visible {
+		outline: 3px solid var(--accent-text);
+		outline-offset: 2px;
+	}
+	.swatch {
+		display: block;
+		position: relative;
+		width: 22px;
+		height: 22px;
+		border-radius: 50%;
+		box-shadow:
+			inset 0 0 0 1px rgb(0 0 0 / 0.25),
+			0 0 0 2px rgb(255 255 255 / 0.6);
+	}
+	.dot {
+		position: absolute;
+		right: 3px;
+		bottom: 3px;
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+	}
+	fieldset {
+		position: absolute;
+		top: 30px;
+		right: 0;
+		margin: 0;
+		padding: 12px;
+		border: 1px solid var(--border);
+		border-radius: 10px;
+		background: var(--panel);
+		box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+	}
+	legend {
+		float: left;
+		width: 100%;
+		margin-bottom: 8px;
+		font-size: 11px;
+		font-weight: 600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--muted);
+	}
+	.grid {
+		clear: both;
+		display: grid;
+		grid-template-columns: repeat(5, 30px);
+		gap: 8px;
+	}
+	.grid label {
+		position: relative;
+		cursor: pointer;
+	}
+	.grid input {
+		position: absolute;
+		opacity: 0;
+		inset: 0;
+		margin: 0;
+	}
+	.grid .swatch {
+		width: 30px;
+		height: 30px;
+	}
+	.grid input:checked + .swatch {
+		box-shadow:
+			inset 0 0 0 1px rgb(0 0 0 / 0.25),
+			0 0 0 3px var(--accent-text);
+	}
+	.grid input:focus-visible + .swatch {
+		outline: 3px solid var(--accent-text);
+		outline-offset: 3px;
+	}
+	.current {
+		margin: 10px 0 0;
+		font-size: 12px;
+		color: var(--text);
+	}
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
 	}
 	.controls {
 		padding: 10px 14px;

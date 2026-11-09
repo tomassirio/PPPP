@@ -30,3 +30,15 @@ describe('play helpers', () => {
 		expect(formatCommand('LEFT,LEFT,DOWN')).toBe('LEFT ×2 DOWN');
 	});
 });
+
+import { inkFor, SHELLS, shellVars } from './shells';
+
+describe('shells', () => {
+	it('picks readable ink and keeps the original first', () => {
+		expect(inkFor('#ffffff')).toBe('#1d1f1c');
+		expect(inkFor('#141416')).toBe('#ffffff');
+		expect(SHELLS[0].id).toBe('original');
+		expect(new Set(SHELLS.map((s) => s.id)).size).toBe(SHELLS.length);
+		expect(shellVars(SHELLS[0])).toContain('--ab:#bc4b51');
+	});
+});
