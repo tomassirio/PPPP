@@ -188,7 +188,9 @@
 			{@const system = isSystem(m)}
 			<li class:system class:mine={m.user === session.me?.id}>
 				<time class="ts" datetime={new Date(m.at).toISOString()}>{time(m.at)}</time>
-				<span class="who" style:--name={system ? undefined : nameColor(m.user)}>{m.kind === 'ADMIN' ? 'Admin' : m.name}</span>
+				<!-- System lines need no sender; admin-only ones keep a tag so admins know players don't see them. -->
+				{#if system}<span class="sr-only">System: </span>{:else}<span class="who" style:--name={nameColor(m.user)}>{m.name}</span>{/if}
+				{#if m.kind === 'ADMIN'}<span class="tag admin-only">admin only</span>{/if}
 				{#if m.command}<span class="tag">command</span>{/if}
 				<span class="text"
 					>{#if system}{#each systemParts(m.text) as part, i (i)}{#if part.mode}<span class="mode {part.mode}">{part.text}</span>{:else if part.town === 'rainbow'}<span class="town rainbow">{part.text}</span>{:else if part.town}<span class="town" style:--town={part.town}>{part.text}</span>{:else}{part.text}{/if}{/each}{:else}{m.text}{/if}</span
@@ -327,10 +329,16 @@
 		font-weight: 700;
 		color: color-mix(in oklab, var(--name, var(--text)), var(--text) var(--name-dim));
 	}
-	.system,
-	.system .who {
+	/* Status lines, quieter than people's messages: smaller, muted, italic, a touch of indent. */
+	.system {
+		padding-left: 10px;
+		font-size: 13px;
 		color: var(--muted);
 		font-style: italic;
+	}
+	.admin-only {
+		font-style: normal;
+		margin-right: 4px;
 	}
 	.mine {
 		border-left: 2px solid var(--accent-text);

@@ -129,8 +129,8 @@
 	});
 	$effect(() => {
 		const offs = [
-			on('CHAT_MESSAGE', () => {
-				if (tab !== 'chat') unreadChat++;
+			on('CHAT_MESSAGE', (m: { kind: string }) => {
+				if (tab !== 'chat' && m.kind === 'USER') unreadChat++; // only people's messages, not system lines
 			}),
 			on('GAME_EVENT', () => {
 				if (tab !== 'party') newInParty = true;
