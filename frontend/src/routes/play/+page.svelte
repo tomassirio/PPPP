@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { api } from '#lib/api.ts';
 	import { on } from '#lib/events.ts';
-	import { isAdmin, loadMe, logout, session } from '#lib/session.svelte.ts';
+	import { loadMe, session } from '#lib/session.svelte.ts';
 	import type { GameState } from '#lib/play.ts';
 	import Chat from '#lib/components/Chat.svelte';
 	import GameScreen from '#lib/components/GameScreen.svelte';
@@ -13,7 +13,7 @@
 	import ModeCard from '#lib/components/ModeCard.svelte';
 	import Presence from '#lib/components/Presence.svelte';
 	import SoundControl from '#lib/components/SoundControl.svelte';
-	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
+	import UserMenu from '#lib/components/UserMenu.svelte';
 	import UpNext from '#lib/components/UpNext.svelte';
 	import LastPressed from '#lib/components/LastPressed.svelte';
 	import VoteTally from '#lib/components/VoteTally.svelte';
@@ -43,15 +43,6 @@
 
 	const me = $derived(session.me);
 	let loadFailed = $state(false);
-	let pictureFailed = $state(false);
-	const initials = $derived(
-		(me?.name ?? '')
-			.split(/[\s@.]+/)
-			.filter(Boolean)
-			.slice(0, 2)
-			.map((w) => w[0].toUpperCase())
-			.join('')
-	);
 	const modeLabel = $derived(game.mode === 'DEMOCRACY' ? 'Democracy' : 'Anarchy');
 
 	$effect(() => {
@@ -97,15 +88,7 @@
 			</div>
 			<div class="user">
 				<Presence />
-				<ThemeToggle />
-				{#if isAdmin(me)}<a href="/admin">Admin</a>{/if}
-				{#if me.picture && !pictureFailed}
-					<!-- Google photo URLs reject requests that carry a Referer. -->
-					<img class="avatar" src={me.picture} alt="Signed in as {me.name}" title={me.name} referrerpolicy="no-referrer" onerror={() => (pictureFailed = true)} />
-				{:else}
-					<span class="avatar" title={me.name} aria-label="Signed in as {me.name}">{initials}</span>
-				{/if}
-				<button type="button" class="link" onclick={logout}>Sign out</button>
+				<UserMenu {me} />
 			</div>
 		</header>
 
@@ -216,35 +199,6 @@
 	.pill.democracy {
 		background: var(--democracy);
 		color: var(--ink);
-	}
-	img.avatar {
-		object-fit: cover;
-	}
-	.avatar {
-		width: 36px;
-		height: 36px;
-		border-radius: 50%;
-		background: #2a9d8f;
-		color: #fff;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 13px;
-		font-weight: 700;
-	}
-	.user a,
-	.link {
-		font-size: 14px;
-	}
-	.link {
-		background: none;
-		border: none;
-		padding: 0;
-		color: var(--accent-text);
-		text-decoration: underline;
-	}
-	.link:hover {
-		color: var(--accent-text-hover);
 	}
 	main {
 		display: flex;
@@ -408,11 +362,6 @@
 		.pill {
 			font-size: 12px;
 			padding: 5px 9px;
-		}
-		.avatar {
-			width: 32px;
-			height: 32px;
-			font-size: 12px;
 		}
 		main {
 			padding: 12px 16px 24px;
