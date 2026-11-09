@@ -54,7 +54,7 @@ public class RamWatcher {
         this.events = events;
     }
 
-    /** The latest confirmed state of the inserted game, or null when it has no profile or has not been played yet. */
+    /** The latest confirmed state of the inserted game (empty before it comes into play), or null when it has no profile. */
     public GameSummary summary() {
         return summary;
     }
@@ -85,7 +85,9 @@ public class RamWatcher {
             if (s.cartridgeId() == null || !s.cartridgeId().equals(cartridgeId)) {
                 cartridgeId = s.cartridgeId();
                 tracker = cartridgeId == null ? null : load(cartridgeId);
-                summary = null;
+                // An empty box until the game comes into play, so players see it from the title screen on.
+                summary = tracker == null ? null : tracker.profile.summary(null);
+                if (summary != null) events.publishEvent(new LiveEvent("GAME_STATE", summary));
             }
             if (tracker == null) return;
             if (rebaseline || s.power() != EmulatorHost.Power.ON) {

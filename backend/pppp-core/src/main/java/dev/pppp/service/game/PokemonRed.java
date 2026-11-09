@@ -140,6 +140,7 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
 
     @Override
     public GameSummary summary(State s) {
+        if (s == null) s = new State(List.of(), new BitSet(), new BitSet(), 0, 0);
         List<GameSummary.Member> party = s.party().stream().map(m -> new GameSummary.Member(display(m),
                 speciesNames[m.species()], m.level(), m.hp(), m.maxHp(), status(m), dexNumber[m.species()])).toList();
         List<GameSummary.Badge> badges = new ArrayList<>();

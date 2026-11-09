@@ -30,6 +30,7 @@ public interface GameProfile<S> {
     /** Events for a confirmed change from before to after; both non-null. */
     List<GameEvent> diff(S before, S after);
 
+    /** state is null before the game first comes into play: an empty summary (no party, nothing earned). */
     GameSummary summary(S state);
 
     /** PNG for a {@link GameSummary.Member#icon()} id, or null. Called from request threads. */

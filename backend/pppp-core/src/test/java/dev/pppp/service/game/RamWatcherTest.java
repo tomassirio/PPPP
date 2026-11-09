@@ -42,6 +42,10 @@ class RamWatcherTest {
         List<Object> published = new ArrayList<>();
         var watcher = new RamWatcher(host, cartridges, repo, mock(ChatService.class), published::add);
 
+        watcher.poll(); // title screen: not in play yet, but the box is there, empty
+        assertThat(watcher.summary().party()).isEmpty();
+        assertThat(watcher.summary().badges()).hasSize(8).noneMatch(b -> b.earned());
+
         ram.addMon(0, PokemonRedTest.BULBASAUR, "BULBASAUR", 5, 20, 1);
         ram.dexOwned(1);
         for (int i = 0; i < RamWatcher.STABLE_READS; i++) watcher.poll();
