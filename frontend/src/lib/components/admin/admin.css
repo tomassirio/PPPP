@@ -215,17 +215,10 @@
 	align-self: end;
 	min-height: 36px;
 }
-/* Tables in half-width columns: compact buttons, long emails wrap. */
+/* Tables in half-width columns: compact buttons. */
 .admin td button {
 	height: 30px;
 	padding: 0 10px;
-}
-.admin td.wrap {
-	white-space: normal;
-	overflow-wrap: anywhere;
-}
-.admin form:empty {
-	display: none;
 }
 .admin form h3 {
 	margin: 0;
@@ -234,20 +227,62 @@
 	font-size: 12px;
 	color: var(--muted);
 }
-/* People: add/mute controls live in the table so they share its columns. */
-.admin td input,
-.admin td select {
+/* People: shared columns via subgrid so add, mute and each person align. */
+.admin .people {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 120px auto;
+	gap: 10px;
+	align-items: center;
+}
+.admin .people .person,
+.admin .people .list {
+	grid-column: 1 / -1;
+	display: grid;
+	grid-template-columns: subgrid;
+	align-items: center;
+	gap: inherit;
+}
+.admin .people .list {
+	margin: 4px 0 0;
+	padding: 6px 0 0;
+	list-style: none;
+	border-top: 1px solid var(--border);
+	max-height: 440px;
+	overflow-y: auto;
+}
+.admin .people .list > li.muted {
+	grid-column: 1 / -1;
+}
+.admin .people form.person {
+	align-items: center;
+}
+.admin .people .person > button {
+	justify-self: start;
+}
+.admin .people .email {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.admin .people .actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+.admin .people .actions button {
+	height: 32px;
+	padding: 0 10px;
+}
+.admin .people .person > input,
+.admin .people .person > select {
 	width: 100%;
-	min-width: 110px;
-	height: 32px;
+	min-width: 0;
 }
-.admin td button {
-	height: 32px;
-}
-.admin tbody.controls td {
-	border-bottom: none;
-}
-.admin tbody.controls tr:last-child td {
-	border-bottom: 1px solid var(--border);
-	padding-bottom: 10px;
+.admin .badge {
+	font-size: 12px;
+	font-weight: 600;
+	padding: 4px 8px;
+	border-radius: 999px;
+	border: 1px solid var(--danger);
+	color: var(--danger);
 }
