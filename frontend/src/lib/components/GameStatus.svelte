@@ -61,7 +61,9 @@
 
 		<div class="head">
 			<h2 id="badges-h">Badges</h2>
-			<span class="muted">{earned} / {summary.badges.length}</span>
+			<span class="muted"
+				>{earned} / {summary.badges.length}<span class="next-inline">{next ? ` · Next: ${next.place.replace(/ Gym$/, '')}` : ''}</span></span
+			>
 		</div>
 		<ul class="badges" aria-labelledby="badges-h">
 			{#each summary.badges as b (b.name)}
@@ -71,7 +73,7 @@
 				</li>
 			{/each}
 		</ul>
-		<p class="muted">{next ? `Next Gym: ${next.place.replace(/ Gym$/, '')}` : 'All badges earned'}</p>
+		<p class="muted next-line">{next ? `Next Gym: ${next.place.replace(/ Gym$/, '')}` : 'All badges earned'}</p>
 		{#if dex}
 			<hr />
 			<div class="split">
@@ -281,6 +283,9 @@
 		padding-left: 16px;
 		border-left: 1px solid var(--border);
 	}
+	.next-inline {
+		display: none;
+	}
 	.dex strong {
 		color: var(--text);
 		font-weight: 600;
@@ -290,15 +295,41 @@
 			transition: none;
 		}
 	}
-	/* Phones: shorter slots and tighter spacing so the whole box fits the Party tab. */
+	/* Phones: the whole box fits the Party tab without scrolling: a 3x2 party of compact slots (no species line),
+	   Next Gym in the Badges header, gaps instead of rules. */
 	@media (max-width: 760px) {
 		.card {
-			padding: 12px 16px;
-			gap: 10px;
+			padding: 12px 14px;
+			gap: 8px;
+		}
+		.party {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 6px;
 		}
 		.mon,
 		.empty {
 			height: 46px;
+		}
+		.mon {
+			gap: 6px;
+			padding: 4px 6px;
+		}
+		.species {
+			display: none;
+		}
+		.mon .row:last-child {
+			justify-content: flex-end;
+		}
+		.lv,
+		.hp {
+			font-size: 10px;
+		}
+		hr,
+		.next-line {
+			display: none;
+		}
+		.next-inline {
+			display: inline;
 		}
 		.sprite {
 			width: 34px;

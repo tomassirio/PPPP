@@ -497,22 +497,31 @@
 			max-width: none;
 			overflow-y: auto;
 		}
+		/* Vote and Party are fixed, not scrolled: their content is sized to fit; only lists inside scroll. */
 		.side {
 			gap: 12px;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
 		}
 		.chat {
 			overflow: hidden; /* the chat scrolls its own list; the message box stays at the bottom */
 		}
-		.next {
-			flex: none;
-			height: 240px;
-		}
 		.voting {
+			flex: 1 1 0;
+			min-height: 0;
 			display: flex;
 			flex-direction: column;
 			gap: 12px;
 		}
+		.voting .next {
+			flex: 1 1 0;
+			min-height: 0;
+			height: auto;
+		}
 		.party {
+			flex: 1 1 0;
+			min-height: 0;
 			display: flex;
 			flex-direction: column;
 			gap: 12px;
