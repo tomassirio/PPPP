@@ -425,4 +425,14 @@
 		clip: rect(0 0 0 0);
 		white-space: nowrap;
 	}
+	/* Phones: the send button and the checkbox in the player's plate colour (set on the play page). */
+	@media (max-width: 760px), (orientation: landscape) and (max-height: 520px) {
+		.toggle input {
+			accent-color: var(--plate, var(--accent-text));
+		}
+		form button {
+			background: var(--plate, var(--accent));
+			color: var(--plate-ink, var(--ink));
+		}
+	}
 </style>

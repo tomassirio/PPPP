@@ -50,10 +50,13 @@ export function saveShell(id: string) {
 	}
 }
 
-/** Dark or light text for a hex background (WCAG relative luminance). */
-export function inkFor(hex: string): string {
-	const [r, g, b] = [1, 3, 5].map((i) => {
-		const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+/** Dark or light text for a background: '#rrggbb' or 'rgb(r g b / a)' (alpha ignored). WCAG luminance. */
+export function inkFor(color: string): string {
+	const rgb = color.startsWith('#')
+		? [1, 3, 5].map((i) => parseInt(color.slice(i, i + 2), 16))
+		: (color.match(/[\d.]+/g) ?? ['0', '0', '0']).slice(0, 3).map(Number);
+	const [r, g, b] = rgb.map((v) => {
+		const c = v / 255;
 		return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
 	});
 	return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.3 ? '#1d1f1c' : '#ffffff';

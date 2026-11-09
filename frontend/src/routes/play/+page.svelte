@@ -5,6 +5,7 @@
 	import { on } from '#lib/events.ts';
 	import { loadMe, session } from '#lib/session.svelte.ts';
 	import { currentShell } from '#lib/shell.svelte.ts';
+	import { inkFor } from '#lib/shells.ts';
 	import type { GameState } from '#lib/play.ts';
 	import Chat from '#lib/components/Chat.svelte';
 	import GameScreen from '#lib/components/GameScreen.svelte';
@@ -189,7 +190,7 @@
 <svelte:window onpointerdowncapture={closeSheetOnOutsideTap} onclickcapture={swallowClosingClick} />
 
 {#if me}
-	<div class="page" class:big={bigScreen} style:--plate={currentShell.value.shell}>
+	<div class="page" class:big={bigScreen} style:--plate={currentShell.value.shell} style:--plate-ink={inkFor(currentShell.value.shell)}>
 		<header>
 			<div class="brand">
 				<img class="logo" src={banner} alt="Pibs&amp;PibettesPlayPokemon" width="924" height="111" />

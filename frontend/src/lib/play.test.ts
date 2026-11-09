@@ -37,6 +37,8 @@ describe('shells', () => {
 	it('picks readable ink and keeps the original first', () => {
 		expect(inkFor('#ffffff')).toBe('#1d1f1c');
 		expect(inkFor('#141416')).toBe('#ffffff');
+		expect(inkFor('rgb(235 235 242 / 0.45)')).toBe('#1d1f1c'); // translucent "Clear" shells
+		expect(inkFor('rgb(40 140 225 / 0.65)')).toBe('#ffffff');
 		expect(SHELLS[0].id).toBe('original');
 		expect(new Set(SHELLS.map((s) => s.id)).size).toBe(SHELLS.length);
 		expect(shellVars(SHELLS[0])).toContain('--ab:#bc4b51');
