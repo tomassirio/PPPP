@@ -13,7 +13,6 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,16 +42,13 @@ public class AllowlistController {
 
     @GetMapping("/me")
     public Me me(Authentication auth) {
-        String id = CurrentUser.id(auth);
-        OidcUser oidc = auth.getPrincipal() instanceof OidcUser o ? o : null;
-        String name = oidc != null && oidc.getFullName() != null ? oidc.getFullName() : id;
-        String picture = oidc != null ? oidc.getPicture() : null;
+        var v = CurrentUser.viewer(auth);
         List<String> roles = auth.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .filter(a -> a.startsWith("ROLE_"))
                 .map(a -> a.substring(5))
                 .toList();
-        return new Me(id, name, picture, roles, rateLimiter.remaining(id));
+        return new Me(v.id(), v.name(), v.picture(), roles, rateLimiter.remaining(v.id()));
     }
 
     @GetMapping("/admin/allowlist")
