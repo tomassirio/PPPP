@@ -608,9 +608,35 @@
 		}
 	}
 	@media (max-width: 760px) {
-		/* Phones: a slim last-press row under the pad (no keyboard legend). */
+		/* Phones: no card, a centred line under the pad; the pressed button as a mini button in the shell's
+		   colours. */
 		.controls {
-			padding: 8px 14px;
+			padding: 0;
+			border: none;
+			background: none;
+			box-shadow: none;
+		}
+		.head {
+			min-height: 30px;
+			justify-content: center;
+		}
+		.last {
+			margin: 0;
+			gap: 10px;
+		}
+		.last .muted:first-child {
+			font-size: 10px;
+			font-weight: 600;
+			letter-spacing: 0.1em;
+			text-transform: uppercase;
+		}
+		.chip {
+			padding: 7px 12px;
+			border: none;
+			border-radius: 999px;
+			background: var(--pill);
+			color: var(--pill-ink);
+			font-size: 10px;
 		}
 	}
 	/* Short phones: a tighter pad so it fits under the screen without scrolling. */
