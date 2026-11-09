@@ -9,14 +9,14 @@
 </script>
 
 <section class="about" aria-labelledby="about-title">
-	<h2 id="about-title">One Game Boy. Everyone plays.</h2>
+	<h2 id="about-title">One cartridge. Too many thumbs.</h2>
 	<p class="pitch">
-		Pokémon Red, shared live. Every press goes to the same game: <b>Anarchy</b>, every press counts; <b>Democracy</b>, the
-		vote decides.
+		All of us, playing the same Pokémon Red at once. Your presses land in everyone's game. In <b>Anarchy</b> it's chaos; in
+		<b>Democracy</b> we vote first, and it's slower chaos.
 	</p>
 	{#if teaser}
 		<ul class="stats" aria-label="The game right now">
-			<li><span class="dot" aria-hidden="true"></span><b>{teaser.online}</b> {teaser.online === 1 ? 'trainer' : 'trainers'} online</li>
+			<li><span class="dot" aria-hidden="true"></span><b>{teaser.online}</b> online</li>
 			{#if badges}<li><b>{badges.value}</b>/{badges.max} badges</li>{/if}
 			{#if caught}<li><b>{caught.value}</b> caught</li>{/if}
 			{#if teaser.playTime}<li><b>{teaser.playTime}</b> played</li>{/if}
@@ -28,7 +28,7 @@
 	.about {
 		position: relative;
 		z-index: 1;
-		max-width: 300px;
+		max-width: 380px;
 		padding: 18px 20px;
 		border-radius: 14px;
 		background: color-mix(in oklab, var(--panel), transparent 15%);
@@ -53,9 +53,10 @@
 		border-top: 1px solid var(--border);
 		list-style: none;
 		display: flex;
-		flex-wrap: wrap;
-		gap: 6px 14px;
+		flex-wrap: nowrap; /* one row */
+		gap: 12px;
 		font-size: 13px;
+		white-space: nowrap;
 		color: var(--muted);
 	}
 	.stats b {
@@ -78,8 +79,9 @@
 			padding: 10px 14px;
 		}
 		h2 {
-			font-size: 10px;
+			font-size: 9px;
 			margin: 0;
+			white-space: nowrap;
 		}
 		.pitch {
 			display: none;
@@ -87,6 +89,7 @@
 		.stats {
 			margin-top: 6px;
 			padding-top: 6px;
+			gap: 10px;
 			font-size: 12px;
 		}
 	}
