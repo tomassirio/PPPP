@@ -120,6 +120,33 @@
 		if (picker?.open && !picker.contains(e.target as Node)) picker.open = false;
 	}
 
+	/** A short buzz for touch presses (Android; ignored where unsupported, e.g. iPhone). */
+	function buzz(e: Event) {
+		if ((e as PointerEvent).pointerType === 'touch') navigator.vibrate?.(12);
+	}
+
+	function tap(e: MouseEvent, b: Button) {
+		buzz(e);
+		send(b);
+	}
+
+	/* D-pad by pointer: the press goes out on touch-down; holding repeats like a held arrow key (anarchy).
+	   Keyboard activation of the focused button still arrives as a click with detail 0. */
+	function pressDir(e: PointerEvent, b: Button) {
+		if (e.button !== 0 || blocked) return;
+		buzz(e);
+		held = b;
+		send(b);
+		if (mode === 'ANARCHY') startRepeat(b);
+	}
+
+	function releaseDir() {
+		if (held && ARROWS.includes(held)) {
+			stopRepeat();
+			held = null;
+		}
+	}
+
 	function onblur() {
 		stopRepeat();
 		held = null;
@@ -181,7 +208,12 @@
 					aria-label={d.label}
 					aria-keyshortcuts={d.key}
 					disabled={blocked}
-					onclick={() => send(d.b)}
+					onpointerdown={(e) => pressDir(e, d.b)}
+					onpointerup={releaseDir}
+					onpointercancel={releaseDir}
+					onpointerleave={releaseDir}
+					oncontextmenu={(e) => e.preventDefault()}
+					onclick={(e) => e.detail === 0 && send(d.b)}
 				>
 					<svg
 						width="22"
@@ -199,19 +231,19 @@
 			<div class="hub"></div>
 		</div>
 		<div class="ab">
-			<button type="button" class="round pixel b" class:held={held === 'b'} aria-label="B button" aria-keyshortcuts="X" disabled={blocked} onclick={() => send('b')}
+			<button type="button" class="round pixel b" class:held={held === 'b'} aria-label="B button" aria-keyshortcuts="X" disabled={blocked} onclick={(e) => tap(e, 'b')}
 				>B</button
 			>
-			<button type="button" class="round pixel" class:held={held === 'a'} aria-label="A button" aria-keyshortcuts="Z" disabled={blocked} onclick={() => send('a')}
+			<button type="button" class="round pixel" class:held={held === 'a'} aria-label="A button" aria-keyshortcuts="Z" disabled={blocked} onclick={(e) => tap(e, 'a')}
 				>A</button
 			>
 		</div>
 	</div>
 	<div class="meta">
-		<button type="button" class="pill" class:held={held === 'select'} aria-label="Select" aria-keyshortcuts="Shift" disabled={blocked} onclick={() => send('select')}
+		<button type="button" class="pill" class:held={held === 'select'} aria-label="Select" aria-keyshortcuts="Shift" disabled={blocked} onclick={(e) => tap(e, 'select')}
 			>SELECT</button
 		>
-		<button type="button" class="pill" class:held={held === 'start'} aria-label="Start" aria-keyshortcuts="Enter" disabled={blocked} onclick={() => send('start')}
+		<button type="button" class="pill" class:held={held === 'start'} aria-label="Start" aria-keyshortcuts="Enter" disabled={blocked} onclick={(e) => tap(e, 'start')}
 			>START</button
 		>
 	</div>
@@ -283,6 +315,7 @@
 		outline-offset: 2px;
 	}
 	.dir {
+		-webkit-touch-callout: none; /* no long-press menu while holding a direction */
 		background: var(--dpad);
 		color: var(--dpad-ink);
 		border-radius: 6px;
