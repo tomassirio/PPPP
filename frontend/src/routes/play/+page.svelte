@@ -84,7 +84,7 @@
 		<header>
 			<div class="brand">
 				<img class="logo" src={banner} alt="Pibs&amp;PibettesPlayPokemon" width="924" height="111" />
-				<img class="short" src={ppppLogo} alt="PPPP" width="240" height="104" />
+				<img class="short" src={ppppLogo} alt="PPPP" width="240" height="103" />
 				<span class="pill {game.mode.toLowerCase()}"><span class="pill-label">Mode: </span>{modeLabel}</span>
 			</div>
 			<div class="user">
@@ -181,12 +181,11 @@
 		height: 36px;
 		width: auto;
 	}
-	/* Phones: the PPPP badge instead of the long banner. */
+	/* Phones: the PPPP logo instead of the long banner. */
 	.short {
 		display: none;
-		height: 30px;
+		height: 32px;
 		width: auto;
-		border-radius: 6px;
 	}
 	.pill {
 		font-size: 13px;
