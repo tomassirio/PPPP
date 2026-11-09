@@ -56,7 +56,7 @@
 	.card {
 		padding: 16px 0;
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); /* Last pressed gets room for full names */
 		grid-template-rows: minmax(0, 1fr);
 		box-sizing: border-box;
 		height: 100%;

@@ -41,11 +41,12 @@
 		font-size: 8px;
 		font-weight: 700;
 	}
+	/* Never cut off: a long name wraps onto a second line instead. */
 	.name {
+		min-width: 0;
 		font-size: 13px;
+		line-height: 1.25;
 		color: var(--muted);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		overflow-wrap: anywhere;
 	}
 </style>

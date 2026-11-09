@@ -18,29 +18,31 @@
 	const secs = $derived(open ? Math.ceil((open.endsAt - now) / 1000) : 0);
 </script>
 
-<section class="panel card" aria-labelledby="tally-h">
-	<div class="head">
-		<h2 id="tally-h">This vote</h2>
-		{#if open}<span class="muted">Closes in {secs} s · {total} voted</span>{/if}
+<!-- With children (the play page passes Last pressed): two columns split by a rule, like Up next. -->
+<section class="panel card" class:split={!!children} aria-labelledby="tally-h">
+	<div class="col">
+		<div class="head">
+			<h2 id="tally-h">This vote</h2>
+			{#if open}<span class="muted">Closes in {secs} s · {total} voted</span>{/if}
+		</div>
+		{#if open}
+			<ul>
+				{#each rows as r, i (r.button)}
+					<li>
+						<span class="pixel">{r.button}</span>
+						<div class="bar"><div style:width="{r.pct}%" class:lead={i === 0}></div></div>
+						<span class="muted">{r.votes} {r.votes === 1 ? 'vote' : 'votes'}</span>
+					</li>
+				{/each}
+			</ul>
+		{:else}
+			<p class="muted">No vote open. Press a button to start one.</p>
+		{/if}
+		{#if !children}
+			<p class="muted">Press a button on the pad to vote. Repeat counts merge by median.</p>
+		{/if}
 	</div>
-	{#if open}
-		<ul>
-			{#each rows as r, i (r.button)}
-				<li>
-					<span class="pixel">{r.button}</span>
-					<div class="bar"><div style:width="{r.pct}%" class:lead={i === 0}></div></div>
-					<span class="muted">{r.votes} {r.votes === 1 ? 'vote' : 'votes'}</span>
-				</li>
-			{/each}
-		</ul>
-	{:else}
-		<p class="muted">No vote open. Press a button to start one.</p>
-	{/if}
-	{#if children}
-		{@render children()}
-	{:else}
-		<p class="muted">Press a button on the pad to vote. Repeat counts merge by median.</p>
-	{/if}
+	{#if children}<div class="col side">{@render children()}</div>{/if}
 </section>
 
 <style>
@@ -54,8 +56,35 @@
 		min-height: 0;
 		overflow-y: auto; /* many buttons voted on a short screen: scroll inside, never over the party box */
 	}
-	.card > :not(:last-child) {
+	.col {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		min-width: 0;
+		min-height: 0;
+	}
+	.col > * {
 		flex: none;
+	}
+	/* Split: the vote (2 parts) | Last pressed (3 parts, room for full names), each scrolling on its own. */
+	.card.split {
+		display: grid;
+		grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+		grid-template-rows: minmax(0, 1fr);
+		padding: 16px 0;
+		overflow: hidden;
+	}
+	.split .col {
+		padding: 0 16px 0 20px;
+		overflow-y: auto;
+	}
+	.split .col.side {
+		padding: 0 20px 0 16px;
+		border-left: 1px solid var(--border);
+		overflow: hidden;
+	}
+	.col.side > :global(*) {
+		flex: 1 1 auto;
 	}
 	.head {
 		display: flex;
