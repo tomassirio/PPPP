@@ -18,6 +18,7 @@
 	import Presence from '#lib/components/Presence.svelte';
 	import SoundControl from '#lib/components/SoundControl.svelte';
 	import UserMenu from '#lib/components/UserMenu.svelte';
+	import ShellPicker from '#lib/components/ShellPicker.svelte';
 	import UpNext from '#lib/components/UpNext.svelte';
 	import LastPressed from '#lib/components/LastPressed.svelte';
 	import VoteTally from '#lib/components/VoteTally.svelte';
@@ -233,6 +234,7 @@
 							><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg
 						>
 					</button>
+					<span class="rail-picker"><ShellPicker up /></span>
 				</nav>
 				<div class="pad" class:off={tab !== 'play'}>
 					<Gamepad mode={game.mode} />
@@ -396,7 +398,8 @@
 		display: none;
 	}
 	/* Landscape only (beats the phone tab-bar's ".tabs button" rule). */
-	.tabs .big-toggle {
+	.tabs .big-toggle,
+	.tabs .rail-picker {
 		display: none;
 	}
 	/* Pokédex side banners only where the side margins are wide enough (see the wide media query). */
@@ -719,20 +722,14 @@
 		.pad :global(.controls) {
 			display: none;
 		}
-		/* Colour picker next to the rail (bottom-left), opening upward. */
-		.pad :global(.shells) {
-			position: fixed;
-			top: auto;
-			right: auto;
-			bottom: 17px;
-			left: calc(max(8px, env(safe-area-inset-left)) + 186px);
-			z-index: 31;
+		/* The colour picker lives inside the rail pill here, not in the pad's corner. */
+		.pad :global(.picker-corner) {
+			display: none;
 		}
-		.pad :global(.shells fieldset) {
-			top: auto;
-			bottom: 32px;
-			right: auto;
-			left: 0;
+		.tabs .rail-picker {
+			display: flex;
+			align-items: center;
+			padding: 0 9px;
 		}
 		.tabs .big-toggle {
 			display: flex;
@@ -741,15 +738,41 @@
 			color: color-mix(in oklab, var(--plate, var(--accent-text)), var(--text) var(--name-dim));
 			background: var(--bg);
 		}
-		/* Big screen: the screen takes the full height (still 160:144) and the controls float over it. */
-		.big main {
-			grid-template-columns: 1fr;
-			grid-template-rows: 1fr;
-			grid-template-areas: 'screen';
-		}
+		/* Big screen: the game stretched edge to edge (wider pixels, on purpose); the controls float over it. */
 		.big .screen-slot {
-			height: calc(100dvh - 16px);
-			width: calc((100dvh - 16px - 76px) * 160 / 144 + 32px);
+			position: fixed;
+			inset: 0;
+			z-index: 1;
+			width: auto;
+			height: auto;
+		}
+		.big .screen-slot :global(.fit) {
+			container-type: normal;
+			height: 100%;
+		}
+		.big .screen-slot :global(.bezel) {
+			width: 100%;
+			height: 100%;
+			padding: 0;
+			gap: 0;
+			border-radius: 0;
+		}
+		.big .screen-slot :global(.screen) {
+			aspect-ratio: auto;
+			flex: 1 1 0;
+			min-height: 0;
+			border-radius: 0;
+		}
+		.big .screen-slot :global(.strip) {
+			position: fixed;
+			top: 10px;
+			left: 50%;
+			translate: -50% 0;
+			z-index: 33;
+			min-height: 0;
+			padding: 2px 12px;
+			border-radius: 999px;
+			background: rgb(0 0 0 / 0.5);
 		}
 		.big .pad :global(.dpad),
 		.big .pad :global(.ab),
