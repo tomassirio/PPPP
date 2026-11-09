@@ -125,21 +125,26 @@
 	</div>
 </div>
 
-<p class="last" role="status" aria-live="polite">
-	{#if lastPress}
-		<span class="muted">Last press</span>
-		<strong class="chip pixel">{lastPress}</strong>
-	{/if}
-	{#if status}<span class:error={statusError} class:muted={!statusError}>{status}</span>{/if}
-</p>
-
-<ul class="legend" aria-label="Keyboard controls">
-	<li><span class="caps"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd></span>Move</li>
-	<li><kbd>Z</kbd>A</li>
-	<li><kbd>X</kbd>B</li>
-	<li><kbd>Enter</kbd>Start</li>
-	<li><kbd>Shift</kbd>Select</li>
-</ul>
+<section class="controls panel" class:idle={!lastPress && !status} aria-label="Controls">
+	<div class="head">
+		<h2 class="keys-only">Keyboard</h2>
+		<p class="last" role="status" aria-live="polite">
+			{#if lastPress}<span class="muted">Last press</span><strong class="chip pixel">{lastPress}</strong>{/if}
+			{#if status}<span class:error={statusError} class:muted={!statusError}>{status}</span>{/if}
+		</p>
+	</div>
+	<div class="keys keys-only">
+		<div class="cluster" role="img" aria-label="Arrow keys move">
+			<kbd class="up">↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd>
+		</div>
+		<ul class="map">
+			<li><kbd>Z</kbd><span class="mini round pixel">A</span></li>
+			<li><kbd>X</kbd><span class="mini round pixel">B</span></li>
+			<li><kbd>Enter</kbd><span class="mini pill">START</span></li>
+			<li><kbd>Shift</kbd><span class="mini pill">SELECT</span></li>
+		</ul>
+	</div>
+</section>
 
 <style>
 	.shell {
@@ -227,13 +232,32 @@
 		font-weight: 700;
 		letter-spacing: 0.08em;
 	}
-	.last {
+	.controls {
+		padding: 10px 14px;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+	.head {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		min-height: 24px;
+	}
+	h2 {
 		margin: 0;
-		min-height: 28px;
+		font-size: 11px;
+		font-weight: 600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--muted);
+	}
+	.last {
+		margin: 0 0 0 auto;
 		display: flex;
 		align-items: center;
 		gap: 8px;
-		font-size: 13px;
+		font-size: 12px;
 	}
 	.muted {
 		color: var(--muted);
@@ -243,36 +267,43 @@
 		font-weight: 600;
 	}
 	.chip {
-		padding: 5px 8px;
+		padding: 4px 7px;
 		border-radius: 6px;
-		background: var(--panel);
+		background: var(--bg);
 		border: 1px solid var(--border);
-		font-size: 10px;
+		font-size: 9px;
 		line-height: 1;
 	}
-	/* Keyboard legend: only where there is a keyboard and mouse. */
-	.legend {
-		display: none;
+	.keys {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 16px;
+	}
+	/* Inverted T, like a real keyboard. */
+	.cluster {
+		display: grid;
+		grid-template-columns: repeat(3, 24px);
+		gap: 3px;
+	}
+	.cluster .up {
+		grid-column: 2;
+	}
+	.map {
 		margin: 0;
 		padding: 0;
 		list-style: none;
-		flex-wrap: wrap;
-		justify-content: center;
-		gap: 8px 18px;
-		font-size: 12px;
-		color: var(--muted);
+		display: grid;
+		grid-template-columns: repeat(2, auto);
+		gap: 6px 18px;
 	}
-	.legend li {
+	.map li {
 		display: flex;
 		align-items: center;
-		gap: 6px;
-	}
-	.caps {
-		display: flex;
-		gap: 3px;
+		gap: 8px;
 	}
 	kbd {
-		min-width: 22px;
+		min-width: 24px;
 		height: 22px;
 		padding: 0 6px;
 		box-sizing: border-box;
@@ -280,14 +311,43 @@
 		align-items: center;
 		justify-content: center;
 		border-radius: 5px;
-		background: var(--panel);
+		background: var(--bg);
 		border: 1px solid var(--border);
 		border-bottom-width: 3px;
 		color: var(--text);
 		font: 600 11px/1 var(--body-font);
 	}
+	/* Tiny copies of the pad's buttons, so each key points at what it presses. */
+	.mini.round {
+		width: 20px;
+		height: 20px;
+		font-size: 8px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.mini.pill {
+		min-width: 0;
+		height: 18px;
+		padding: 0 8px;
+		border-radius: 9px;
+		font-size: 9px;
+		display: inline-flex;
+		align-items: center;
+	}
+	/* Keyboard parts only where there is a keyboard and mouse; phones keep just the last press. */
+	.keys-only {
+		display: none;
+	}
+	.controls.idle {
+		display: none;
+	}
 	@media (hover: hover) and (pointer: fine) and (min-width: 761px) {
-		.legend {
+		h2.keys-only {
+			display: block;
+		}
+		.keys.keys-only,
+		.controls.idle {
 			display: flex;
 		}
 	}
