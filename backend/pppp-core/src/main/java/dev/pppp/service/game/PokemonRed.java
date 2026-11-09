@@ -20,12 +20,14 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
     record Mon(int key, int species, String nick, int level, int hp, int maxHp, int status) {}
 
     /** BitSets are indexed by Pokédex number - 1 (bit order of the game's flag arrays). */
-    record State(List<Mon> party, BitSet owned, BitSet seen, int badges, int towns) {}
+    /** Play time is kept to the minute, so the clock does not make a new state every second. */
+    record State(List<Mon> party, BitSet owned, BitSet seen, int badges, int towns, int playHours, int playMinutes) {}
 
     static final int DEX_SIZE = 151;
     private static final int PLAYER_NAME = 0xD158, PARTY_COUNT = 0xD163, PARTY_SPECIES = 0xD164,
             PARTY_MONS = 0xD16B, MON_SIZE = 44, PARTY_NICKS = 0xD2B5, NAME_LENGTH = 11,
-            DEX_OWNED = 0xD2F7, DEX_SEEN = 0xD30A, DEX_BYTES = 19, BADGES = 0xD356, TOWNS_VISITED = 0xD70B;
+            DEX_OWNED = 0xD2F7, DEX_SEEN = 0xD30A, DEX_BYTES = 19, BADGES = 0xD356, TOWNS_VISITED = 0xD70B,
+            PLAY_HOURS = 0xDA41, PLAY_MINUTES = 0xDA43; // wPlayTimeHours, (wPlayTimeMaxed), wPlayTimeMinutes
     private static final int ROM_MON_NAMES = 0x1C21E, ROM_DEX_ORDER = 0x41024, SPECIES_COUNT = 190,
             ROM_BASE_STATS = 0x383DE, BASE_STATS_SIZE = 28, ROM_MEW_BASE_STATS = 0x425B;
 
@@ -77,7 +79,7 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
 
     @Override
     public int ramLength() {
-        return TOWNS_VISITED + 2 - PLAYER_NAME;
+        return PLAY_MINUTES + 1 - PLAYER_NAME;
     }
 
     @Override
@@ -105,7 +107,8 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
         // (pokered StarterDex), before the player owns anything. Not a catch.
         if (owned.equals(STARTER_DEX)) owned = new BitSet();
         return new State(List.copyOf(party), owned,
-                BitSet.valueOf(ram.slice(DEX_SEEN, DEX_BYTES)), ram.u8(BADGES), ram.u16le(TOWNS_VISITED));
+                BitSet.valueOf(ram.slice(DEX_SEEN, DEX_BYTES)), ram.u8(BADGES), ram.u16le(TOWNS_VISITED),
+                ram.u8(PLAY_HOURS), ram.u8(PLAY_MINUTES));
     }
 
     @Override
@@ -152,7 +155,7 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
 
     @Override
     public GameSummary summary(State s) {
-        if (s == null) s = new State(List.of(), new BitSet(), new BitSet(), 0, 0);
+        if (s == null) s = new State(List.of(), new BitSet(), new BitSet(), 0, 0, 0, 0);
         List<GameSummary.Member> party = s.party().stream().map(m -> new GameSummary.Member(display(m),
                 speciesNames[m.species()], m.level(), m.hp(), m.maxHp(), status(m), dexNumber[m.species()])).toList();
         List<GameSummary.Badge> badges = new ArrayList<>();
@@ -161,7 +164,7 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
                 new GameSummary.Counter("Badges", Integer.bitCount(s.badges()), 8),
                 new GameSummary.Counter("Pokédex", owned(s), DEX_SIZE),
                 new GameSummary.Counter("Seen", s.seen().get(0, DEX_SIZE).cardinality(), DEX_SIZE)), party, badges,
-                collection(s));
+                collection(s), s.playMinutes() < 60 ? String.format("%dh %02dm", s.playHours(), s.playMinutes()) : null);
     }
 
     private GameSummary.Collection collection(State s) {

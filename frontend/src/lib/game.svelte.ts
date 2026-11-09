@@ -11,6 +11,7 @@ export type GameSummary = {
 	party: Member[];
 	badges: { name: string; place: string; earned: boolean }[];
 	collection: { size: number; seen: number[]; owned: number[]; names: (string | null)[] };
+	playTime: string | null;
 };
 
 export const game = $state<{ summary: GameSummary | null }>({ summary: null });

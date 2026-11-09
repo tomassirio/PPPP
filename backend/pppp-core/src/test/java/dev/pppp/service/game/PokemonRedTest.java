@@ -58,6 +58,7 @@ class PokemonRedTest {
         assertThat(types(red.diff(levelled, evolved))).containsExactly("EVOLVED", "POKEMON_OBTAINED");
 
         put(0xD16B + 1, new byte[] {0, 0});
+        put(0xDA41, new byte[] {3, 0, 7}); // 3 h, (not maxed), 7 min
         var fainted = red.read(ram());
         assertThat(types(red.diff(evolved, fainted))).containsExactly("POKEMON_FAINTED", "BLACKED_OUT");
         var summary = red.summary(fainted);
@@ -66,6 +67,7 @@ class PokemonRedTest {
         assertThat(summary.badges()).extracting(b -> b.earned()).containsExactly(true, false, false, false, false, false, false, false);
         assertThat(summary.badges().getFirst().place()).isEqualTo("Pewter Gym");
         assertThat(summary.collection().owned()).containsExactly(1, 2);
+        assertThat(summary.playTime()).isEqualTo("3h 07m");
         assertThat(summary.collection().seen()).containsExactly(1, 2); // owned counts as seen
         assertThat(summary.collection().names().get(1)).isEqualTo("Ivysaur");
         assertThat(summary.collection().names().get(15)).isNull(); // unseen: not given away

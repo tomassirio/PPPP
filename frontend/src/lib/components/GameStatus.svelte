@@ -74,9 +74,17 @@
 		<p class="muted">{next ? `Next Gym: ${next.place.replace(/ Gym$/, '')}` : 'All badges earned'}</p>
 		{#if dex}
 			<hr />
-			<div class="dex">
-				<h2 id="dex-h">Pokédex</h2>
-				<p class="muted"><strong>{dex.value}</strong> / {dex.max} owned{#if seen}{' · '}{seen.value} seen{/if}</p>
+			<div class="split">
+				<div class="dex">
+					<h2 id="dex-h">Pokédex</h2>
+					<p class="muted"><strong>{dex.value}</strong> / {dex.max} owned{#if seen}{' · '}{seen.value} seen{/if}</p>
+				</div>
+				{#if summary.playTime}
+					<div class="dex time">
+						<h2 id="time-h">Time played</h2>
+						<p class="muted"><strong>{summary.playTime}</strong></p>
+					</div>
+				{/if}
 			</div>
 		{/if}
 	</section>
@@ -258,10 +266,20 @@
 		filter: grayscale(1) brightness(0.55);
 		opacity: 0.45;
 	}
+	/* Pokédex | Time played, split by a vertical rule. */
+	.split {
+		display: flex;
+		gap: 16px;
+	}
 	.dex {
 		display: flex;
 		flex-direction: column;
 		gap: 6px;
+		min-width: 0;
+	}
+	.time {
+		padding-left: 16px;
+		border-left: 1px solid var(--border);
 	}
 	.dex strong {
 		color: var(--text);

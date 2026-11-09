@@ -4,10 +4,11 @@ import java.util.List;
 
 /**
  * What a game profile shows in the party box (GET /game/state, GAME_STATE): progress counters, the party and the
- * badges in the order they are meant to be earned, and the collection (Pokédex) for the side banners.
+ * badges in the order they are meant to be earned, the collection (Pokédex) for the side banners, and the
+ * in-game play time ("12h 05m", null when the game has no clock).
  */
 public record GameSummary(String game, List<Counter> counters, List<Member> party, List<Badge> badges,
-                          Collection collection) {
+                          Collection collection, String playTime) {
     public record Counter(String label, int value, int max) {}
 
     /** status is a short condition tag ("PSN", "FNT") or null; icon is an id for GET /game/icons/{icon}.png, 0 = none. */
