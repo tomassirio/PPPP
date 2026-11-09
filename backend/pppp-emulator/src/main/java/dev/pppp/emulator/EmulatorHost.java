@@ -228,8 +228,21 @@ public class EmulatorHost {
         if (address < 0 || address > 0xFFFE || (address >= 0xFF00 && address < 0xFF80)) {
             throw new IllegalArgumentException("Address not readable: " + Integer.toHexString(address));
         }
-        // ponytail: one queue round trip per byte; add a batch read when RAM watchers poll many bytes.
-        return call(() -> gb.getAddressSpace().getByte(address) & 0xFF);
+        return readBytes(address, 1)[0] & 0xFF;
+    }
+
+    /** Like {@link #readByte} for {@code length} consecutive bytes, all from the same frame. */
+    public byte[] readBytes(int address, int length) {
+        int end = address + length - 1;
+        if (length < 1 || address < 0 || end > 0xFFFE || (address < 0xFF80 && end >= 0xFF00)) {
+            throw new IllegalArgumentException("Range not readable: " + Integer.toHexString(address) + "+" + length);
+        }
+        return call(() -> {
+            byte[] out = new byte[length];
+            var bus = gb.getAddressSpace();
+            for (int i = 0; i < length; i++) out[i] = (byte) bus.getByte(address + i);
+            return out;
+        });
     }
 
     /**

@@ -7,6 +7,7 @@
 	import type { GameState } from '#lib/play.ts';
 	import Chat from '#lib/components/Chat.svelte';
 	import GameScreen from '#lib/components/GameScreen.svelte';
+	import GameStatus from '#lib/components/GameStatus.svelte';
 	import Gamepad from '#lib/components/Gamepad.svelte';
 	import ModeCard from '#lib/components/ModeCard.svelte';
 	import SoundControl from '#lib/components/SoundControl.svelte';
@@ -111,6 +112,7 @@
 				<ModeCard mode={game.mode} bind:votes={game.modeVotes} />
 				{#if game.mode === 'DEMOCRACY'}<VoteTally tally={game.tally} />{/if}
 				<UpNext />
+				<GameStatus />
 			</section>
 			<section class="chat" class:off={tab !== 'chat'} aria-label="Chat">
 				<Chat />
