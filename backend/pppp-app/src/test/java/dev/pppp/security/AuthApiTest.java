@@ -6,6 +6,7 @@ import dev.pppp.service.AllowlistService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -157,6 +158,16 @@ class AuthApiTest {
                 .andExpect(jsonPath("$.id").value("me@x.com"))
                 .andExpect(jsonPath("$.roles[0]").value("PLAYER"))
                 .andExpect(jsonPath("$.rateLimitRemaining").value(1)); // default limit 2
+    }
+
+    @Test
+    void meIncludesGooglePicture() throws Exception {
+        mvc.perform(get("/api/v1/me").with(oidcLogin()
+                        .authorities(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_PLAYER"))
+                        .idToken(t -> t.claim("email", "pic@x.com").claim("picture", "https://lh3.example/p.jpg"))))
+                .andExpect(jsonPath("$.picture").value("https://lh3.example/p.jpg"));
+        mvc.perform(get("/api/v1/me").with(user("plain@x.com").roles("PLAYER")))
+                .andExpect(jsonPath("$.picture").doesNotExist());
     }
 
     @Test

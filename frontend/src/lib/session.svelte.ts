@@ -1,6 +1,6 @@
 import { api, ApiError } from './api';
 
-export type Me = { id: string; name: string; roles: string[]; rateLimitRemaining: number };
+export type Me = { id: string; name: string; picture: string | null; roles: string[]; rateLimitRemaining: number };
 
 // Shared session state. `me` is null until loaded or when signed out.
 export const session = $state<{ me: Me | null; loaded: boolean }>({ me: null, loaded: false });
