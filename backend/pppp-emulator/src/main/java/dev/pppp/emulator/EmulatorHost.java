@@ -372,6 +372,9 @@ public class EmulatorHost {
         // Always a Game Boy Color: original Game Boy carts get the CGB boot ROM's colour palette.
         return new GameboyConfiguration(rom)
                 .setGameboyType(eu.rekawek.coffeegb.core.GameboyType.CGB)
+                // The CGB boot ROM picks the original cart's palette from its title (Pokémon Red: reds); skipping it
+                // leaves the generic green/blue one. FAST_FORWARD runs it without the logo delay.
+                .setBootstrapMode(Gameboy.BootstrapMode.FAST_FORWARD)
                 .setExecutionMode(eu.rekawek.coffeegb.core.ExecutionMode.PERFORMANCE)
                 .setBatteryStorage(BatteryStorage.direct(batterySave), null);
     }
