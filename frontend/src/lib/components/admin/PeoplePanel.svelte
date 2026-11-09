@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { api } from '#lib/api.ts';
 	import { act } from './admin.svelte';
+	import Pager from './Pager.svelte';
 
 	type Role = 'PLAYER' | 'ADMIN';
 	type User = { id: string; role: Role; banned: boolean };
@@ -10,6 +11,9 @@
 	let email = $state('');
 	let role = $state<Role>('PLAYER');
 	let muteMinutes = $state(10);
+	const PER_PAGE = 10;
+	let page = $state(0);
+	const shown = $derived(users.slice(page * PER_PAGE, (page + 1) * PER_PAGE));
 
 	async function load() {
 		const list = await act('Load users', () => api<User[]>('GET', '/admin/users'), undefined, true);
@@ -33,56 +37,46 @@
 
 <section class="panel" aria-labelledby="people-h">
 	<h2 id="people-h" class="pixel">People</h2>
-	<!-- Inputs below join this form via form="add-user", so they sit in the table's columns. -->
-	<form id="add-user" onsubmit={add}></form>
-	<div class="scroll">
-		<table>
-			<thead><tr><th>Email</th><th>Role</th><th>Banned</th><th></th></tr></thead>
-			<tbody class="controls">
-				<tr>
-					<td><input form="add-user" type="email" required bind:value={email} autocomplete="off" placeholder="Email to add" aria-label="Email to add" /></td>
-					<td>
-						<select form="add-user" bind:value={role} aria-label="Role for new person">
-							<option value="PLAYER">Player</option>
-							<option value="ADMIN">Admin</option>
-						</select>
-					</td>
-					<td></td>
-					<td><button form="add-user" class="primary">Add</button></td>
-				</tr>
-				<tr>
-					<td class="muted"><label for="mute-minutes">Mute duration (minutes)</label></td>
-					<td><input id="mute-minutes" type="number" min="1" max="525600" bind:value={muteMinutes} /></td>
-					<td colspan="2"></td>
-				</tr>
-			</tbody>
-			<tbody>
-				{#each users as u (u.id)}
-					<tr>
-						<td class="wrap">{u.id}</td>
-						<td>
-							<select
-								aria-label={`Role of ${u.id}`}
-								value={u.role}
-								onchange={(e) => change(`Set role of ${u.id}`, () => api('PUT', `/admin/allowlist/${enc(u.id)}`, { role: e.currentTarget.value }))}
-							>
-								<option value="PLAYER">Player</option>
-								<option value="ADMIN">Admin</option>
-							</select>
-						</td>
-						<td>{u.banned ? 'yes' : 'no'}</td>
-						<td class="row">
-							<button onclick={() => change(`Mute ${u.id}`, () => api('POST', `/admin/users/${enc(u.id)}/mute`, { minutes: muteMinutes }))}>Mute</button>
-							{#if !u.banned}
-								<button class="danger" onclick={() => change(`Ban ${u.id}`, () => api('POST', `/admin/users/${enc(u.id)}/ban`), `Ban ${u.id}?`)}>Ban</button>
-							{/if}
-							<button class="danger" onclick={() => change(`Remove ${u.id}`, () => api('DELETE', `/admin/allowlist/${enc(u.id)}`), `Remove ${u.id} from the allowlist?`)}>Remove</button>
-						</td>
-					</tr>
-				{:else}
-					<tr><td colspan="4" class="muted">Allowlist is empty.</td></tr>
-				{/each}
-			</tbody>
-		</table>
+	<!-- One column grid (rows use subgrid): email | role | actions line up across add, mute and every person. -->
+	<div class="people">
+		<form class="person" onsubmit={add}>
+			<input type="email" required bind:value={email} autocomplete="off" placeholder="Email to add" aria-label="Email to add" />
+			<select bind:value={role} aria-label="Role for new person">
+				<option value="PLAYER">Player</option>
+				<option value="ADMIN">Admin</option>
+			</select>
+			<button class="primary">Add</button>
+		</form>
+		<div class="person">
+			<label for="mute-minutes" class="muted">Mute duration (min)</label>
+			<input id="mute-minutes" type="number" min="1" max="525600" bind:value={muteMinutes} />
+		</div>
+		<ul class="list" aria-label="Allowlist">
+			{#each shown as u (u.id)}
+				<li class="person">
+					<span class="email" title={u.id}>{u.id}</span>
+					<select
+						aria-label={`Role of ${u.id}`}
+						value={u.role}
+						onchange={(e) => change(`Set role of ${u.id}`, () => api('PUT', `/admin/allowlist/${enc(u.id)}`, { role: e.currentTarget.value }))}
+					>
+						<option value="PLAYER">Player</option>
+						<option value="ADMIN">Admin</option>
+					</select>
+					<span class="actions">
+						<button onclick={() => change(`Mute ${u.id}`, () => api('POST', `/admin/users/${enc(u.id)}/mute`, { minutes: muteMinutes }))}>Mute</button>
+						{#if u.banned}
+							<span class="badge">Banned</span>
+						{:else}
+							<button class="danger" onclick={() => change(`Ban ${u.id}`, () => api('POST', `/admin/users/${enc(u.id)}/ban`), `Ban ${u.id}?`)}>Ban</button>
+						{/if}
+						<button class="danger" onclick={() => change(`Remove ${u.id}`, () => api('DELETE', `/admin/allowlist/${enc(u.id)}`), `Remove ${u.id} from the allowlist?`)}>Remove</button>
+					</span>
+				</li>
+			{:else}
+				<li class="muted">Allowlist is empty.</li>
+			{/each}
+		</ul>
 	</div>
+	<Pager bind:page total={users.length} perPage={PER_PAGE} label="People pages" noun="people" />
 </section>
