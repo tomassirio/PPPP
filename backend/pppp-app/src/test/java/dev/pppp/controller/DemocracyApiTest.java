@@ -96,16 +96,18 @@ class DemocracyApiTest {
     }
 
     @Test
-    void tieGoesToEarliestAndSecondVoteIsOutvoted() throws Exception {
+    void tieIsRandomAndSecondVoteIsOutvoted() throws Exception {
         democracy(1);
         active("u1", "u2", "u3", "u4", "u5");
         String b = vote("u1", "b");
         String a = vote("u2", "a");
         String again = vote("u1", "a"); // would make A win 2-1 if it counted
         awaitStatus(again, "OUTVOTED");
-        awaitStatus(b, "EXECUTED");
-        awaitStatus(a, "OUTVOTED");
-        assertThat(presses).containsExactly(Button.B);
+        await(() -> presses.size() == 1);
+        boolean bWon = presses.getFirst() == Button.B;
+        assertThat(presses.getFirst()).isIn(Button.A, Button.B);
+        awaitStatus(bWon ? b : a, "EXECUTED");
+        awaitStatus(bWon ? a : b, "OUTVOTED");
     }
 
     @Test

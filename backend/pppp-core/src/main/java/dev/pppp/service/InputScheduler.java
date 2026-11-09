@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component;
  *
  * <p>Democracy entries are votes for their button with their repeat. Window n (n = id of its first vote) opens on
  * the first vote and closes when one button has a strict majority of active players, every active player has
- * voted, or democracyWindowSeconds have passed. Most votes wins, ties go to the button voted first; it presses
+ * voted, or democracyWindowSeconds have passed. Most votes wins, a tie is broken at random; it presses
  * the median of its voters' repeats (lower middle for an even count). Winners EXECUTED, the rest OUTVOTED.
  * A user's second vote in a window is OUTVOTED right away. Votes stay unacked until their window resolves, so a
  * restart re-reads and re-tallies them. An anarchy entry, or the mode switching to ANARCHY, resolves the open
@@ -208,7 +208,9 @@ public class InputScheduler implements SmartLifecycle {
         Map<Button, List<Vote>> byButton = new LinkedHashMap<>(); // insertion order = first vote order
         live.forEach(v -> byButton.computeIfAbsent(v.button(), b -> new ArrayList<>()).add(v));
         List<Vote> winners = List.of();
-        for (var votes : byButton.values()) if (votes.size() > winners.size()) winners = votes; // strict: earliest wins ties
+        int most = byButton.values().stream().mapToInt(List::size).max().orElse(0);
+        List<List<Vote>> tied = byButton.values().stream().filter(v -> v.size() == most).toList();
+        if (!tied.isEmpty()) winners = tied.get(java.util.concurrent.ThreadLocalRandom.current().nextInt(tied.size())); // tie: random
 
         if (!winners.isEmpty()) {
             int[] repeats = winners.stream().mapToInt(Vote::repeat).sorted().toArray();
