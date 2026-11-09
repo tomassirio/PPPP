@@ -84,7 +84,7 @@
 			<p class="sr-only" role="status">{overlay ?? ''}</p>
 		</div>
 		<div class="strip">
-			<span class="live" class:off={!!overlay}>● {overlay ? 'OFFLINE' : 'LIVE'}</span>
+			<span class="live" class:off={!!overlay}><span class="dot" aria-hidden="true">●</span> {overlay ? 'OFFLINE' : 'LIVE'}</span>
 			{@render controls?.()}
 		</div>
 	</div>
@@ -159,6 +159,10 @@
 	}
 	.live.off {
 		color: var(--muted);
+	}
+	/* On air: console on, game running, stream connected. */
+	.live:not(.off) .dot {
+		color: #ff4d4f;
 	}
 	@media (max-width: 640px) {
 		.bezel {
