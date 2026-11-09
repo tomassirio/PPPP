@@ -687,8 +687,8 @@
 			max-width: none;
 			display: grid;
 			grid-template-columns: 1fr auto 1fr;
-			grid-template-rows: 1fr auto;
-			grid-template-areas: 'dpad screen ab' 'dpad meta ab';
+			grid-template-rows: 1fr;
+			grid-template-areas: 'dpad screen ab';
 			align-items: center;
 			justify-items: center;
 			gap: 6px 12px;
@@ -696,8 +696,9 @@
 		}
 		.screen-slot {
 			grid-area: screen;
-			height: calc(100dvh - 16px - 52px);
-			width: calc((100dvh - 16px - 52px - 76px) * 160 / 144 + 32px);
+			/* Full height: Select/Start sit under A/B, not under the screen. */
+			height: calc(100dvh - 16px);
+			width: calc((100dvh - 16px - 76px) * 160 / 144 + 32px);
 		}
 		.screen-slot :global(.fit) {
 			container-type: size;
@@ -722,7 +723,11 @@
 			right: max(28px, env(safe-area-inset-right));
 		}
 		.pad :global(.meta) {
-			grid-area: meta;
+			position: fixed;
+			z-index: 20;
+			right: max(20px, env(safe-area-inset-right));
+			bottom: 12px;
+			gap: 8px;
 		}
 		.pad :global(.controls) {
 			display: none;
@@ -786,11 +791,7 @@
 			z-index: 20;
 			opacity: 0.55;
 		}
-		.big .pad :global(.meta) {
-			left: 50%;
-			bottom: 10px;
-			translate: -50% 0;
-		}
+
 		/* Other tabs: an icon rail in the bottom-left corner; Vote, Party and Chat open as a sheet on the right,
 		   with the game still visible. Play closes it. */
 		.tabs {
