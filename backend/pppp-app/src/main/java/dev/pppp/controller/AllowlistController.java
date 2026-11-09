@@ -86,4 +86,10 @@ public class AllowlistController {
     public void ban(@PathVariable String email) {
         allowlist.ban(email);
     }
+
+    @DeleteMapping("/admin/users/{email}/ban")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unban(@PathVariable String email) {
+        allowlist.unban(email);
+    }
 }

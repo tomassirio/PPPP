@@ -62,7 +62,8 @@ public class AllowlistService {
     public List<User> list() {
         Set<String> banned = repo.banned();
         return repo.roles().entrySet().stream()
-                .map(e -> new User(e.getKey(), e.getValue(), banned.contains(e.getKey())))
+                // ponytail: one Redis read per user for the mute; fine for a friends-sized allowlist.
+                .map(e -> new User(e.getKey(), e.getValue(), banned.contains(e.getKey()), chat.mutedUntil(e.getKey())))
                 .sorted(Comparator.comparing(User::id))
                 .toList();
     }
@@ -81,8 +82,10 @@ public class AllowlistService {
         put(email, role);
     }
 
+    /** Admins can't be removed directly: demote them to player first. */
     public void remove(String email) {
         String id = normalize(email);
+        if (repo.role(id) == Role.ADMIN) throw new IllegalStateException("Demote " + id + " to player before removing them");
         if (!repo.remove(id)) throw notAllowlisted(id);
         events.publishEvent(new UserRevokedEvent(id));
     }
@@ -93,6 +96,12 @@ public class AllowlistService {
         repo.ban(id);
         events.publishEvent(new UserRevokedEvent(id));
         chat.postSystem(id + " was banned");
+    }
+
+    public void unban(String email) {
+        String id = normalize(email);
+        if (!repo.unban(id)) throw new NotFoundException(id + " is not banned");
+        chat.postSystem(id + " was unbanned");
     }
 
 

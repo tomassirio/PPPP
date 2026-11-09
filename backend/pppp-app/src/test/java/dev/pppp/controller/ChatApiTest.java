@@ -4,7 +4,10 @@ import dev.pppp.exception.QueueFullException;
 import dev.pppp.model.InputAccepted;
 import dev.pppp.exception.RateLimitedException;
 import dev.pppp.model.ChatMessage;
+import dev.pppp.service.AllowlistService;
 import dev.pppp.service.ChatService;
+import dev.pppp.model.Role;
+import dev.pppp.model.User;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -51,6 +54,7 @@ class ChatApiTest {
     @Autowired StringRedisTemplate redis;
     @Autowired SettingsService settings;
     @Autowired ChatService chat;
+    @Autowired AllowlistService allowlist;
     @Autowired ObjectMapper json;
     @MockitoBean InputService inputs;
     @MockitoSpyBean EventPublisher events;
@@ -124,6 +128,22 @@ class ChatApiTest {
         redis.opsForHash().put("chat:mutes", "loud@y.z", Long.toString(System.currentTimeMillis() - 1));
         send("loud@y.z", "hi").andExpect(status().isCreated());
         assertThat(redis.opsForHash().hasKey("chat:mutes", "loud@y.z")).isFalse();
+    }
+
+    @Test
+    void unmuteLiftsMuteAndUserListShowsIt() throws Exception {
+        allowlist.put("loud@y.z", Role.PLAYER);
+        mvc.perform(post("/api/v1/admin/users/loud@y.z/mute").with(user("a@y.z").roles("ADMIN")).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"minutes\":5}"))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/api/v1/admin/users").with(user("a@y.z").roles("ADMIN")))
+                .andExpect(jsonPath("$[?(@.id=='loud@y.z')].mutedUntil").isNotEmpty());
+
+        mvc.perform(delete("/api/v1/admin/users/Loud@Y.Z/mute").with(user("a@y.z").roles("ADMIN")).with(csrf()))
+                .andExpect(status().isNoContent());
+        send("loud@y.z", "hi").andExpect(status().isCreated());
+        assertThat(allowlist.list()).filteredOn(u -> u.id().equals("loud@y.z")).extracting(User::mutedUntil).containsOnlyNulls();
+        allowlist.remove("loud@y.z");
     }
 
     @Test
