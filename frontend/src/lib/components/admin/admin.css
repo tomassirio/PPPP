@@ -20,6 +20,7 @@
 }
 .admin main {
 	display: grid;
+	align-items: start;
 	grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr));
 	gap: 16px;
 }
@@ -179,4 +180,20 @@
 }
 .admin main > .group:first-child {
 	margin-top: 0;
+}
+.admin .scroll.saves {
+	max-height: 420px;
+	overflow-y: auto;
+}
+.admin .scroll.saves thead th {
+	position: sticky;
+	top: 0;
+	background: var(--panel);
+}
+.admin .pager {
+	justify-content: space-between;
+}
+.admin button:disabled {
+	opacity: 0.5;
+	cursor: default;
 }
