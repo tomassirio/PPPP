@@ -588,38 +588,53 @@
 			color: var(--pill-ink);
 			font-size: 10px;
 		}
-		/* Two lines on one grid (label | chip | detail), so both rows line up column by column. */
+		/* Side by side, two equal halves split by a rule: label on top, the press (chip + detail) below. */
 		.controls {
 			display: grid;
-			grid-template-columns: max-content max-content max-content;
-			justify-content: center;
-			align-items: center;
-			gap: 4px 10px;
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			align-items: start;
 		}
-		.head,
-		.last,
-		.game-last {
+		.head {
 			display: contents;
 		}
-		.last > * {
-			grid-row: 1;
+		.last,
+		.game-last {
+			display: grid;
+			grid-template-columns: auto auto;
+			grid-template-areas: 'label label' 'chip detail';
+			justify-content: center;
+			align-items: center;
+			gap: 4px 8px;
+			margin: 0;
+			min-width: 0;
+			font-size: 13px;
 		}
-		.game-last > * {
-			grid-row: 2;
+		.last {
+			grid-column: 1;
+		}
+		.game-last {
+			grid-column: 2;
+			border-left: 1px solid var(--border);
 		}
 		.label-wide {
 			display: none;
 		}
 		.label-phone {
 			display: inline;
-			justify-self: end;
+			grid-area: label;
+			justify-self: center;
 			font-size: 10px;
 			font-weight: 600;
 			letter-spacing: 0.1em;
 			text-transform: uppercase;
 		}
 		.controls .chip {
-			justify-self: start;
+			grid-area: chip;
+		}
+		.last > :last-child:not(.chip),
+		.game-last > :last-child {
+			grid-area: detail;
+			min-width: 0;
 		}
 
 	}
