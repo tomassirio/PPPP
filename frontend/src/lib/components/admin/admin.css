@@ -283,3 +283,84 @@
 	width: 100%;
 	min-width: 0;
 }
+
+/* Phones: People as stacked rows, tables as wrapped lines, settings in two columns. */
+@media (max-width: 760px) {
+	.admin .people {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+	.admin .people .person {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 8px;
+	}
+	.admin .people form.person > input[type='email'] {
+		grid-column: 1 / -1;
+	}
+	.admin .people .person > label {
+		align-self: center;
+	}
+	.admin .people .person > input[type='number'] {
+		width: 96px;
+	}
+	.admin .people .list {
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+		max-height: none;
+	}
+	.admin .people .list > li.person {
+		padding: 10px 0;
+		border-bottom: 1px solid var(--border);
+	}
+	.admin .people .email {
+		grid-column: 1 / -1;
+		white-space: normal;
+		overflow-wrap: anywhere;
+		color: var(--text);
+	}
+	.admin .people .actions {
+		justify-content: flex-end;
+	}
+
+	.admin .scroll {
+		overflow-x: visible;
+	}
+	.admin table thead {
+		display: none;
+	}
+	.admin table tr {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 4px 10px;
+		padding: 10px 0;
+		border-bottom: 1px solid var(--border);
+	}
+	.admin th,
+	.admin td,
+	.admin td.row {
+		display: block;
+		padding: 0;
+		border: none;
+		white-space: normal;
+	}
+	.admin td code {
+		overflow-wrap: anywhere;
+	}
+	.admin td:last-child {
+		margin-left: auto;
+	}
+	.admin td[colspan] {
+		margin-left: 0;
+	}
+
+	.admin .grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	.admin .grid label.check {
+		grid-column: 1 / -1;
+	}
+}
