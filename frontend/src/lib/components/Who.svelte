@@ -1,0 +1,51 @@
+<!-- A player: round photo (initials when there is none) and the short name. -->
+<script lang="ts">
+	import { shortUser } from '#lib/play.ts';
+	import { needPicture, presses } from '#lib/presses.svelte.ts';
+
+	let { user }: { user: string } = $props();
+	let broken = $state(false);
+	const picture = $derived(presses.pictures[user]);
+	$effect(() => needPicture(user));
+</script>
+
+<span class="who">
+	{#if picture && !broken}
+		<img class="pic" src={picture} alt="" referrerpolicy="no-referrer" onerror={() => (broken = true)} />
+	{:else}
+		<span class="pic initials" aria-hidden="true">{shortUser(user).slice(0, 2).toUpperCase()}</span>
+	{/if}
+	<span class="name">{shortUser(user)}</span>
+</span>
+
+<style>
+	.who {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		min-width: 0;
+	}
+	.pic {
+		flex: none;
+		width: 18px;
+		height: 18px;
+		border-radius: 50%;
+		object-fit: cover;
+	}
+	.initials {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: #2a9d8f;
+		color: #fff;
+		font-size: 8px;
+		font-weight: 700;
+	}
+	.name {
+		font-size: 13px;
+		color: var(--muted);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+</style>

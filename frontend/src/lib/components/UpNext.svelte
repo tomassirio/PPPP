@@ -1,41 +1,15 @@
-<!-- Queued inputs (GET /api/v1/queue, refreshed after INPUT_EXECUTED) and recently executed ones from SSE.
-     Fills its container's height: the queue on top, then Recent, oldest to newest, kept scrolled to the newest. -->
+<!-- Queued inputs (GET /api/v1/queue, refreshed after INPUT_EXECUTED), then Last pressed. Fills its container. -->
 <script lang="ts">
-	import { tick } from 'svelte';
 	import { api } from '#lib/api.ts';
 	import { on } from '#lib/events.ts';
-	import { formatCommand, shortUser } from '#lib/play.ts';
+	import { formatCommand } from '#lib/play.ts';
+	import LastPressed from './LastPressed.svelte';
+	import Who from './Who.svelte';
 
 	type Queued = { id: string; user: string; command: string };
 	const SHOWN = 5;
 
 	let queue = $state<Queued[]>([]);
-
-	// Player id -> Google photo (GET /players/pictures); refreshed when someone new shows up, at most every 10 s.
-	let pictures = $state<Record<string, string>>({});
-	let picturesAt = 0;
-	async function loadPictures() {
-		if (Date.now() - picturesAt < 10_000) return;
-		picturesAt = Date.now();
-		try {
-			pictures = await api<Record<string, string>>('GET', '/players/pictures');
-		} catch {
-			/* initials instead */
-		}
-	}
-	$effect(() => {
-		const missing = [...queue, ...recent].some((q) => !(q.user in pictures));
-		if (missing || !picturesAt) loadPictures();
-	});
-	let broken = $state<Record<string, boolean>>({});
-	const initials = (user: string) => shortUser(user).slice(0, 2).toUpperCase();
-	let recent = $state<Queued[]>([]);
-	let list = $state<HTMLOListElement>();
-	let stick = true; // false while the reader has scrolled up
-
-	const pin = () => {
-		if (list && stick) list.scrollTop = list.scrollHeight;
-	};
 
 	async function refresh() {
 		try {
@@ -48,37 +22,16 @@
 	$effect(() => {
 		refresh();
 		let t: ReturnType<typeof setTimeout> | undefined;
-		const off = on('INPUT_EXECUTED', async (e: Queued) => {
-			recent = [...recent, e].slice(-30);
+		const off = on('INPUT_EXECUTED', () => {
 			clearTimeout(t);
 			t = setTimeout(refresh, 300);
-			await tick();
-			pin();
 		});
 		return () => {
 			off();
 			clearTimeout(t);
 		};
 	});
-
-	$effect(() => {
-		if (!list) return;
-		const resized = new ResizeObserver(pin);
-		resized.observe(list);
-		return () => resized.disconnect();
-	});
 </script>
-
-{#snippet who(user: string)}
-	<span class="who">
-		{#if pictures[user] && !broken[user]}
-			<img class="pic" src={pictures[user]} alt="" referrerpolicy="no-referrer" onerror={() => (broken[user] = true)} />
-		{:else}
-			<span class="pic initials" aria-hidden="true">{initials(user)}</span>
-		{/if}
-		<span class="muted">{shortUser(user)}</span>
-	</span>
-{/snippet}
 
 <section class="panel card" aria-labelledby="next-h">
 	<div class="head">
@@ -88,24 +41,14 @@
 	{#if queue.length}
 		<ol class="queue">
 			{#each queue.slice(0, SHOWN) as q (q.id)}
-				<li><span class="pixel">{formatCommand(q.command)}</span>{@render who(q.user)}</li>
+				<li><span class="pixel">{formatCommand(q.command)}</span><Who user={q.user} /></li>
 			{/each}
 			{#if queue.length > SHOWN}<li class="muted">+{queue.length - SHOWN} more</li>{/if}
 		</ol>
 	{:else}
 		<p class="muted">Nothing queued.</p>
 	{/if}
-
-	<h3 id="recent-h">Recent</h3>
-	{#if recent.length}
-		<ol class="recent" bind:this={list} aria-labelledby="recent-h" onscroll={() => list && (stick = list.scrollHeight - list.scrollTop - list.clientHeight < 30)}>
-			{#each recent as r (r.id)}
-				<li><span class="pixel">{formatCommand(r.command)}</span>{@render who(r.user)}</li>
-			{/each}
-		</ol>
-	{:else}
-		<p class="muted">No presses yet.</p>
-	{/if}
+	<LastPressed />
 </section>
 
 <style>
@@ -118,19 +61,12 @@
 		height: 100%;
 		min-height: 0;
 	}
-	.recent {
-		flex: 1 1 auto;
-		min-height: 48px;
-		overflow-y: auto;
-		padding-right: 4px;
-	}
 	.head {
 		display: flex;
 		justify-content: space-between;
 		align-items: baseline;
 	}
-	h2,
-	h3 {
+	h2 {
 		margin: 0;
 		font-size: 12px;
 		font-weight: 600;
@@ -161,28 +97,6 @@
 		align-items: center;
 		gap: 12px;
 		font-size: 14px;
-	}
-	.who {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		min-width: 0;
-	}
-	.pic {
-		flex: none;
-		width: 18px;
-		height: 18px;
-		border-radius: 50%;
-		object-fit: cover;
-	}
-	.initials {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		background: #2a9d8f;
-		color: #fff;
-		font-size: 8px;
-		font-weight: 700;
 	}
 	li .pixel {
 		font-size: 10px;

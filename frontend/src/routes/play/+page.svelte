@@ -15,6 +15,7 @@
 	import SoundControl from '#lib/components/SoundControl.svelte';
 	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
 	import UpNext from '#lib/components/UpNext.svelte';
+	import LastPressed from '#lib/components/LastPressed.svelte';
 	import VoteTally from '#lib/components/VoteTally.svelte';
 	import banner from '#lib/assets/banner.webp';
 
@@ -134,7 +135,12 @@
 					<ModeCard mode={game.mode} bind:votes={game.modeVotes} />
 					<!-- The flexible slot: the open vote in democracy (the queue is only votes then), the queue in anarchy. -->
 					<div class="next">
-						{#if game.mode === 'DEMOCRACY'}<VoteTally tally={game.tally} />{:else}<UpNext />{/if}
+						{#if game.mode === 'DEMOCRACY'}
+							<div class="vote"><VoteTally tally={game.tally} /></div>
+							<section class="panel last-card" aria-label="Last pressed"><LastPressed /></section>
+						{:else}
+							<UpNext />
+						{/if}
 					</div>
 				</div>
 				<div class="party" class:off={tab !== 'party'}><GameStatus /></div>
@@ -278,10 +284,26 @@
 		contain: size;
 		min-height: 140px;
 	}
+	/* Anarchy: Up next fills the slot. Democracy: the vote at its size, Last pressed takes the rest. */
+	.next {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
 	.next > :global(*) {
-		height: 100%;
+		flex: 1 1 0;
+		min-height: 0;
 		box-sizing: border-box;
 		overflow-y: auto;
+	}
+	.next > .vote {
+		flex: none;
+	}
+	.last-card {
+		padding: 16px 20px;
+		display: flex;
+		flex-direction: column;
+		min-height: 90px;
 	}
 	.chat {
 		flex: 1 1 340px;
