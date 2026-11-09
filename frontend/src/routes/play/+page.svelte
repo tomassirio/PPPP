@@ -27,6 +27,7 @@
 
 	const me = $derived(session.me);
 	let loadFailed = $state(false);
+	let pictureFailed = $state(false);
 	const initials = $derived(
 		(me?.name ?? '')
 			.split(/[\s@.]+/)
@@ -80,7 +81,12 @@
 			</div>
 			<div class="user">
 				{#if isAdmin(me)}<a href="/admin">Admin</a>{/if}
-				<span class="avatar" title={me.name} aria-label="Signed in as {me.name}">{initials}</span>
+				{#if me.picture && !pictureFailed}
+					<!-- Google photo URLs reject requests that carry a Referer. -->
+					<img class="avatar" src={me.picture} alt="Signed in as {me.name}" title={me.name} referrerpolicy="no-referrer" onerror={() => (pictureFailed = true)} />
+				{:else}
+					<span class="avatar" title={me.name} aria-label="Signed in as {me.name}">{initials}</span>
+				{/if}
 				<button type="button" class="link" onclick={logout}>Sign out</button>
 			</div>
 		</header>
@@ -176,6 +182,9 @@
 	.pill.democracy {
 		background: var(--democracy);
 		color: var(--ink);
+	}
+	img.avatar {
+		object-fit: cover;
 	}
 	.avatar {
 		width: 36px;

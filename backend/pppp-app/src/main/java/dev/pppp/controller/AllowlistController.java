@@ -30,7 +30,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class AllowlistController {
     public record Entry(@NotBlank @Email String email, @NotNull Role role) {}
     public record RoleChange(@NotNull Role role) {}
-    public record Me(String id, String name, List<String> roles, int rateLimitRemaining) {}
+    /** picture: Google profile photo URL, null for non-OIDC logins or accounts without one. */
+    public record Me(String id, String name, String picture, List<String> roles, int rateLimitRemaining) {}
 
     private final AllowlistService allowlist;
     private final RateLimiter rateLimiter;
@@ -43,13 +44,15 @@ public class AllowlistController {
     @GetMapping("/me")
     public Me me(Authentication auth) {
         String id = CurrentUser.id(auth);
-        String name = auth.getPrincipal() instanceof OidcUser o && o.getFullName() != null ? o.getFullName() : id;
+        OidcUser oidc = auth.getPrincipal() instanceof OidcUser o ? o : null;
+        String name = oidc != null && oidc.getFullName() != null ? oidc.getFullName() : id;
+        String picture = oidc != null ? oidc.getPicture() : null;
         List<String> roles = auth.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .filter(a -> a.startsWith("ROLE_"))
                 .map(a -> a.substring(5))
                 .toList();
-        return new Me(id, name, roles, rateLimiter.remaining(id));
+        return new Me(id, name, picture, roles, rateLimiter.remaining(id));
     }
 
     @GetMapping("/admin/allowlist")
