@@ -1,5 +1,7 @@
-<!-- The avatar in the top bar opens this menu: who you are, light/dark (sun/moon), Admin (admins only), Sign out. -->
+<!-- The avatar in the top bar opens this menu: who you are, light/dark (sun/moon), Admin (admins only; Play when
+     already on /admin), Sign out. -->
 <script lang="ts">
+	import { page } from '$app/state';
 	import { isAdmin, logout, type Me } from '#lib/session.svelte.ts';
 	import { setTheme, theme } from '#lib/theme.svelte.ts';
 
@@ -92,7 +94,9 @@
 				</div>
 			</div>
 
-			{#if isAdmin(me)}
+			{#if page.url.pathname.startsWith('/admin')}
+				<a class="item" href="/play">Play</a>
+			{:else if isAdmin(me)}
 				<a class="item" href="/admin">Admin</a>
 			{/if}
 			<button type="button" class="item" onclick={logout}>Sign out</button>
