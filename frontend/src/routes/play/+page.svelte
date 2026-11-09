@@ -24,7 +24,7 @@
 		tally: null,
 		modeVotes: { ANARCHY: 0, DEMOCRACY: 0 }
 	});
-	let tab = $state<'play' | 'vote' | 'chat'>('play');
+	let tab = $state<'play' | 'vote' | 'party' | 'chat'>('play');
 
 	// The screen frame sizes itself to the height left over; on desktop the controller matches its width.
 	let screenSlot = $state<HTMLDivElement>();
@@ -111,7 +111,7 @@
 					</GameScreen>
 				</div>
 				<div class="tabs" role="group" aria-label="Panels">
-					{#each ['play', 'vote', 'chat'] as const as t (t)}
+					{#each ['play', 'vote', 'party', 'chat'] as const as t (t)}
 						<button type="button" aria-pressed={tab === t} onclick={() => (tab = t)}
 							>{t[0].toUpperCase() + t.slice(1)}</button
 						>
@@ -121,11 +121,14 @@
 					<Gamepad mode={game.mode} />
 				</div>
 			</section>
-			<section class="side" class:off={tab !== 'vote'} aria-label="Mode and votes">
-				<ModeCard mode={game.mode} bind:votes={game.modeVotes} />
-				{#if game.mode === 'DEMOCRACY'}<VoteTally tally={game.tally} />{/if}
-				<div class="next"><UpNext /></div>
-				<GameStatus />
+			<section class="side" class:off={tab !== 'vote' && tab !== 'party'} aria-label="Mode, votes and party">
+				<!-- Phones: Vote and Party are separate tabs; desktop: one column (display: contents). -->
+				<div class="voting" class:off={tab !== 'vote'}>
+					<ModeCard mode={game.mode} bind:votes={game.modeVotes} />
+					{#if game.mode === 'DEMOCRACY'}<VoteTally tally={game.tally} />{/if}
+					<div class="next"><UpNext /></div>
+				</div>
+				<div class="party" class:off={tab !== 'party'}><GameStatus /></div>
 			</section>
 			<section class="chat" class:off={tab !== 'chat'} aria-label="Chat">
 				<Chat />
@@ -280,6 +283,10 @@
 	.tabs {
 		display: none;
 	}
+	.voting,
+	.party {
+		display: contents;
+	}
 
 	/* Desktop: the page is exactly one screen tall and never scrolls. The game screen takes the height the
 	   controller leaves; a column that still doesn't fit (very short windows) scrolls inside itself. */
@@ -377,6 +384,14 @@
 		}
 		.chat {
 			height: 70vh;
+		}
+		.voting {
+			display: flex;
+			flex-direction: column;
+			gap: 16px;
+		}
+		.party {
+			display: block;
 		}
 		.off {
 			display: none;

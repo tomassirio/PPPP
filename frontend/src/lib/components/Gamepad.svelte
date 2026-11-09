@@ -305,4 +305,11 @@
 			gap: 10px;
 		}
 	}
+	/* Phones: no keyboard, so no combo box or key hints. */
+	@media (max-width: 760px) {
+		.compound,
+		.hint {
+			display: none;
+		}
+	}
 </style>
