@@ -55,4 +55,10 @@ class ChatController {
     void mute(@PathVariable String id, @Valid @RequestBody MuteRequest body) {
         chat.mute(id.toLowerCase(Locale.ROOT), body.minutes());
     }
+
+    @DeleteMapping("/admin/users/{id}/mute")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void unmute(@PathVariable String id) {
+        chat.unmute(id.toLowerCase(Locale.ROOT));
+    }
 }

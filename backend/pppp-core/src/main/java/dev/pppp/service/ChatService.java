@@ -67,12 +67,20 @@ public class ChatService {
         repo.muteUntil(userId, System.currentTimeMillis() + Duration.ofMinutes(minutes).toMillis());
     }
 
-    private boolean isMuted(String userId) {
-        Long until = repo.mutedUntil(userId);
-        if (until == null) return false;
-        if (until > System.currentTimeMillis()) return true;
+    public void unmute(String userId) {
         repo.unmute(userId);
-        return false;
+    }
+
+    /** Active mute expiry in epoch ms, or null; clears an expired mute. */
+    public Long mutedUntil(String userId) {
+        Long until = repo.mutedUntil(userId);
+        if (until == null || until > System.currentTimeMillis()) return until;
+        repo.unmute(userId);
+        return null;
+    }
+
+    private boolean isMuted(String userId) {
+        return mutedUntil(userId) != null;
     }
 
     private ChatMessage store(String userId, String name, String text, String kind, boolean command) {

@@ -59,4 +59,10 @@ public class AllowlistRepository {
     public void ban(String id) {
         redis.opsForSet().add(BANS, id);
     }
+
+    /** Returns false if the id was not banned. */
+    public boolean unban(String id) {
+        Long removed = redis.opsForSet().remove(BANS, id);
+        return removed != null && removed > 0;
+    }
 }

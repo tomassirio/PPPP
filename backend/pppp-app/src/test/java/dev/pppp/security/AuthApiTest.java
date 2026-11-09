@@ -131,6 +131,26 @@ class AuthApiTest {
     }
 
     @Test
+    void unbanAndAdminsMustBeDemotedBeforeRemoval() throws Exception {
+        allowlist.put("bad@x.com", Role.PLAYER);
+        allowlist.put("boss@x.com", Role.ADMIN);
+        allowlist.ban("bad@x.com");
+
+        mvc.perform(delete("/api/v1/admin/users/Bad@x.com/ban").with(csrf()).with(user("a@x.com").roles("ADMIN")))
+                .andExpect(status().isNoContent());
+        assertThat(allowlist.isBanned("bad@x.com")).isFalse();
+        mvc.perform(delete("/api/v1/admin/users/bad@x.com/ban").with(csrf()).with(user("a@x.com").roles("ADMIN")))
+                .andExpect(status().isNotFound());
+
+        mvc.perform(delete("/api/v1/admin/allowlist/boss@x.com").with(csrf()).with(user("a@x.com").roles("ADMIN")))
+                .andExpect(status().isConflict());
+        assertThat(allowlist.role("boss@x.com")).isEqualTo(Role.ADMIN);
+        allowlist.changeRole("boss@x.com", Role.PLAYER);
+        mvc.perform(delete("/api/v1/admin/allowlist/boss@x.com").with(csrf()).with(user("a@x.com").roles("ADMIN")))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
     void meReportsRolesAndRateLimitRemaining() throws Exception {
         redis.opsForValue().set("ratelimit:me@x.com", "1");
         mvc.perform(get("/api/v1/me").with(user("Me@x.com").roles("PLAYER")))

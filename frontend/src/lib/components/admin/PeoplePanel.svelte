@@ -5,7 +5,7 @@
 	import Pager from './Pager.svelte';
 
 	type Role = 'PLAYER' | 'ADMIN';
-	type User = { id: string; role: Role; banned: boolean };
+	type User = { id: string; role: Role; banned: boolean; mutedUntil: number | null };
 
 	let users = $state<User[]>([]);
 	let email = $state('');
@@ -22,6 +22,7 @@
 	onMount(load);
 
 	const enc = encodeURIComponent;
+	const until = (ms: number) => new Date(ms).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
 
 	// Runs an action that returns no body, then reloads the table.
 	async function change(label: string, fn: () => Promise<unknown>, confirmText?: string) {
@@ -64,13 +65,21 @@
 						<option value="ADMIN">Admin</option>
 					</select>
 					<span class="actions">
-						<button onclick={() => change(`Mute ${u.id}`, () => api('POST', `/admin/users/${enc(u.id)}/mute`, { minutes: muteMinutes }))}>Mute</button>
+						{#if u.mutedUntil}
+							<button title="Muted until {until(u.mutedUntil)}" onclick={() => change(`Unmute ${u.id}`, () => api('DELETE', `/admin/users/${enc(u.id)}/mute`))}>Unmute</button>
+						{:else}
+							<button onclick={() => change(`Mute ${u.id}`, () => api('POST', `/admin/users/${enc(u.id)}/mute`, { minutes: muteMinutes }))}>Mute</button>
+						{/if}
 						{#if u.banned}
-							<span class="badge">Banned</span>
+							<button onclick={() => change(`Unban ${u.id}`, () => api('DELETE', `/admin/users/${enc(u.id)}/ban`))}>Unban</button>
 						{:else}
 							<button class="danger" onclick={() => change(`Ban ${u.id}`, () => api('POST', `/admin/users/${enc(u.id)}/ban`), `Ban ${u.id}?`)}>Ban</button>
 						{/if}
-						<button class="danger" onclick={() => change(`Remove ${u.id}`, () => api('DELETE', `/admin/allowlist/${enc(u.id)}`), `Remove ${u.id} from the allowlist?`)}>Remove</button>
+						{#if u.role === 'ADMIN'}
+							<button class="danger" disabled title="Demote to player first" aria-label="Remove {u.id} (demote to player first)">Remove</button>
+						{:else}
+							<button class="danger" onclick={() => change(`Remove ${u.id}`, () => api('DELETE', `/admin/allowlist/${enc(u.id)}`), `Remove ${u.id} from the allowlist?`)}>Remove</button>
+						{/if}
 					</span>
 				</li>
 			{:else}
