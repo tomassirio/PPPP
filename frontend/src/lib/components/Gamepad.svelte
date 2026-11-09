@@ -247,7 +247,7 @@
 <section class="controls panel" style={vars} class:idle={!lastPress && !status && !gameLast} aria-label="Controls">
 	<div class="head">
 		<h2 class="keys-only">Keyboard</h2>
-		<p class="last" role="status" aria-live="polite">
+		<p class="last" class:empty={!lastPress && !status} role="status" aria-live="polite">
 			{#if lastPress}<span class="muted label-wide">Last press</span><span class="muted label-phone">You</span><strong
 					class="chip pixel">{lastPress}</strong
 				>{/if}
@@ -259,7 +259,7 @@
 		<p class="game-last">
 			<span class="muted label-phone">In game</span>
 			<strong class="chip pixel">{formatCommand(gameLast.command)}</strong>
-			<Who user={gameLast.user} />
+			<Who user={gameLast.user} compact />
 		</p>
 	{/if}
 	<div class="keys keys-only">
@@ -588,53 +588,48 @@
 			color: var(--pill-ink);
 			font-size: 10px;
 		}
-		/* Side by side, two equal halves split by a rule: label on top, the press (chip + detail) below. */
+		/* One compact row, side by side: YOU [chip] | IN GAME [chip] (photo). The game screen matters most. */
 		.controls {
-			display: grid;
-			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-			align-items: start;
+			display: flex;
+			justify-content: center;
+			align-items: center;
 		}
 		.head {
 			display: contents;
 		}
 		.last,
 		.game-last {
-			display: grid;
-			grid-template-columns: auto auto;
-			grid-template-areas: 'label label' 'chip detail';
-			justify-content: center;
+			display: flex;
 			align-items: center;
-			gap: 4px 8px;
+			gap: 6px;
 			margin: 0;
-			min-width: 0;
-			font-size: 13px;
-		}
-		.last {
-			grid-column: 1;
+			padding: 0 12px;
+			min-height: 30px;
+			font-size: 12px;
 		}
 		.game-last {
-			grid-column: 2;
 			border-left: 1px solid var(--border);
+		}
+		.last.empty {
+			display: none;
+		}
+		.head:has(.last.empty) + .game-last {
+			border-left: none;
+		}
+		/* Sent/Voted would not fit; errors still show. */
+		.last > span.muted:not(.label-phone):not(.label-wide) {
+			display: none;
 		}
 		.label-wide {
 			display: none;
 		}
 		.label-phone {
 			display: inline;
-			grid-area: label;
-			justify-self: center;
 			font-size: 10px;
 			font-weight: 600;
 			letter-spacing: 0.1em;
 			text-transform: uppercase;
-		}
-		.controls .chip {
-			grid-area: chip;
-		}
-		.last > :last-child:not(.chip),
-		.game-last > :last-child {
-			grid-area: detail;
-			min-width: 0;
+			white-space: nowrap;
 		}
 
 	}
