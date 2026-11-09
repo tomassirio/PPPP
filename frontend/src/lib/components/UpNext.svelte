@@ -7,7 +7,6 @@
 	import Who from './Who.svelte';
 
 	type Queued = { id: string; user: string; command: string };
-	const SHOWN = 5;
 
 	let queue = $state<Queued[]>([]);
 
@@ -33,37 +32,55 @@
 	});
 </script>
 
+<!-- Two columns split by a rule: the queue (left) and Last pressed (right), each scrolling on its own. -->
 <section class="panel card" aria-labelledby="next-h">
-	<div class="head">
-		<h2 id="next-h">Up next</h2>
-		<span class="muted">{queue.length}{queue.length === 10 ? '+' : ''} queued</span>
+	<div class="col">
+		<div class="head">
+			<h2 id="next-h">Up next</h2>
+			<span class="muted">{queue.length}{queue.length === 10 ? '+' : ''} queued</span>
+		</div>
+		{#if queue.length}
+			<ol class="queue">
+				{#each queue as q (q.id)}
+					<li><span class="pixel">{formatCommand(q.command)}</span><Who user={q.user} /></li>
+				{/each}
+			</ol>
+		{:else}
+			<p class="muted">Nothing queued.</p>
+		{/if}
 	</div>
-	{#if queue.length}
-		<ol class="queue">
-			{#each queue.slice(0, SHOWN) as q (q.id)}
-				<li><span class="pixel">{formatCommand(q.command)}</span><Who user={q.user} /></li>
-			{/each}
-			{#if queue.length > SHOWN}<li class="muted">+{queue.length - SHOWN} more</li>{/if}
-		</ol>
-	{:else}
-		<p class="muted">Nothing queued.</p>
-	{/if}
-	<LastPressed />
+	<div class="col last"><LastPressed /></div>
 </section>
 
 <style>
 	.card {
-		padding: 16px 20px;
-		display: flex;
-		flex-direction: column;
-		gap: 12px;
+		padding: 16px 0;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		grid-template-rows: minmax(0, 1fr);
 		box-sizing: border-box;
 		height: 100%;
 		min-height: 0;
 	}
-	/* Only Last pressed gives up height when the card is short; the queue part never shrinks away. */
-	.card > :not(:last-child) {
+	.col {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		min-height: 0;
+		min-width: 0;
+		padding: 0 16px 0 20px;
+	}
+	.col.last {
+		padding: 0 20px 0 16px;
+		border-left: 1px solid var(--border);
+	}
+	.head {
 		flex: none;
+	}
+	.queue {
+		flex: 1 1 auto;
+		min-height: 0;
+		overflow-y: auto;
 	}
 	.head {
 		display: flex;
