@@ -37,13 +37,11 @@
 	{#if session.me && isAdmin(session.me)}
 		<p class="notice" class:error={notice.error} role="status" aria-live="polite">{notice.text}</p>
 		<main>
-			<h2 class="group">Game</h2>
 			<ConsolePanel />
-			<SaveStatesPanel />
-			<div class="wide"><CartridgesPanel /></div>
-			<h2 class="group">Players &amp; settings</h2>
 			<PeoplePanel />
+			<SaveStatesPanel />
 			<SettingsPanel />
+			<div class="wide"><CartridgesPanel /></div>
 		</main>
 	{:else if session.me}
 		<section class="panel"><p>Admins only. <a href="/play">Go to play</a></p></section>
