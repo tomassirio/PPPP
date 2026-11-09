@@ -38,12 +38,13 @@
 
 	let inFlight = false;
 
-	async function send(command: string) {
+	/** walk: a held direction, pressed by the server long enough to chain steps (see InputScheduler). */
+	async function send(command: string, walk = false) {
 		if (Date.now() < blockedUntil) return;
 		lastPress = command.toUpperCase();
 		inFlight = true;
 		try {
-			await api('POST', '/inputs', { command, repeat: 1 });
+			await api('POST', '/inputs', walk ? { command, repeat: 1, walk } : { command, repeat: 1 });
 			say(mode === 'DEMOCRACY' ? 'Voted' : 'Sent', false);
 		} catch (e) {
 			if (!(e instanceof ApiError)) return say('Network error, try again');
@@ -72,21 +73,33 @@
 	 * per player: a repeat waits until the server accepted the previous one, and pauses while it says slow down
 	 * or queue full. The browser's own key auto-repeat is ignored. Democracy is one vote per window: no repeats.
 	 */
-	const REPEAT_MS = 250;
+	/*
+	 * Held direction (anarchy): a tap first (turn, or one tile when already facing that way, as in the game); if
+	 * still held after WALK_AFTER_MS, walk presses every WALK_MS. The server holds those a bit longer than a step
+	 * with no release, so they chain into smooth walking. One press in flight at a time; paused while the server
+	 * says slow down or queue full.
+	 */
+	const WALK_AFTER_MS = 180;
+	const WALK_MS = 320;
 	const ARROWS: Button[] = ['up', 'down', 'left', 'right'];
 	let repeating: Button | null = null;
-	let repeatTimer: ReturnType<typeof setInterval> | undefined;
+	let repeatTimer: ReturnType<typeof setTimeout> | undefined;
+	/** Arrow keys currently down, oldest first: releasing the newest goes back to walking the previous one. */
+	let heldArrows: Button[] = [];
 
-	function startRepeat(b: Button) {
+	function startRepeat(b: Button, delay = WALK_AFTER_MS) {
 		stopRepeat();
 		repeating = b;
-		repeatTimer = setInterval(() => {
-			if (!inFlight && Date.now() >= blockedUntil) send(b);
-		}, REPEAT_MS);
+		const tick = () => {
+			if (repeating !== b) return;
+			if (!inFlight && Date.now() >= blockedUntil) send(b, true);
+			repeatTimer = setTimeout(tick, WALK_MS);
+		};
+		repeatTimer = setTimeout(tick, delay);
 	}
 
 	function stopRepeat() {
-		clearInterval(repeatTimer);
+		clearTimeout(repeatTimer);
 		repeating = null;
 	}
 
@@ -105,13 +118,32 @@
 		e.preventDefault();
 		held = b;
 		clearTimeout(heldTimer);
-		send(b);
-		if (mode === 'ANARCHY' && ARROWS.includes(b)) startRepeat(b);
-		else heldTimer = setTimeout(() => (held = null), 1000); // in case the keyup never arrives (focus lost)
+		const walking = repeating !== null; // already walking: a new direction walks straight away
+		if (ARROWS.includes(b)) heldArrows = [...heldArrows.filter((x) => x !== b), b];
+		if (mode === 'ANARCHY' && ARROWS.includes(b)) {
+			if (walking) startRepeat(b, 0);
+			else {
+				send(b);
+				startRepeat(b);
+			}
+		} else {
+			send(b);
+			heldTimer = setTimeout(() => (held = null), 1000); // in case the keyup never arrives (focus lost)
+		}
 	}
 
 	function onkeyup(e: KeyboardEvent) {
-		if (repeating && e.key.startsWith('Arrow')) stopRepeat(); // even if focus moved into a text field meanwhile
+		if (e.key.startsWith('Arrow')) {
+			const b = e.key.slice(5).toLowerCase() as Button;
+			heldArrows = heldArrows.filter((x) => x !== b);
+			const back = heldArrows.at(-1);
+			if (back && repeating === b && mode === 'ANARCHY') {
+				startRepeat(back, 0); // still holding another arrow: keep walking that way
+				held = back;
+				return;
+			}
+			if (repeating) stopRepeat(); // even if focus moved into a text field meanwhile
+		}
 		clearTimeout(heldTimer);
 		heldTimer = setTimeout(() => (held = null), 120); // a quick tap still shows
 	}
@@ -148,6 +180,7 @@
 	}
 
 	function onblur() {
+		heldArrows = [];
 		stopRepeat();
 		held = null;
 	}

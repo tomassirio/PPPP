@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class InputService {
+    private static final java.util.Set<Button> DIRECTIONS = java.util.EnumSet.of(Button.UP, Button.DOWN, Button.LEFT, Button.RIGHT);
     private final InputQueueRepository queue;
     private final RateLimiter rateLimiter;
     private final ModeService modes;
@@ -34,15 +35,27 @@ public class InputService {
     }
 
     public InputAccepted submit(String userId, String command, int repeat) {
+        return submit(userId, command, repeat, false);
+    }
+
+    /**
+     * walk = the player is holding a direction (pad or arrow key): pressed long enough to chain steps without a
+     * release in between. Only for a single direction in anarchy; ignored in democracy (one vote per window).
+     */
+    public InputAccepted submit(String userId, String command, int repeat, boolean walk) {
         rateLimiter.check(userId);
         String mode = modes.current();
         List<Button> steps = CommandParser.parse(command, repeat, mode);
+        walk = walk && ModeService.ANARCHY.equals(mode);
+        if (walk && (steps.size() != 1 || !DIRECTIONS.contains(steps.getFirst()))) {
+            throw new IllegalArgumentException("walk is only for a single direction");
+        }
         // ponytail: check-then-add, concurrent submits can overshoot the cap by a few; fine for 18 players.
         // ponytail: fixed 1 s Retry-After; derive from depth x hold frames if clients hammer.
         if (depth() >= settings.input().maxQueueLength()) throw new QueueFullException("Queue is full", 1);
 
         boolean single = steps.stream().distinct().count() == 1;
-        String id = queue.add(userId, CommandParser.serialize(steps), single ? steps.size() : 1, mode);
+        String id = queue.add(userId, CommandParser.serialize(steps), single ? steps.size() : 1, mode, walk);
         queue.setStatus(id, "QUEUED", null);
         modes.markActive(userId);
         return new InputAccepted(id, mode);

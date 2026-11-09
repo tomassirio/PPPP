@@ -155,7 +155,9 @@ public class InputScheduler implements SmartLifecycle {
                 sleep(100); // keep the entry; it runs on resume
                 continue;
             }
-            if (pressAll(CommandParser.deserialize(cmd), id)) {
+            boolean ok = r.walk() ? pressWalk(CommandParser.deserialize(cmd).getFirst(), id)
+                    : pressAll(CommandParser.deserialize(cmd), id);
+            if (ok) {
                 queue.setStatus(id, "EXECUTED", Instant.now());
                 events.publishEvent(new LiveEvent("INPUT_EXECUTED", Map.of("id", id, "user", user, "command", cmd)));
             } else {
@@ -240,6 +242,22 @@ public class InputScheduler implements SmartLifecycle {
             sleep(100);
         }
         return false;
+    }
+
+    /**
+     * A held direction: a bit longer than one 16-frame walking step and no release, so back-to-back walk entries
+     * keep the button down at every step boundary and the player walks smoothly instead of stop-and-go.
+     */
+    public static final int WALK_FRAMES = 20;
+
+    private boolean pressWalk(Button b, String id) {
+        try {
+            host.press(b, WALK_FRAMES, 0);
+            return true;
+        } catch (RuntimeException e) {
+            log.warn("Press failed for input {}: {}", id, e.toString());
+            return false;
+        }
     }
 
     private boolean pressAll(List<Button> steps, String id) {

@@ -88,6 +88,14 @@ class InputApiTest {
     }
 
     @Test
+    void walkHoldsTheDirectionWithoutRelease() throws Exception {
+        String walk = id(submit("red@x.y", "{\"command\":\"up\",\"walk\":true}").andExpect(status().isAccepted()));
+        awaitStatus(walk, "EXECUTED");
+        org.mockito.Mockito.verify(host).press(Button.UP, dev.pppp.service.InputScheduler.WALK_FRAMES, 0);
+        submit("red2@x.y", "{\"command\":\"a\",\"walk\":true}").andExpect(status().isBadRequest());
+    }
+
+    @Test
     void rateLimitedGets429() throws Exception {
         settings.save(new Settings.RateLimit(1));
         submit("gary@x.y", "{\"command\":\"a\"}").andExpect(status().isAccepted());

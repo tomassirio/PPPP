@@ -31,7 +31,8 @@ public class InputQueueRepository {
     private static final Duration STATUS_TTL = Duration.ofMinutes(10);
 
     /** One stream entry. cmd: serialized steps, e.g. "LEFT,LEFT,DOWN". */
-    public record Entry(String id, String user, String cmd, int repeat, String mode) {}
+    /** walk: a held direction (pressed longer, no release), see InputScheduler. */
+    public record Entry(String id, String user, String cmd, int repeat, String mode, boolean walk) {}
 
     /** The inputs:status:{id} hash. executedAt is null unless executed. */
     public record StoredStatus(String status, String executedAt) {}
@@ -43,9 +44,9 @@ public class InputQueueRepository {
     }
 
     /** XADD with approximate MAXLEN trimming. Returns the new entry id. */
-    public String add(String user, String cmd, int repeat, String mode) {
+    public String add(String user, String cmd, int repeat, String mode, boolean walk) {
         return redis.opsForStream().add(STREAM,
-                Map.of("user", user, "cmd", cmd, "repeat", String.valueOf(repeat), "mode", mode),
+                Map.of("user", user, "cmd", cmd, "repeat", String.valueOf(repeat), "mode", mode, "walk", String.valueOf(walk)),
                 XAddOptions.maxlen(MAXLEN).approximateTrimming(true)).getValue();
     }
 
@@ -139,7 +140,8 @@ public class InputQueueRepository {
     private static Entry entry(MapRecord<String, Object, Object> r) {
         Map<Object, Object> v = r.getValue();
         return new Entry(r.getId().getValue(), (String) v.get("user"), (String) v.get("cmd"),
-                Integer.parseInt((String) v.getOrDefault("repeat", "1")), (String) v.get("mode"));
+                Integer.parseInt((String) v.getOrDefault("repeat", "1")), (String) v.get("mode"),
+                "true".equals(v.get("walk")));
     }
 
     private static String statusKey(String id) {
