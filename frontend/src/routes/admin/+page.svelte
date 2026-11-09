@@ -40,8 +40,8 @@
 			<div class="column">
 				<h2 class="group">Game</h2>
 				<ConsolePanel />
-				<SaveStatesPanel />
 				<CartridgesPanel />
+				<SaveStatesPanel />
 			</div>
 			<div class="column">
 				<h2 class="group">Players &amp; settings</h2>
