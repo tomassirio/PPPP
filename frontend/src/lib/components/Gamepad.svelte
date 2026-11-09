@@ -391,10 +391,14 @@
 		letter-spacing: 0.08em;
 	}
 	/* The Pibtendo oval from the sign-in handheld, embossed in the shell's own colour. */
+	/* Floats in the shell's top padding, between the d-pad and A/B: adds no height to the pad. */
 	.pib {
-		align-self: center;
-		margin: -8px 0 -4px;
-		padding: 3px 14px;
+		position: absolute;
+		top: 8px;
+		left: 50%;
+		translate: -50% 0;
+		margin: 0;
+		padding: 2px 10px;
 		border-radius: 999px;
 		--emboss: color-mix(in oklab, var(--shell), black 28%);
 		--emboss-hi: color-mix(in oklab, var(--shell), white 40%);
@@ -402,7 +406,7 @@
 		box-shadow:
 			0 1px 0 0 var(--emboss-hi),
 			inset 0 1px 0 0 var(--emboss-hi);
-		font: italic 800 13px/1 var(--body-font);
+		font: italic 800 11px/1 var(--body-font);
 		letter-spacing: 0.01em;
 		color: var(--emboss);
 		text-shadow: 0 1px 0 var(--emboss-hi);
