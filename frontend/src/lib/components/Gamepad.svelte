@@ -591,11 +591,18 @@
 		/* One compact row, side by side: YOU [chip] | IN GAME [chip] (photo). The game screen matters most. */
 		.controls {
 			display: flex;
+			flex-direction: row; /* the card is a column on desktop */
+			flex-wrap: nowrap;
 			justify-content: center;
 			align-items: center;
+			gap: 0;
 		}
 		.head {
 			display: contents;
+		}
+		.controls .chip {
+			padding: 4px 9px;
+			font-size: 9px;
 		}
 		.last,
 		.game-last {
@@ -603,9 +610,10 @@
 			align-items: center;
 			gap: 6px;
 			margin: 0;
-			padding: 0 12px;
-			min-height: 30px;
+			padding: 0 10px;
+			min-height: 26px;
 			font-size: 12px;
+			white-space: nowrap;
 		}
 		.game-last {
 			border-left: 1px solid var(--border);
