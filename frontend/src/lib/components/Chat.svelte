@@ -318,6 +318,7 @@
 		overflow-y: auto;
 	}
 	li {
+		position: relative; /* anchors the screen-reader-only "System:" inside the scrolled list */
 		font-size: 14px;
 		line-height: 20px;
 		overflow-wrap: anywhere;

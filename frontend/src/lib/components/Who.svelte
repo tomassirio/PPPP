@@ -21,6 +21,7 @@
 
 <style>
 	.who {
+		position: relative; /* anchors the screen-reader-only name inside scrolled lists */
 		display: flex;
 		align-items: center;
 		gap: 6px;

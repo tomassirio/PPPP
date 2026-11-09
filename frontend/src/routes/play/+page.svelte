@@ -190,7 +190,7 @@
 <svelte:window onpointerdowncapture={closeSheetOnOutsideTap} onclickcapture={swallowClosingClick} />
 
 {#if me}
-	<div class="page" class:big={bigScreen} style:--plate={currentShell.value.shell} style:--plate-ink={inkFor(currentShell.value.shell)}>
+	<div class="page play-root" class:big={bigScreen} style:--plate={currentShell.value.shell} style:--plate-ink={inkFor(currentShell.value.shell)}>
 		<header>
 			<div class="brand">
 				<img class="logo" src={banner} alt="Pibs&amp;PibettesPlayPokemon" width="924" height="111" />
@@ -418,6 +418,11 @@
 	/* Desktop: the page is exactly one screen tall and never scrolls. The game screen takes the height the
 	   controller leaves; a column that still doesn't fit (very short windows) scrolls inside itself. */
 	@media (min-width: 1100px) and (min-height: 600px) {
+		/* Only while /play is shown (this CSS stays loaded after navigating to /admin). */
+		:global(html:has(.play-root)),
+		:global(body:has(.play-root)) {
+			overflow: hidden; /* one-screen layout: the page never scrolls, only panels inside it */
+		}
 		.page {
 			height: 100dvh;
 			display: flex;
@@ -489,6 +494,13 @@
 		outline-offset: 2px;
 	}
 
+	@media (max-width: 760px), (orientation: landscape) and (max-height: 520px) {
+		/* Only while /play is shown (this CSS stays loaded after navigating to /admin). */
+		:global(html:has(.play-root)),
+		:global(body:has(.play-root)) {
+			overflow: hidden;
+		}
+	}
 	@media (max-width: 760px) {
 		/* One row: badge + mode on the left, online + account menu on the right. */
 		header {
