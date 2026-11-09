@@ -1,4 +1,5 @@
-FROM maven:3.9-eclipse-temurin-21 AS build
+# Build on the runner's own arch: the jar is portable, only the runtime image is arm64.
+FROM --platform=$BUILDPLATFORM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /src
 COPY pom.xml .
 COPY pppp-emulator/pom.xml pppp-emulator/

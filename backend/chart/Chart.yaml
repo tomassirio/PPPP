@@ -1,0 +1,6 @@
+apiVersion: v2
+name: pppp-backend
+description: PPPP backend (Spring Boot + emulator) and its Redis
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
