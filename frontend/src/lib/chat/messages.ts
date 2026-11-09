@@ -35,5 +35,38 @@ export function nameColor(user: string): string {
 	return NAME_COLORS[Math.abs(h) % NAME_COLORS.length];
 }
 
-/** Splits text so the mode names can be coloured; rejoined parts equal the input. */
-export const modeParts = (text: string) => text.split(/\b(ANARCHY|DEMOCRACY)\b/).filter(Boolean);
+/**
+ * Pokémon Red towns in their gym badge's colour (Celadon's Rainbow Badge is drawn as a gradient, 'rainbow').
+ * Towns without a gym get a colour of their own. Routes and other places stay plain.
+ */
+export const TOWN_COLORS: Record<string, string> = {
+	'Pallet Town': '#e8eef2',
+	'Viridian City': '#4cd17a', // Earth
+	'Pewter City': '#b4bcc6', // Boulder
+	'Cerulean City': '#5cb8ff', // Cascade
+	'Lavender Town': '#b9a3ff',
+	'Vermilion City': '#ffa53a', // Thunder
+	'Celadon City': 'rainbow', // Rainbow
+	'Fuchsia City': '#ff8ab8', // Soul
+	'Saffron City': '#f5c542', // Marsh
+	'Cinnabar Island': '#ff6b5b', // Volcano
+	'Indigo Plateau': '#8f9dff'
+};
+
+export type Part = { text: string; mode?: 'anarchy' | 'democracy'; town?: string };
+
+const HIGHLIGHT = new RegExp(`\\b(ANARCHY|DEMOCRACY|${Object.keys(TOWN_COLORS).join('|')})\\b`);
+
+/** Splits a system line so mode names and towns can be coloured; the parts' text rejoins to the input. */
+export function systemParts(text: string): Part[] {
+	return text
+		.split(HIGHLIGHT)
+		.filter(Boolean)
+		.map((t) =>
+			t === 'ANARCHY' || t === 'DEMOCRACY'
+				? { text: t, mode: t.toLowerCase() as Part['mode'] }
+				: t in TOWN_COLORS
+					? { text: t, town: TOWN_COLORS[t] }
+					: { text: t }
+		);
+}

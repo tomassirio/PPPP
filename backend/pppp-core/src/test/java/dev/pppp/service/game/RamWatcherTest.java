@@ -30,6 +30,7 @@ class RamWatcherTest {
         System.arraycopy("POKEMON RED".getBytes(), 0, rom, 0x134, 11);
         rom[0x14A] = 1;
         PokemonRedTest.name(rom, PokemonRedTest.BULBASAUR, "BULBASAUR", 1);
+        PokemonRedTest.name(rom, PokemonRedTest.IVYSAUR, "IVYSAUR", 2);
         Path romFile = Files.write(dir.resolve("red.gb"), rom);
 
         EmulatorHost host = mock(EmulatorHost.class);
@@ -61,10 +62,18 @@ class RamWatcherTest {
         assertThat(gameEvents(published)).extracting(GameEvent::type, GameEvent::lastPlayer)
                 .containsExactly(org.assertj.core.groups.Tuple.tuple("BADGE_EARNED", "ash@x.y"));
 
+        byte[] inPlay = ram.mem.clone();
+        java.util.Arrays.fill(ram.mem, (byte) 0); // a moment out of play (no player name)
+        for (int i = 0; i < RamWatcher.STABLE_READS; i++) watcher.poll();
+        System.arraycopy(inPlay, 0, ram.mem, 0, inPlay.length);
+        ram.mem[ram.off(0xD2F7)] |= 0b10; // ... and something happened meanwhile: still announced
+        for (int i = 0; i < RamWatcher.STABLE_READS; i++) watcher.poll();
+        assertThat(gameEvents(published)).extracting(GameEvent::type).containsExactly("BADGE_EARNED", "POKEMON_OBTAINED");
+
         watcher.onLiveEvent(new LiveEvent("CONSOLE_CHANGED", null)); // e.g. a save state loaded
         ram.mem[ram.off(0xD356)] = 3;
         for (int i = 0; i < RamWatcher.STABLE_READS + 2; i++) watcher.poll();
-        assertThat(gameEvents(published)).hasSize(1);
+        assertThat(gameEvents(published)).hasSize(2);
     }
 
     static List<GameEvent> gameEvents(List<Object> published) {

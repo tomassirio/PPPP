@@ -89,7 +89,9 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
         for (int i = 0; i < count; i++) {
             int base = PARTY_MONS + i * MON_SIZE;
             int species = ram.u8(base);
-            if (species < 1 || species > SPECIES_COUNT || species != ram.u8(PARTY_SPECIES + i)) return null;
+            // Adding a Pokémon, the game writes the species list, asks for a nickname, and only then the data:
+            // skip a member that is mid-write rather than calling the whole game out of play.
+            if (species < 1 || species > SPECIES_COUNT || species != ram.u8(PARTY_SPECIES + i)) continue;
             party.add(new Mon(ram.u16(base + 0x0C) << 16 | ram.u16(base + 0x1B), species,
                     text(ram.slice(PARTY_NICKS + i * NAME_LENGTH, NAME_LENGTH), 0, NAME_LENGTH),
                     ram.u8(base + 0x21), ram.u16(base + 1), ram.u16(base + 0x22), ram.u8(base + 4)));

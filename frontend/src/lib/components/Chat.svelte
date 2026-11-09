@@ -4,7 +4,7 @@
 	import { api, ApiError } from '../api';
 	import { on } from '../events';
 	import { session, isAdmin } from '../session.svelte';
-	import { merge, modeParts, remove, nameColor, type ChatMessage } from '../chat/messages';
+	import { merge, remove, nameColor, systemParts, type ChatMessage } from '../chat/messages';
 
 	const PAGE = 50;
 	const MAX = 300;
@@ -184,11 +184,12 @@
 		{/if}
 		{#each shown as m (m.id)}
 			{@const system = isSystem(m)}
-			<li class:system class:mine={m.user === session.me?.id} title={time(m.at)}>
+			<li class:system class:mine={m.user === session.me?.id}>
+				<time class="ts" datetime={new Date(m.at).toISOString()}>{time(m.at)}</time>
 				<span class="who" style:color={system ? undefined : nameColor(m.user)}>{m.kind === 'ADMIN' ? 'Admin' : m.name}</span>
 				{#if m.command}<span class="tag">command</span>{/if}
 				<span class="text"
-					>{#if system}{#each modeParts(m.text) as part, i (i)}{#if part === 'ANARCHY' || part === 'DEMOCRACY'}<span class="mode {part.toLowerCase()}">{part}</span>{:else}{part}{/if}{/each}{:else}{m.text}{/if}</span
+					>{#if system}{#each systemParts(m.text) as part, i (i)}{#if part.mode}<span class="mode {part.mode}">{part.text}</span>{:else if part.town === 'rainbow'}<span class="town rainbow">{part.text}</span>{:else if part.town}<span class="town" style:color={part.town}>{part.text}</span>{:else}{part.text}{/if}{/each}{:else}{m.text}{/if}</span
 				>
 				{#if admin && !system}
 					<span class="mod">
@@ -263,6 +264,23 @@
 	}
 	.anarchy {
 		color: var(--anarchy);
+	}
+	.town {
+		font-style: normal;
+		font-weight: 700;
+	}
+	.town.rainbow {
+		background: linear-gradient(90deg, #ff6b5b, #ffa53a, #f5c542, #4cd17a, #5cb8ff, #b9a3ff);
+		background-clip: text;
+		-webkit-background-clip: text;
+		color: transparent;
+	}
+	.ts {
+		margin-right: 6px;
+		font-size: 11px;
+		font-style: normal;
+		font-variant-numeric: tabular-nums;
+		color: var(--muted);
 	}
 	.democracy {
 		color: var(--democracy);

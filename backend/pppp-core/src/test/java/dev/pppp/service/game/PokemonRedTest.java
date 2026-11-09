@@ -75,6 +75,19 @@ class PokemonRedTest {
     }
 
     @Test
+    void halfAddedPokemonIsSkippedNotOutOfPlay() {
+        var start = red.read(ram());
+        addMon(0, BULBASAUR, "BULBASAUR", 5, 20, 1);
+        mem[off(0xD16B)] = 0; // species list says Bulbasaur, its data is not written yet (nickname prompt)
+        var naming = red.read(ram());
+        assertThat(naming).isNotNull();
+        assertThat(naming.party()).isEmpty();
+        mem[off(0xD16B)] = (byte) BULBASAUR;
+        dexOwned(1);
+        assertThat(types(red.diff(naming, red.read(ram())))).containsExactly("POKEMON_OBTAINED");
+    }
+
+    @Test
     void reorderingThePartyIsNotNews() {
         addMon(0, BULBASAUR, "BULBASAUR", 5, 20, 1);
         addMon(1, PIDGEY, "BIRDY", 9, 30, 2);

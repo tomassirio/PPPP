@@ -25,8 +25,9 @@ import org.springframework.stereotype.Service;
  * during screen transitions). Each confirmed state is published as GAME_STATE; the profile's events between two
  * confirmed states go to game:events, GAME_EVENT and chat.
  *
- * <p>The first confirmed state after the game comes into play (or after any CONSOLE_CHANGED, e.g. a loaded save
- * state) is a baseline and fires nothing, so loading progress never replays it as news.
+ * <p>The first confirmed state after the cartridge loads (or after any CONSOLE_CHANGED, e.g. a reset or a loaded
+ * save state) is a baseline and fires nothing, so loading progress never replays it as news. Moments where the
+ * profile reads "not in play" keep the last state.
  */
 @Service
 public class RamWatcher {
@@ -157,10 +158,11 @@ public class RamWatcher {
                 return;
             }
             if (stable < STABLE_READS) stable++;
-            if (stable < STABLE_READS || Objects.equals(current, confirmed)) return;
+            // Out of play for a moment (a menu, a transition): keep the last state, so nothing gets swallowed.
+            // Resets, power, loaded states and cartridge swaps re-baseline through CONSOLE_CHANGED instead.
+            if (stable < STABLE_READS || current == null || Objects.equals(current, confirmed)) return;
             S before = confirmed;
             confirmed = current;
-            if (current == null) return; // out of play: the next state in play is a fresh baseline
             summary = profile.summary(current);
             events.publishEvent(new LiveEvent("GAME_STATE", summary));
             if (before != null) profile.diff(before, current).forEach(RamWatcher.this::announce);
