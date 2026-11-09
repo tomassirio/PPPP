@@ -87,11 +87,12 @@
 	{#if autosave}
 		<form onsubmit={save('autosave', autosave)}>
 			<h3>Autosave</h3>
+			<label class="check"><input type="checkbox" bind:checked={autosave.enabled} /> Enabled</label>
 			<div class="grid">
-				<label class="check"><input type="checkbox" bind:checked={autosave.enabled} /> Enabled</label>
 				<label>
 					Quartz cron
 					<input type="text" required spellcheck="false" bind:value={autosave.cron} placeholder="0 0/30 * * * ?" />
+					<span class="hint">sec min hour day month weekday · 0 0/30 * * * ? = every 30 min</span>
 				</label>
 				<label>
 					Keep (newest)

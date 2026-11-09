@@ -33,24 +33,29 @@
 
 <section class="panel" aria-labelledby="people-h">
 	<h2 id="people-h" class="pixel">People</h2>
-	<form class="row" onsubmit={add}>
-		<label>Email <input type="email" required bind:value={email} autocomplete="off" /></label>
-		<label>
-			Role
-			<select bind:value={role}>
-				<option value="PLAYER">Player</option>
-				<option value="ADMIN">Admin</option>
-			</select>
-		</label>
-		<button class="primary">Add</button>
-	</form>
-	<label class="row">
-		Mute duration (minutes)
-		<input type="number" min="1" max="525600" bind:value={muteMinutes} />
-	</label>
+	<!-- Inputs below join this form via form="add-user", so they sit in the table's columns. -->
+	<form id="add-user" onsubmit={add}></form>
 	<div class="scroll">
 		<table>
 			<thead><tr><th>Email</th><th>Role</th><th>Banned</th><th></th></tr></thead>
+			<tbody class="controls">
+				<tr>
+					<td><input form="add-user" type="email" required bind:value={email} autocomplete="off" placeholder="Email to add" aria-label="Email to add" /></td>
+					<td>
+						<select form="add-user" bind:value={role} aria-label="Role for new person">
+							<option value="PLAYER">Player</option>
+							<option value="ADMIN">Admin</option>
+						</select>
+					</td>
+					<td></td>
+					<td><button form="add-user" class="primary">Add</button></td>
+				</tr>
+				<tr>
+					<td class="muted"><label for="mute-minutes">Mute duration (minutes)</label></td>
+					<td><input id="mute-minutes" type="number" min="1" max="525600" bind:value={muteMinutes} /></td>
+					<td colspan="2"></td>
+				</tr>
+			</tbody>
 			<tbody>
 				{#each users as u (u.id)}
 					<tr>
