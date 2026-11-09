@@ -60,7 +60,11 @@ class PokemonRedTest {
         put(0xD16B + 1, new byte[] {0, 0});
         var fainted = red.read(ram());
         assertThat(types(red.diff(evolved, fainted))).containsExactly("POKEMON_FAINTED", "BLACKED_OUT");
-        assertThat(red.summary(fainted).party().getFirst().status()).isEqualTo("FNT");
+        var summary = red.summary(fainted);
+        assertThat(summary.party().getFirst().status()).isEqualTo("FNT");
+        assertThat(summary.party().getFirst().icon()).isEqualTo(2); // Ivysaur's Pokédex number
+        assertThat(summary.badges()).extracting(b -> b.earned()).containsExactly(true, false, false, false, false, false, false, false);
+        assertThat(summary.badges().getFirst().place()).isEqualTo("Pewter Gym");
     }
 
     @Test

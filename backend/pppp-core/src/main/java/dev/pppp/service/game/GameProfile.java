@@ -31,4 +31,9 @@ public interface GameProfile<S> {
     List<GameEvent> diff(S before, S after);
 
     GameSummary summary(S state);
+
+    /** PNG for a {@link GameSummary.Member#icon()} id, or null. Called from request threads. */
+    default byte[] icon(int id) {
+        return null;
+    }
 }

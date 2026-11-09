@@ -41,5 +41,6 @@ class GameApiTest {
     @Test
     void noStateWithoutACartridge() throws Exception {
         mvc.perform(get("/api/v1/game/state").with(user("x@y.z").roles("PLAYER"))).andExpect(status().isNoContent());
+        mvc.perform(get("/api/v1/game/icons/25.png").with(user("x@y.z").roles("PLAYER"))).andExpect(status().isNotFound());
     }
 }

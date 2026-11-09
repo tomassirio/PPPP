@@ -43,7 +43,7 @@ public class RamWatcher {
     private volatile boolean rebaseline;
     private volatile GameSummary summary;
     private String cartridgeId; // poll thread only
-    private Tracker<?> tracker;
+    private volatile Tracker<?> tracker;
 
     public RamWatcher(EmulatorHost host, CartridgeService cartridges, GameEventRepository repo, ChatService chat,
                       ApplicationEventPublisher events) {
@@ -57,6 +57,12 @@ public class RamWatcher {
     /** The latest confirmed state of the inserted game, or null when it has no profile or has not been played yet. */
     public GameSummary summary() {
         return summary;
+    }
+
+    /** PNG for an icon id of the current summary, or null. */
+    public byte[] icon(int id) {
+        Tracker<?> t = tracker;
+        return t == null ? null : t.profile.icon(id);
     }
 
     public List<GameEvent> history(int limit) {

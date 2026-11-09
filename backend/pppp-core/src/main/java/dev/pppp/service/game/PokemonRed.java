@@ -8,6 +8,7 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Pokémon Red (international release). Addresses are the pret/pokered symbols (wPartyCount, wPokedexOwned,
@@ -25,10 +26,13 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
     private static final int PLAYER_NAME = 0xD158, PARTY_COUNT = 0xD163, PARTY_SPECIES = 0xD164,
             PARTY_MONS = 0xD16B, MON_SIZE = 44, PARTY_NICKS = 0xD2B5, NAME_LENGTH = 11,
             DEX_OWNED = 0xD2F7, DEX_SEEN = 0xD30A, DEX_BYTES = 19, BADGES = 0xD356, TOWNS_VISITED = 0xD70B;
-    private static final int ROM_MON_NAMES = 0x1C21E, ROM_DEX_ORDER = 0x41024, SPECIES_COUNT = 190;
+    private static final int ROM_MON_NAMES = 0x1C21E, ROM_DEX_ORDER = 0x41024, SPECIES_COUNT = 190,
+            ROM_BASE_STATS = 0x383DE, BASE_STATS_SIZE = 28, ROM_MEW_BASE_STATS = 0x425B;
 
     private static final String[] BADGE_NAMES = {"Boulder", "Cascade", "Thunder", "Rainbow", "Soul", "Marsh", "Volcano", "Earth"};
     private static final String[] LEADERS = {"Brock", "Misty", "Lt. Surge", "Erika", "Koga", "Sabrina", "Blaine", "Giovanni"};
+    private static final String[] GYMS = {"Pewter Gym", "Cerulean Gym", "Vermilion Gym", "Celadon Gym", "Fuchsia Gym",
+            "Saffron Gym", "Cinnabar Gym", "Viridian Gym"};
     /** Map ids 0-10, the bit order of wTownVisitedFlag. */
     private static final String[] TOWNS = {"Pallet Town", "Viridian City", "Pewter City", "Cerulean City",
             "Lavender Town", "Vermilion City", "Celadon City", "Fuchsia City", "Cinnabar Island", "Indigo Plateau",
@@ -37,6 +41,9 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
     private final String[] speciesNames = new String[SPECIES_COUNT + 1]; // by internal species id
     private final int[] dexNumber = new int[SPECIES_COUNT + 1];
     private final String[] namesByDex = new String[DEX_SIZE + 1];
+    private final int[] speciesByDex = new int[DEX_SIZE + 1];
+    private final byte[] rom;
+    private final Map<Integer, byte[]> icons = new ConcurrentHashMap<>();
 
     /** "POKEMON RED" with the non-Japanese destination code; the Japanese release has other addresses. */
     static boolean matches(byte[] rom) {
@@ -46,10 +53,14 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
     }
 
     PokemonRed(byte[] rom) {
+        this.rom = rom;
         for (int id = 1; id <= SPECIES_COUNT; id++) {
             speciesNames[id] = titleCase(text(rom, ROM_MON_NAMES + (id - 1) * 10, 10));
             dexNumber[id] = rom[ROM_DEX_ORDER + id - 1] & 0xFF;
-            if (dexNumber[id] >= 1 && dexNumber[id] <= DEX_SIZE) namesByDex[dexNumber[id]] = speciesNames[id];
+            if (dexNumber[id] >= 1 && dexNumber[id] <= DEX_SIZE) {
+                namesByDex[dexNumber[id]] = speciesNames[id];
+                speciesByDex[dexNumber[id]] = id;
+            }
         }
     }
 
@@ -130,11 +141,31 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
     @Override
     public GameSummary summary(State s) {
         List<GameSummary.Member> party = s.party().stream().map(m -> new GameSummary.Member(display(m),
-                speciesNames[m.species()], m.level(), m.hp(), m.maxHp(), status(m))).toList();
+                speciesNames[m.species()], m.level(), m.hp(), m.maxHp(), status(m), dexNumber[m.species()])).toList();
+        List<GameSummary.Badge> badges = new ArrayList<>();
+        for (int i = 0; i < 8; i++) badges.add(new GameSummary.Badge(BADGE_NAMES[i], GYMS[i], (s.badges() & 1 << i) != 0));
         return new GameSummary("Pokémon Red", List.of(
                 new GameSummary.Counter("Badges", Integer.bitCount(s.badges()), 8),
                 new GameSummary.Counter("Pokédex", owned(s), DEX_SIZE),
-                new GameSummary.Counter("Seen", s.seen().get(0, DEX_SIZE).cardinality(), DEX_SIZE)), party);
+                new GameSummary.Counter("Seen", s.seen().get(0, DEX_SIZE).cardinality(), DEX_SIZE)), party, badges);
+    }
+
+    /** The front sprite of Pokédex number id, decompressed from the ROM. */
+    @Override
+    public byte[] icon(int id) {
+        if (id < 1 || id > DEX_SIZE || speciesByDex[id] == 0) return null;
+        return icons.computeIfAbsent(id, dex -> {
+            int stats = dex == DEX_SIZE ? ROM_MEW_BASE_STATS : ROM_BASE_STATS + (dex - 1) * BASE_STATS_SIZE;
+            int pointer = (rom[stats + 0x0B] & 0xFF) | (rom[stats + 0x0C] & 0xFF) << 8;
+            return GenOnePic.png(rom, picBank(dex) * 0x4000 + pointer - 0x4000, 1);
+        });
+    }
+
+    /** Which ROM bank holds the pictures, by internal species id (pokered UncompressMonSprite). */
+    private int picBank(int dex) {
+        if (dex == DEX_SIZE) return 0x01; // Mew
+        int id = speciesByDex[dex];
+        return id <= 0x1E ? 0x09 : id <= 0x49 ? 0x0A : id <= 0x73 ? 0x0B : id <= 0x98 ? 0x0C : 0x0D;
     }
 
     private static int owned(State s) {
