@@ -192,8 +192,6 @@
 				</div>
 				<div class="party" class:off={tab !== 'party'}>
 					<GameStatus />
-					<!-- Phones only: the side banners do not fit, so the Pokédex goes under the party box. -->
-					<section class="panel dex-grid" aria-label="Pokédex"><PokedexBanner from={1} to={151} columns={8} fill={false} /></section>
 				</div>
 			</section>
 			<section class="chat" class:off={tab !== 'chat'} aria-label="Chat">
@@ -342,9 +340,6 @@
 	.party {
 		display: contents;
 	}
-	.dex-grid {
-		display: none;
-	}
 
 	/* Desktop: the page is exactly one screen tall and never scrolls. The game screen takes the height the
 	   controller leaves; a column that still doesn't fit (very short windows) scrolls inside itself. */
@@ -465,6 +460,11 @@
 			display: flex;
 			flex-direction: column;
 			flex-wrap: nowrap;
+			/* Full width on every tab: the desktop centring (margin: auto) made the column, and the screen in
+			   it, shrink to whatever the active tab contained. */
+			width: 100%;
+			max-width: none;
+			margin: 0;
 			padding: 8px 12px 0;
 			gap: 8px;
 		}
@@ -508,10 +508,6 @@
 			display: flex;
 			flex-direction: column;
 			gap: 12px;
-		}
-		.dex-grid {
-			display: block;
-			padding: 12px;
 		}
 		.off {
 			display: none;
@@ -575,10 +571,8 @@
 			overflow: hidden;
 		}
 		header,
-		.tabs,
-		.side,
-		.chat,
-		.dex {
+		.dex,
+		.off {
 			display: none;
 		}
 		.stage,
@@ -622,14 +616,107 @@
 		.pad :global(.meta) {
 			grid-area: meta;
 		}
-		.pad :global(.controls),
-		.pad :global(.chip-last) {
+		.pad :global(.controls) {
 			display: none;
 		}
 		.pad :global(.shells) {
 			position: fixed;
 			top: 10px;
 			right: max(12px, env(safe-area-inset-right));
+		}
+		/* Other tabs: an icon rail in the bottom-left corner; Vote, Party and Chat open as a sheet on the right,
+		   with the game still visible. Play closes it. */
+		.tabs {
+			position: fixed;
+			left: max(8px, env(safe-area-inset-left));
+			bottom: 8px;
+			z-index: 31;
+			display: flex;
+			gap: 2px;
+			padding: 4px;
+			border: 1px solid var(--border);
+			border-radius: 999px;
+			background: var(--panel);
+			box-shadow: 0 4px 16px rgb(0 0 0 / 0.3);
+		}
+		.tabs button {
+			position: relative;
+			width: 40px;
+			height: 40px;
+			padding: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border: none;
+			border-radius: 50%;
+			background: transparent;
+			color: var(--muted);
+		}
+		.tabs button[aria-pressed='true'] {
+			color: var(--accent-text);
+			background: var(--bg);
+		}
+		.tabs button span:not(.badge) {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip: rect(0 0 0 0);
+		}
+		.badge {
+			position: absolute;
+			top: 2px;
+			right: 2px;
+			min-width: 8px;
+			height: 14px;
+			padding: 0 3px;
+			box-sizing: border-box;
+			border-radius: 999px;
+			background: var(--danger);
+			color: #fff;
+			font-size: 9px;
+			line-height: 14px;
+		}
+		.badge:empty {
+			width: 8px;
+			height: 8px;
+			padding: 0;
+		}
+		.side,
+		.chat {
+			position: fixed;
+			top: 8px;
+			right: max(8px, env(safe-area-inset-right));
+			bottom: 8px;
+			z-index: 30;
+			width: min(420px, 52vw);
+			box-sizing: border-box;
+			padding: 8px;
+			border: 1px solid var(--border);
+			border-radius: 14px;
+			background: var(--bg);
+			box-shadow: 0 8px 32px rgb(0 0 0 / 0.4);
+			overflow-y: auto;
+		}
+		.chat {
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
+		}
+		.voting,
+		.party {
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+		}
+		.voting.off,
+		.party.off,
+		.chat.off {
+			display: none;
+		}
+		.next {
+			flex: none;
+			height: 220px;
 		}
 	}
 </style>

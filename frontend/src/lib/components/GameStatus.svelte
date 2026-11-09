@@ -290,4 +290,23 @@
 			transition: none;
 		}
 	}
+	/* Phones: shorter slots and tighter spacing so the whole box fits the Party tab. */
+	@media (max-width: 760px) {
+		.card {
+			padding: 12px 16px;
+			gap: 10px;
+		}
+		.mon,
+		.empty {
+			height: 46px;
+		}
+		.sprite {
+			width: 34px;
+			height: 34px;
+		}
+		.sprite img {
+			width: 32px;
+			height: 32px;
+		}
+	}
 </style>

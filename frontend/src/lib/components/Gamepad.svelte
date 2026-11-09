@@ -190,13 +190,6 @@
 			<p class="current">{shell.name}</p>
 		</fieldset>
 	</details>
-	<!-- Phones: the last press as a chip in the shell (the keyboard card is hidden there). -->
-	{#if lastPress || status}
-		<p class="chip-last" aria-hidden="true">
-			{#if lastPress}<strong class="pixel">{lastPress}</strong>{/if}
-			{#if status}<span class:error={statusError}>{status}</span>{/if}
-		</p>
-	{/if}
 	<div class="row">
 		<div class="dpad">
 			{#each dpad as d (d.b)}
@@ -614,34 +607,10 @@
 			gap: 10px;
 		}
 	}
-	.chip-last {
-		display: none;
-	}
 	@media (max-width: 760px) {
-		/* The status line stays in the card for screen readers; visually it is the chip in the shell. */
+		/* Phones: a slim last-press row under the pad (no keyboard legend). */
 		.controls {
-			position: absolute;
-			width: 1px;
-			height: 1px;
-			overflow: hidden;
-			clip: rect(0 0 0 0);
-		}
-		.chip-last {
-			position: absolute;
-			top: 10px;
-			left: 14px;
-			margin: 0;
-			display: flex;
-			align-items: center;
-			gap: 6px;
-			padding: 4px 8px;
-			border-radius: 999px;
-			background: rgb(0 0 0 / 0.18);
-			color: var(--pill-ink);
-			font-size: 11px;
-		}
-		.chip-last strong {
-			font-size: 9px;
+			padding: 8px 14px;
 		}
 	}
 	/* Short phones: a tighter pad so it fits under the screen without scrolling. */

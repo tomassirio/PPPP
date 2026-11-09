@@ -29,7 +29,7 @@
 
 <section class="panel card" aria-labelledby="mode-h">
 	<h2 id="mode-h">Mode</h2>
-	<div>
+	<div class="current">
 		<p class="mode {mode.toLowerCase()}">{label(mode)}</p>
 		<p class="muted desc">
 			{dem ? 'Each window runs the most-voted button.' : 'Every press runs in arrival order.'}
@@ -155,17 +155,18 @@
 			transition: none;
 		}
 	}
-	/* Phones: compact. Mode name and switch line, buttons side by side. */
+	/* Phones: the header pill already shows the mode, so just the switch vote: line, bar, two equal buttons. */
 	@media (max-width: 760px) {
 		.card {
-			padding: 14px 16px;
+			padding: 12px 16px;
 			gap: 10px;
 		}
-		.mode {
-			font-size: 18px;
-		}
-		.desc {
+		h2,
+		.current {
 			display: none;
+		}
+		.actions {
+			flex-wrap: nowrap;
 		}
 		.actions button {
 			flex: 1 1 0;
