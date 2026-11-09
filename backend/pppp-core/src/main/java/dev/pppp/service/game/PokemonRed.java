@@ -177,12 +177,17 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
         return icons.computeIfAbsent(id, dex -> {
             int stats = dex == DEX_SIZE ? ROM_MEW_BASE_STATS : ROM_BASE_STATS + (dex - 1) * BASE_STATS_SIZE;
             int pointer = (rom[stats + 0x0B] & 0xFF) | (rom[stats + 0x0C] & 0xFF) << 8;
-            return GenOnePic.png(rom, picBank(dex) * 0x4000 + pointer - 0x4000, 1);
+            return GenOnePic.png(rom, picBank(dex, stats) * 0x4000 + pointer - 0x4000, 1);
         });
     }
 
-    /** Which ROM bank holds the pictures, by internal species id (pokered UncompressMonSprite). */
-    private int picBank(int dex) {
+    /**
+     * Which ROM bank holds the pictures. Colour hacks that move the sprites store the bank in the base stats'
+     * last byte (unused padding in the original); otherwise by internal species id (pokered UncompressMonSprite).
+     */
+    private int picBank(int dex, int stats) {
+        int stored = rom[stats + BASE_STATS_SIZE - 1] & 0xFF;
+        if (stored != 0 && stored < rom.length / 0x4000) return stored; // original Mew has 0xFF padding there
         if (dex == DEX_SIZE) return 0x01; // Mew
         int id = speciesByDex[dex];
         return id <= 0x1E ? 0x09 : id <= 0x49 ? 0x0A : id <= 0x73 ? 0x0B : id <= 0x98 ? 0x0C : 0x0D;
