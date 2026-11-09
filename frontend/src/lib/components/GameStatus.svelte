@@ -54,29 +54,28 @@
 			{#each slots as m, i (i)}
 				{#if m}
 					{@const h = hp(m)}
-					<li class="mon" class:fainted={m.hp === 0}>
+					<li class="mon" class:fainted={m.hp === 0} title="{m.name} ({m.species}), Lv {m.level}, {m.hp}/{m.maxHp} HP{m.status ? `, ${m.status}` : ''}">
 						<span class="sprite">
 							{#if m.icon}<img src="/api/v1/game/icons/{m.icon}.png" alt="" width="56" height="56" />{/if}
 						</span>
 						<div class="info">
 							<div class="row">
-								<span class="name"><b class="pixel">{m.name}</b>{#if m.name !== m.species} <span class="muted">{m.species}</span>{/if}</span>
-								<span class="lv">Lv {m.level}</span>
+								<b class="name pixel">{m.name}</b>
+								<span class="lv">Lv{m.level}</span>
 							</div>
-							<div class="row hp-row">
-								<span class="hp-tag" aria-hidden="true">HP</span>
-								<span class="bar" role="meter" aria-label="{m.name} HP" aria-valuemin="0" aria-valuemax={m.maxHp} aria-valuenow={m.hp}>
-									<span class={h.level} style:width="{h.pct}%"></span>
-								</span>
-								<span class="hp" class:fnt={m.hp === 0}>
-									{#if m.hp === 0}FNT{:else}{m.hp}/{m.maxHp}{/if}
+							<span class="bar" role="meter" aria-label="{m.name} HP" aria-valuemin="0" aria-valuemax={m.maxHp} aria-valuenow={m.hp}>
+								<span class={h.level} style:width="{h.pct}%"></span>
+							</span>
+							<div class="row">
+								<span class="species">{m.species}</span>
+								<span class="hp" class:bad={m.hp === 0 || m.status}>
+									{#if m.hp === 0}FNT{:else if m.status}{m.status}{:else}{m.hp}/{m.maxHp}{/if}
 								</span>
 							</div>
-							{#if m.status && m.status !== 'FNT'}<span class="status">{m.status}</span>{/if}
 						</div>
 					</li>
 				{:else}
-					<li class="empty">Empty slot</li>
+					<li class="empty">Empty</li>
 				{/if}
 			{/each}
 		</ol>
@@ -103,10 +102,10 @@
 
 <style>
 	.card {
-		padding: 20px;
+		padding: 16px 20px;
 		display: flex;
 		flex-direction: column;
-		gap: 14px;
+		gap: 12px;
 	}
 	.head {
 		display: flex;
@@ -141,17 +140,23 @@
 		list-style: none;
 	}
 	.party {
-		display: flex;
-		flex-direction: column;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
 		gap: 8px;
+	}
+	.mon,
+	.empty {
+		height: 52px;
+		box-sizing: border-box;
+		border-radius: 10px;
 	}
 	.mon {
 		display: flex;
 		align-items: center;
-		gap: 12px;
-		padding: 8px 12px;
-		border-radius: 10px;
+		gap: 8px;
+		padding: 6px 8px;
 		background: var(--bg);
+		min-width: 0;
 	}
 	.mon.fainted {
 		opacity: 0.6;
@@ -161,9 +166,9 @@
 	}
 	.sprite {
 		flex: none;
-		width: 44px;
-		height: 44px;
-		border-radius: 8px;
+		width: 38px;
+		height: 38px;
+		border-radius: 6px;
 		background: #e2f3d6;
 		display: flex;
 		align-items: center;
@@ -171,8 +176,8 @@
 		overflow: hidden;
 	}
 	.sprite img {
-		width: 40px;
-		height: 40px;
+		width: 36px;
+		height: 36px;
 		image-rendering: pixelated;
 	}
 	.info {
@@ -180,58 +185,48 @@
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 6px;
+		gap: 4px;
 	}
 	.row {
 		display: flex;
 		justify-content: space-between;
 		align-items: baseline;
-		gap: 8px;
+		gap: 6px;
+		min-width: 0;
 	}
 	.name {
 		min-width: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-	}
-	.name b {
-		font-size: 10px;
+		font-size: 9px;
 		font-weight: normal;
 	}
-	.name .muted {
-		font-size: 12px;
+	.species {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 11px;
+		color: var(--muted);
 	}
 	.lv,
 	.hp {
 		flex: none;
-		font-size: 12px;
+		font-size: 11px;
 		color: var(--muted);
 		font-variant-numeric: tabular-nums;
 	}
-	.hp-row {
-		align-items: center;
-	}
-	.hp-tag {
-		font-size: 10px;
-		font-weight: 700;
-		color: var(--muted);
-	}
 	.hp {
-		width: 52px;
-		text-align: right;
 		color: var(--text);
 	}
-	.hp.fnt,
-	.status {
+	.hp.bad {
 		color: var(--danger);
 		font-weight: 600;
 	}
-	.status {
-		font-size: 11px;
-	}
 	.bar {
-		flex: 1;
-		height: 6px;
+		display: block;
+		height: 5px;
 		border-radius: 999px;
 		background: var(--border);
 		overflow: hidden;
@@ -252,19 +247,18 @@
 		background: var(--danger);
 	}
 	.empty {
-		height: 56px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		border: 1px dashed var(--border);
-		border-radius: 10px;
 		font-size: 12px;
 		color: var(--muted);
 	}
 	.badges {
 		display: grid;
-		grid-template-columns: repeat(8, minmax(0, 1fr));
-		gap: 6px;
+		grid-template-columns: repeat(8, minmax(0, 32px));
+		justify-content: space-between;
+		gap: 4px;
 	}
 	.badges li {
 		aspect-ratio: 1;

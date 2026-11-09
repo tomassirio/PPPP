@@ -111,12 +111,16 @@
 			<section class="side" class:off={tab !== 'vote'} aria-label="Mode and votes">
 				<ModeCard mode={game.mode} bind:votes={game.modeVotes} />
 				{#if game.mode === 'DEMOCRACY'}<VoteTally tally={game.tally} />{/if}
-				<UpNext />
 				<GameStatus />
 			</section>
-			<section class="chat" class:off={tab !== 'chat'} aria-label="Chat">
-				<Chat />
-			</section>
+			<div class="feed">
+				<section class="next" class:off={tab !== 'vote'} aria-label="Queue">
+					<UpNext />
+				</section>
+				<section class="chat" class:off={tab !== 'chat'} aria-label="Chat">
+					<Chat />
+				</section>
+			</div>
 		</main>
 	</div>
 {:else if loadFailed}
@@ -222,11 +226,13 @@
 		max-width: 1440px;
 		margin: 0 auto;
 		box-sizing: border-box;
-		align-items: flex-start;
+		/* Columns stretch to the tallest one (the game), so chat fills the rest of the screen. */
+		align-items: stretch;
 	}
 	.game {
 		flex: 1 1 520px;
-		max-width: 560px;
+		/* Screen + pad (~390px besides the screen) fit under the header: width follows viewport height. */
+		max-width: clamp(360px, calc((100dvh - 510px) * 10 / 9 + 32px), 560px);
 		display: flex;
 		flex-direction: column;
 		gap: 16px;
@@ -244,9 +250,24 @@
 		gap: 16px;
 		min-width: 0;
 	}
-	.chat {
+	.feed {
 		flex: 1 1 340px;
-		height: 640px;
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		min-width: 0;
+	}
+	.next {
+		flex: none;
+		max-height: 220px;
+		overflow-y: auto;
+		border-radius: 12px;
+	}
+	.chat {
+		flex: 1 1 0;
+		/* Its size never drives the row height; it takes whatever the game column leaves. */
+		contain: size;
+		min-height: 360px;
 		display: flex;
 		flex-direction: column;
 		min-width: 0;
@@ -293,11 +314,15 @@
 		}
 		.game,
 		.side,
-		.chat {
+		.feed {
 			flex: 1 1 100%;
 			max-width: none;
 		}
+		.next {
+			max-height: none;
+		}
 		.chat {
+			flex: none;
 			height: 70vh;
 		}
 		.off {
