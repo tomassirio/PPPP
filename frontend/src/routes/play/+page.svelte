@@ -476,13 +476,14 @@
 			min-height: 0;
 		}
 	}
-	/* Wide enough for the Pokédex as two banners, 1-76 left and 77-151 right. Each gets at least 150px (the
-	   columns shrink toward their 1100px minimum to make room) and grows into whatever margin is left. */
-	@media (min-width: 1400px) and (min-height: 600px) {
+	/* Wide enough for the Pokédex as two banners, 1-76 left and 77-151 right. Each gets at least 210px: 4 cells
+	   across at the size the height allows (19 rows) on a typical desktop. The columns shrink toward their 1100px
+	   minimum to make room; the banners grow into whatever margin is left. */
+	@media (min-width: 1520px) and (min-height: 600px) {
 		.dex {
 			display: block;
 			flex: 1 1 0;
-			min-width: 150px;
+			min-width: 210px;
 			padding: 16px 12px;
 			box-sizing: border-box;
 		}
