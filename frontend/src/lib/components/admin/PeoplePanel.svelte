@@ -54,7 +54,7 @@
 			<tbody>
 				{#each users as u (u.id)}
 					<tr>
-						<td>{u.id}</td>
+						<td class="wrap">{u.id}</td>
 						<td>
 							<select
 								aria-label={`Role of ${u.id}`}

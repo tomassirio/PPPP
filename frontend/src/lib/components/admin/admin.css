@@ -64,7 +64,6 @@
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
 	gap: 10px;
-	margin-bottom: 10px;
 }
 .admin label {
 	display: flex;
@@ -192,4 +191,36 @@
 .admin button:disabled {
 	opacity: 0.5;
 	cursor: default;
+}
+/* Stacked forms: even spacing, buttons sized to their label. */
+.admin form:not(.row) {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+.admin form:not(.row) > button {
+	align-self: flex-start;
+}
+/* Inline forms: buttons line up with the inputs, not their labels. */
+.admin form.row {
+	align-items: flex-end;
+}
+/* Inputs match button height so rows line up. */
+.admin input:not([type='checkbox']),
+.admin select {
+	height: 36px;
+}
+/* Checkboxes in a field grid sit level with the neighbouring inputs. */
+.admin .grid label.check {
+	align-self: end;
+	min-height: 36px;
+}
+/* Tables in half-width columns: compact buttons, long emails wrap. */
+.admin td button {
+	height: 30px;
+	padding: 0 10px;
+}
+.admin td.wrap {
+	white-space: normal;
+	overflow-wrap: anywhere;
 }
