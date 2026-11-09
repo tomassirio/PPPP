@@ -588,28 +588,40 @@
 			color: var(--pill-ink);
 			font-size: 10px;
 		}
-		/* Two lines: what you pressed, and what the game last ran (anyone's). */
+		/* Two lines on one grid (label | chip | detail), so both rows line up column by column. */
+		.controls {
+			display: grid;
+			grid-template-columns: max-content max-content max-content;
+			justify-content: center;
+			align-items: center;
+			gap: 4px 10px;
+		}
+		.head,
+		.last,
+		.game-last {
+			display: contents;
+		}
+		.last > * {
+			grid-row: 1;
+		}
+		.game-last > * {
+			grid-row: 2;
+		}
 		.label-wide {
 			display: none;
 		}
 		.label-phone {
 			display: inline;
-			min-width: 56px;
-			text-align: right;
+			justify-self: end;
 			font-size: 10px;
 			font-weight: 600;
 			letter-spacing: 0.1em;
 			text-transform: uppercase;
 		}
-		.game-last {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			gap: 10px;
-			margin: 0;
-			min-height: 30px;
-			font-size: 13px;
+		.controls .chip {
+			justify-self: start;
 		}
+
 	}
 	/* Short phones: a tighter pad so it fits under the screen without scrolling. */
 	@media (max-width: 760px) and (max-height: 760px) {

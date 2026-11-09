@@ -548,7 +548,7 @@
 		.screen-slot {
 			order: 0;
 			flex: none;
-			height: min(calc((100vw - 24px - 32px) * 144 / 160 + 76px), 46dvh);
+			height: min(calc((100vw - 24px - 32px) * 144 / 160 + 76px), 44dvh);
 		}
 		.screen-slot :global(.fit) {
 			container-type: size;
