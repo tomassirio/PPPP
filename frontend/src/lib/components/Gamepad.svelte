@@ -108,19 +108,19 @@
 		</div>
 		<div class="ab">
 			<button type="button" class="round pixel b" class:held={held === 'b'} aria-label="B button" aria-keyshortcuts="X" disabled={blocked} onclick={() => send('b')}
-				>B<kbd aria-hidden="true">X</kbd></button
+				>B</button
 			>
 			<button type="button" class="round pixel" class:held={held === 'a'} aria-label="A button" aria-keyshortcuts="Z" disabled={blocked} onclick={() => send('a')}
-				>A<kbd aria-hidden="true">Z</kbd></button
+				>A</button
 			>
 		</div>
 	</div>
 	<div class="meta">
 		<button type="button" class="pill" class:held={held === 'select'} aria-label="Select" aria-keyshortcuts="Shift" disabled={blocked} onclick={() => send('select')}
-			>SELECT<kbd aria-hidden="true">Shift</kbd></button
+			>SELECT</button
 		>
 		<button type="button" class="pill" class:held={held === 'start'} aria-label="Start" aria-keyshortcuts="Enter" disabled={blocked} onclick={() => send('start')}
-			>START<kbd aria-hidden="true">Enter</kbd></button
+			>START</button
 		>
 	</div>
 </div>
@@ -131,8 +131,15 @@
 		<strong class="chip pixel">{lastPress}</strong>
 	{/if}
 	{#if status}<span class:error={statusError} class:muted={!statusError}>{status}</span>{/if}
-	<span class="keys">Keyboard: arrows, plus the key on each button</span>
 </p>
+
+<ul class="legend" aria-label="Keyboard controls">
+	<li><span class="caps"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd></span>Move</li>
+	<li><kbd>Z</kbd>A</li>
+	<li><kbd>X</kbd>B</li>
+	<li><kbd>Enter</kbd>Start</li>
+	<li><kbd>Shift</kbd>Select</li>
+</ul>
 
 <style>
 	.shell {
@@ -243,36 +250,45 @@
 		font-size: 10px;
 		line-height: 1;
 	}
-	.keys {
-		margin-left: auto;
+	/* Keyboard legend: only where there is a keyboard and mouse. */
+	.legend {
+		display: none;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 8px 18px;
 		font-size: 12px;
 		color: var(--muted);
 	}
-	/* Keyboard shortcuts as keycaps on the buttons, only where there is a keyboard and mouse. */
-	button {
-		position: relative;
+	.legend li {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+	.caps {
+		display: flex;
+		gap: 3px;
 	}
 	kbd {
-		display: none;
-		position: absolute;
-		right: -6px;
-		bottom: -6px;
-		padding: 2px 4px;
-		border-radius: 4px;
-		background: var(--bg);
-		color: var(--text);
+		min-width: 22px;
+		height: 22px;
+		padding: 0 6px;
+		box-sizing: border-box;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 5px;
+		background: var(--panel);
 		border: 1px solid var(--border);
-		font: 600 9px/1 var(--body-font);
-		letter-spacing: 0;
-		pointer-events: none;
-	}
-	.keys {
-		display: none;
+		border-bottom-width: 3px;
+		color: var(--text);
+		font: 600 11px/1 var(--body-font);
 	}
 	@media (hover: hover) and (pointer: fine) and (min-width: 761px) {
-		kbd,
-		.keys {
-			display: inline-block;
+		.legend {
+			display: flex;
 		}
 	}
 	@media (max-width: 400px) {
