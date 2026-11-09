@@ -23,7 +23,13 @@
 	<div class="col">
 		<div class="head">
 			<h2 id="tally-h">This vote</h2>
-			{#if open}<span class="muted">Closes in {secs} s · {total} voted</span>{/if}
+			{#if open}
+				{#if children}
+					<span class="count" aria-label="Closes in {secs} seconds, {total} voted">{secs} s</span>
+				{:else}
+					<span class="muted">Closes in {secs} s · {total} voted</span>
+				{/if}
+			{/if}
 		</div>
 		{#if open}
 			<ul>
@@ -76,7 +82,45 @@
 	}
 	.split .col {
 		padding: 0 16px 0 20px;
-		overflow-y: auto;
+		overflow: hidden auto;
+	}
+	/* Narrow column: header with a countdown badge; each option on two lines (button + votes, then the bar). */
+	.split .head {
+		justify-content: flex-start;
+		flex-wrap: nowrap;
+	}
+	.count {
+		min-width: 18px;
+		height: 18px;
+		padding: 0 6px;
+		box-sizing: border-box;
+		border-radius: 999px;
+		background: var(--border);
+		color: var(--text);
+		font-size: 11px;
+		font-weight: 600;
+		line-height: 18px;
+		white-space: nowrap;
+		font-variant-numeric: tabular-nums;
+	}
+	.split li {
+		grid-template-columns: minmax(0, 1fr) auto;
+		grid-template-areas: 'button votes' 'bar bar';
+		gap: 4px 8px;
+	}
+	.split li .pixel {
+		grid-area: button;
+	}
+	.split li .muted {
+		grid-area: votes;
+		font-size: 12px;
+	}
+	.split li .bar {
+		grid-area: bar;
+		height: 6px;
+	}
+	.split li .bar div {
+		height: 6px;
 	}
 	.split .col.side {
 		padding: 0 20px 0 16px;

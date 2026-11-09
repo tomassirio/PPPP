@@ -37,12 +37,14 @@
 	<div class="col">
 		<div class="head">
 			<h2 id="next-h">Up next</h2>
-			<span class="muted">{queue.length}{queue.length === 10 ? '+' : ''} queued</span>
+			<span class="count" aria-label="{queue.length}{queue.length === 10 ? ' or more' : ''} queued"
+				>{queue.length}{queue.length === 10 ? '+' : ''}</span
+			>
 		</div>
 		{#if queue.length}
 			<ol class="queue">
 				{#each queue as q (q.id)}
-					<li><span class="pixel">{formatCommand(q.command)}</span><Who user={q.user} /></li>
+					<li><span class="pixel">{formatCommand(q.command)}</span><Who user={q.user} compact /></li>
 				{/each}
 			</ol>
 		{:else}
@@ -76,6 +78,21 @@
 	}
 	.head {
 		flex: none;
+		justify-content: flex-start;
+		gap: 8px;
+	}
+	.count {
+		min-width: 18px;
+		height: 18px;
+		padding: 0 5px;
+		box-sizing: border-box;
+		border-radius: 999px;
+		background: var(--border);
+		color: var(--text);
+		font-size: 11px;
+		font-weight: 600;
+		line-height: 18px;
+		text-align: center;
 	}
 	.queue {
 		flex: 1 1 auto;
