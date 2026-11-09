@@ -74,11 +74,14 @@
 		ArrowRight: 'right'
 	};
 
+	const FACE_KEYS: Record<string, string> = { KeyZ: 'a', KeyX: 'b' };
+
 	function onkeydown(e: KeyboardEvent) {
 		const t = e.target as HTMLElement;
 		if (e.metaKey || e.ctrlKey || e.altKey) return;
 		if (t.closest('input, textarea, select, [contenteditable]')) return;
-		if (skip()) return e.preventDefault();
+		// Any key skips the boot; only Enter/Space stop there (no sign-in mid-boot). Arrows, Z and X still count for the code.
+		if (skip() && !ARROWS[e.key] && !FACE_KEYS[e.code]) return e.preventDefault();
 		if (e.key === 'Enter' || e.key === ' ') {
 			e.preventDefault();
 			if (!e.repeat) signIn();
@@ -86,13 +89,17 @@
 			e.preventDefault();
 			dir = ARROWS[e.key];
 			if (!e.repeat) input(dir);
-		} else if ((e.key === 'z' || e.key === 'x') && !e.repeat) {
-			input(e.key === 'z' ? 'a' : 'b'); // Z is A, X is B, as on /play
+		} else if (FACE_KEYS[e.code]) {
+			// Z is A, X is B, as on /play. By physical key, so Caps Lock and other layouts work; the button presses in.
+			e.preventDefault();
+			held = FACE_KEYS[e.code];
+			if (!e.repeat) input(held);
 		}
 	}
 
 	function onkeyup(e: KeyboardEvent) {
 		if (ARROWS[e.key] === dir) dir = null;
+		if (FACE_KEYS[e.code] === held) held = null;
 	}
 
 	// Which D-pad arm the pointer landed on, from its offset to the pad's centre.
