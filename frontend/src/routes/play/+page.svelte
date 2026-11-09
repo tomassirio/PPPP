@@ -707,14 +707,19 @@
 		.pad :global(.row) {
 			display: contents;
 		}
-		/* Controls hug the sides. */
+		/* Controls pinned near the edges, a little below the middle, where thumbs rest. */
+		.pad :global(.dpad),
+		.pad :global(.ab) {
+			position: fixed;
+			z-index: 20;
+			top: 56%;
+			translate: 0 -50%;
+		}
 		.pad :global(.dpad) {
-			grid-area: dpad;
-			justify-self: start;
+			left: max(28px, env(safe-area-inset-left));
 		}
 		.pad :global(.ab) {
-			grid-area: ab;
-			justify-self: end;
+			right: max(28px, env(safe-area-inset-right));
 		}
 		.pad :global(.meta) {
 			grid-area: meta;
@@ -780,16 +785,6 @@
 			position: fixed;
 			z-index: 20;
 			opacity: 0.55;
-		}
-		.big .pad :global(.dpad) {
-			left: max(24px, env(safe-area-inset-left));
-			top: 50%;
-			translate: 0 -50%;
-		}
-		.big .pad :global(.ab) {
-			right: max(24px, env(safe-area-inset-right));
-			top: 50%;
-			translate: 0 -50%;
 		}
 		.big .pad :global(.meta) {
 			left: 50%;
