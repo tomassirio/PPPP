@@ -8,7 +8,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.session.events.SessionDestroyedEvent;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -21,14 +23,15 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
  */
 @Component
 public class EventPublisher {
-    private record Stream(Viewer viewer, boolean admin) {}
+    /** sessionId: the login session that opened the stream (null in tests); it closes when that session ends. */
+    private record Stream(Viewer viewer, boolean admin, String sessionId) {}
     private static final Logger log = LoggerFactory.getLogger(EventPublisher.class);
 
     private final Map<SseEmitter, Stream> emitters = new ConcurrentHashMap<>();
 
-    public SseEmitter subscribe(Viewer viewer, boolean admin) {
+    public SseEmitter subscribe(Viewer viewer, boolean admin, String sessionId) {
         var emitter = new SseEmitter(0L);
-        emitters.put(emitter, new Stream(viewer, admin));
+        emitters.put(emitter, new Stream(viewer, admin, sessionId));
         log.info("Stream opened for {} ({} streams)", viewer.id(), emitters.size());
         emitter.onCompletion(() -> drop(emitter));
         emitter.onTimeout(() -> drop(emitter));
@@ -65,6 +68,20 @@ public class EventPublisher {
                 drop(emitter);
             }
         }
+    }
+
+    /**
+     * Sign-out, expiry or revocation: close that session's streams. Other tabs of a signed-out user would
+     * otherwise keep their streams (authorised when opened) and stay online; they cannot reconnect after this.
+     */
+    @EventListener
+    public void onSessionEnded(SessionDestroyedEvent e) {
+        emitters.forEach((emitter, stream) -> {
+            if (e.getSessionId().equals(stream.sessionId())) {
+                emitter.complete();
+                drop(emitter);
+            }
+        });
     }
 
     /** A closed tab is only noticed on the next write; ping so presence drops it within ~15 s. */
