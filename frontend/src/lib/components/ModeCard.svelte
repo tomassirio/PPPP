@@ -31,7 +31,7 @@
 	<h2 id="mode-h">Mode</h2>
 	<div>
 		<p class="mode {mode.toLowerCase()}">{label(mode)}</p>
-		<p class="muted">
+		<p class="muted desc">
 			{dem ? 'Each window runs the most-voted button.' : 'Every press runs in arrival order.'}
 		</p>
 	</div>
@@ -153,6 +153,22 @@
 	@media (prefers-reduced-motion: reduce) {
 		.bar div {
 			transition: none;
+		}
+	}
+	/* Phones: compact. Mode name and switch line, buttons side by side. */
+	@media (max-width: 760px) {
+		.card {
+			padding: 14px 16px;
+			gap: 10px;
+		}
+		.mode {
+			font-size: 18px;
+		}
+		.desc {
+			display: none;
+		}
+		.actions button {
+			flex: 1 1 0;
 		}
 	}
 </style>

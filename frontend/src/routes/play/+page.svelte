@@ -29,7 +29,44 @@
 		tally: null,
 		modeVotes: { ANARCHY: 0, DEMOCRACY: 0 }
 	});
-	let tab = $state<'play' | 'vote' | 'party' | 'chat'>('play');
+	type Tab = 'play' | 'vote' | 'party' | 'chat';
+	let tab = $state<Tab>('play');
+
+	// Phone tab bar: icons (static SVG paths, not user content) and badges for what changed on other tabs.
+	const TABS: { id: Tab; label: string; icon: string }[] = [
+		{ id: 'play', label: 'Play', icon: '<rect x="3" y="6" width="18" height="12" rx="4"/><path d="M7 12h4M9 10v4"/><circle cx="15.5" cy="11" r="1"/><circle cx="17.5" cy="13.5" r="1"/>' },
+		{ id: 'vote', label: 'Vote', icon: '<path d="M4 13l4 4L20 5"/><path d="M4 20h16"/>' },
+		{ id: 'party', label: 'Party', icon: '<circle cx="12" cy="12" r="9"/><path d="M3 12h6m6 0h6"/><circle cx="12" cy="12" r="3"/>' },
+		{ id: 'chat', label: 'Chat', icon: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>' }
+	];
+	let unreadChat = $state(0);
+	let newInParty = $state(false);
+	let now = $state(Date.now());
+	$effect(() => {
+		const t = setInterval(() => (now = Date.now()), 1000);
+		return () => clearInterval(t);
+	});
+	const badges = $derived<Record<Tab, number | boolean>>({
+		play: false,
+		vote: tab !== 'vote' && !!game.tally && game.tally.endsAt > now,
+		party: newInParty,
+		chat: unreadChat
+	});
+	$effect(() => {
+		if (tab === 'chat') unreadChat = 0;
+		if (tab === 'party') newInParty = false;
+	});
+	$effect(() => {
+		const offs = [
+			on('CHAT_MESSAGE', () => {
+				if (tab !== 'chat') unreadChat++;
+			}),
+			on('GAME_EVENT', () => {
+				if (tab !== 'party') newInParty = true;
+			})
+		];
+		return () => offs.forEach((off) => off());
+	});
 
 	// The screen frame sizes itself to the height left over; on desktop the controller matches its width.
 	let screenSlot = $state<HTMLDivElement>();
@@ -102,13 +139,23 @@
 						{#snippet controls()}<SoundControl />{/snippet}
 					</GameScreen>
 				</div>
-				<div class="tabs" role="group" aria-label="Panels">
-					{#each ['play', 'vote', 'party', 'chat'] as const as t (t)}
-						<button type="button" aria-pressed={tab === t} onclick={() => (tab = t)}
-							>{t[0].toUpperCase() + t.slice(1)}</button
+				<nav class="tabs" aria-label="Panels">
+					{#each TABS as t (t.id)}
+						{@const badge = badges[t.id]}
+						<button
+							type="button"
+							aria-pressed={tab === t.id}
+							aria-label="{t.label}{badge ? `, ${typeof badge === 'number' ? `${badge} new` : 'new'}` : ''}"
+							onclick={() => (tab = t.id)}
 						>
+							<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+								>{@html t.icon}</svg
+							>
+							<span>{t.label}</span>
+							{#if badge}<span class="badge" aria-hidden="true">{typeof badge === 'number' ? (badge > 99 ? '99+' : badge) : ''}</span>{/if}
+						</button>
 					{/each}
-				</div>
+				</nav>
 				<div class="pad" class:off={tab !== 'play'}>
 					<Gamepad mode={game.mode} />
 				</div>
@@ -126,7 +173,11 @@
 						{/if}
 					</div>
 				</div>
-				<div class="party" class:off={tab !== 'party'}><GameStatus /></div>
+				<div class="party" class:off={tab !== 'party'}>
+					<GameStatus />
+					<!-- Phones only: the side banners do not fit, so the Pokédex goes under the party box. -->
+					<section class="panel dex-grid" aria-label="Pokédex"><PokedexBanner from={1} to={151} columns={8} fill={false} /></section>
+				</div>
 			</section>
 			<section class="chat" class:off={tab !== 'chat'} aria-label="Chat">
 				<Chat />
@@ -271,6 +322,9 @@
 	.party {
 		display: contents;
 	}
+	.dex-grid {
+		display: none;
+	}
 
 	/* Desktop: the page is exactly one screen tall and never scrolls. The game screen takes the height the
 	   controller leaves; a column that still doesn't fit (very short windows) scrolls inside itself. */
@@ -374,51 +428,121 @@
 			font-size: 12px;
 			padding: 5px 9px;
 		}
-		main {
-			padding: 12px 16px 24px;
-			gap: 16px;
+		/* App-like: the page is one screen tall. Screen on top, the active tab fills the middle and scrolls
+		   inside itself, the tab bar sits at the bottom. */
+		.page {
+			height: 100dvh;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
 		}
-		.game,
+		header {
+			flex: none;
+		}
+		main {
+			flex: 1 1 0;
+			min-height: 0;
+			display: flex;
+			flex-direction: column;
+			flex-wrap: nowrap;
+			padding: 8px 12px 0;
+			gap: 8px;
+		}
+		.game {
+			display: contents;
+		}
+		.screen-slot {
+			order: 0;
+			flex: none;
+			height: min(calc((100vw - 24px - 32px) * 144 / 160 + 76px), 46dvh);
+		}
+		.screen-slot :global(.fit) {
+			container-type: size;
+			--bezel-width: min(100cqw, (100cqh - 76px) * 160 / 144 + 32px);
+		}
+		.pad,
 		.side,
 		.chat {
-			flex: 1 1 100%;
+			order: 1;
+			flex: 1 1 0;
+			min-height: 0;
 			max-width: none;
+			overflow-y: auto;
+		}
+		.side {
+			gap: 12px;
+		}
+		.chat {
+			overflow: hidden; /* the chat scrolls its own list; the message box stays at the bottom */
 		}
 		.next {
 			flex: none;
-			height: 260px;
-		}
-		.chat {
-			height: 70vh;
+			height: 240px;
 		}
 		.voting {
 			display: flex;
 			flex-direction: column;
-			gap: 16px;
+			gap: 12px;
 		}
 		.party {
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+		}
+		.dex-grid {
 			display: block;
+			padding: 12px;
 		}
 		.off {
 			display: none;
 		}
 		.tabs {
+			order: 2;
+			flex: none;
 			display: flex;
-			padding: 0 8px;
+			margin: 0 -12px;
+			padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+			border-top: 1px solid var(--border);
+			background: var(--panel);
 		}
 		.tabs button {
+			position: relative;
 			flex: 1 1 0;
-			height: 44px;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 2px;
+			padding: 6px 0;
 			border: none;
 			background: transparent;
-			font-size: 14px;
+			font-size: 11px;
 			font-weight: 600;
 			color: var(--muted);
-			box-shadow: inset 0 -1px 0 var(--border);
 		}
 		.tabs button[aria-pressed='true'] {
 			color: var(--accent-text);
-			box-shadow: inset 0 -3px 0 var(--accent-text);
+		}
+		.badge {
+			position: absolute;
+			top: 2px;
+			left: calc(50% + 6px);
+			min-width: 8px;
+			height: 16px;
+			padding: 0 4px;
+			box-sizing: border-box;
+			border-radius: 999px;
+			background: var(--danger);
+			color: #fff;
+			font-size: 10px;
+			line-height: 16px;
+			text-align: center;
+		}
+		.badge:empty {
+			width: 10px;
+			min-width: 0;
+			height: 10px;
+			padding: 0;
+			top: 4px;
 		}
 	}
 </style>

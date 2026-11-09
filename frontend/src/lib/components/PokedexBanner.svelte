@@ -1,9 +1,10 @@
 <!-- A side banner of the Pokédex (numbers from..to): unseen = silhouette with "?", seen = sprite, caught = sprite
-     plus a Poké Ball. Sprites come from the ROM via /api/v1/game/icons/{n}.png. Fills its container. -->
+     plus a Poké Ball. Sprites come from the ROM via /api/v1/game/icons/{n}.png. Fills its container (fill), or a
+     plain grid of `columns` across with its natural height (phones' Party tab). -->
 <script lang="ts">
 	import { game, watchGame } from '#lib/game.svelte.ts';
 
-	let { from, to }: { from: number; to: number } = $props();
+	let { from, to, columns = 4, fill = true }: { from: number; to: number; columns?: number; fill?: boolean } = $props();
 
 	$effect(() => watchGame());
 
@@ -15,8 +16,8 @@
 </script>
 
 {#if dex}
-	<div class="fit">
-	<ol class="banner" aria-label="Pokédex {from} to {to}" style:--rows={Math.ceil(numbers.length / 4)}>
+	<div class="fit" class:grid={!fill}>
+	<ol class="banner" aria-label="Pokédex {from} to {to}" style:--rows={Math.ceil(numbers.length / columns)} style:--cols={columns}>
 		{#each numbers as n (n)}
 			{@const name = dex.names[n - 1]}
 			<li class:seen={seen.has(n)} class:owned={owned.has(n)} title="#{pad(n)} {name ?? '???'}">
@@ -46,14 +47,26 @@
 		container-type: size;
 		height: 100%;
 	}
+	/* Grid: cells from the width alone, rows as tall as they need. */
+	.fit.grid {
+		container-type: inline-size;
+		height: auto;
+	}
+	.fit.grid .banner {
+		--cell: calc((100cqw - (var(--cols) - 1) * var(--gap)) / var(--cols));
+		height: auto;
+	}
 	.banner {
 		margin: 0;
 		padding: 0;
 		list-style: none;
 		display: grid;
 		--gap: 4px;
-		--cell: min(calc((100cqw - 3 * var(--gap)) / 4), calc((100cqh - (var(--rows) - 1) * var(--gap)) / var(--rows)));
-		grid-template-columns: repeat(4, var(--cell));
+		--cell: min(
+			calc((100cqw - (var(--cols) - 1) * var(--gap)) / var(--cols)),
+			calc((100cqh - (var(--rows) - 1) * var(--gap)) / var(--rows))
+		);
+		grid-template-columns: repeat(var(--cols), var(--cell));
 		grid-auto-rows: var(--cell);
 		gap: var(--gap);
 		justify-content: center;
