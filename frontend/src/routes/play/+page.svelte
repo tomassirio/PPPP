@@ -11,7 +11,9 @@
 	import PokedexBanner from '#lib/components/PokedexBanner.svelte';
 	import Gamepad from '#lib/components/Gamepad.svelte';
 	import ModeCard from '#lib/components/ModeCard.svelte';
+	import Presence from '#lib/components/Presence.svelte';
 	import SoundControl from '#lib/components/SoundControl.svelte';
+	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
 	import UpNext from '#lib/components/UpNext.svelte';
 	import VoteTally from '#lib/components/VoteTally.svelte';
 	import banner from '#lib/assets/banner.webp';
@@ -93,6 +95,8 @@
 				<span class="pill {game.mode.toLowerCase()}">Mode: {modeLabel}</span>
 			</div>
 			<div class="user">
+				<Presence />
+				<ThemeToggle />
 				{#if isAdmin(me)}<a href="/admin">Admin</a>{/if}
 				{#if me.picture && !pictureFailed}
 					<!-- Google photo URLs reject requests that carry a Referer. -->
@@ -159,7 +163,7 @@
 		background: none;
 		border: none;
 		padding: 0;
-		color: var(--accent);
+		color: var(--accent-text);
 		text-decoration: underline;
 	}
 	.page {
@@ -189,7 +193,7 @@
 	.short {
 		display: none;
 		font-size: 11px;
-		color: var(--accent);
+		color: var(--accent-text);
 	}
 	.pill {
 		font-size: 13px;
@@ -229,11 +233,11 @@
 		background: none;
 		border: none;
 		padding: 0;
-		color: var(--accent);
+		color: var(--accent-text);
 		text-decoration: underline;
 	}
 	.link:hover {
-		color: var(--accent-hover);
+		color: var(--accent-text-hover);
 	}
 	main {
 		display: flex;
@@ -370,7 +374,7 @@
 		}
 	}
 	:global(.page :focus-visible) {
-		outline: 3px solid var(--accent);
+		outline: 3px solid var(--accent-text);
 		outline-offset: 2px;
 	}
 
@@ -441,8 +445,8 @@
 			box-shadow: inset 0 -1px 0 var(--border);
 		}
 		.tabs button[aria-pressed='true'] {
-			color: var(--accent);
-			box-shadow: inset 0 -3px 0 var(--accent);
+			color: var(--accent-text);
+			box-shadow: inset 0 -3px 0 var(--accent-text);
 		}
 	}
 </style>

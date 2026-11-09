@@ -188,7 +188,7 @@
 			{@const system = isSystem(m)}
 			<li class:system class:mine={m.user === session.me?.id}>
 				<time class="ts" datetime={new Date(m.at).toISOString()}>{time(m.at)}</time>
-				<span class="who" style:color={system ? undefined : nameColor(m.user)}>{m.kind === 'ADMIN' ? 'Admin' : m.name}</span>
+				<span class="who" style:--name={system ? undefined : nameColor(m.user)}>{m.kind === 'ADMIN' ? 'Admin' : m.name}</span>
 				{#if m.command}<span class="tag">command</span>{/if}
 				<span class="text"
 					>{#if system}{#each systemParts(m.text) as part, i (i)}{#if part.mode}<span class="mode {part.mode}">{part.text}</span>{:else if part.town === 'rainbow'}<span class="town rainbow">{part.text}</span>{:else if part.town}<span class="town" style:color={part.town}>{part.text}</span>{:else}{part.text}{/if}{/each}{:else}{m.text}{/if}</span
@@ -258,7 +258,7 @@
 		color: var(--muted);
 	}
 	.toggle input {
-		accent-color: var(--accent);
+		accent-color: var(--accent-text);
 	}
 	.mode {
 		font-style: normal;
@@ -297,7 +297,7 @@
 	select,
 	textarea {
 		background: var(--bg);
-		border: 1px solid #3a4851;
+		border: 1px solid var(--border-strong);
 		border-radius: 8px;
 		color: var(--text);
 		font: inherit;
@@ -323,6 +323,7 @@
 	}
 	.who {
 		font-weight: 700;
+		color: color-mix(in oklab, var(--name, var(--text)), var(--text) var(--name-dim));
 	}
 	.system,
 	.system .who {
@@ -330,7 +331,7 @@
 		font-style: italic;
 	}
 	.mine {
-		border-left: 2px solid var(--accent);
+		border-left: 2px solid var(--accent-text);
 		padding-left: 8px;
 	}
 	.tag {
@@ -389,7 +390,7 @@
 	textarea:focus-visible,
 	select:focus-visible,
 	input:focus-visible {
-		outline: 2px solid var(--accent);
+		outline: 2px solid var(--accent-text);
 		outline-offset: 2px;
 	}
 	.foot {

@@ -152,7 +152,7 @@
 		gap: 24px;
 		padding: 20px 12px;
 		overflow: hidden;
-		background: radial-gradient(ellipse 60% 55% at 50% 42%, #1d1a28, var(--bg) 75%);
+		background: radial-gradient(ellipse 60% 55% at 50% 42%, var(--glow), var(--bg) 75%);
 	}
 	p {
 		margin: 0;
