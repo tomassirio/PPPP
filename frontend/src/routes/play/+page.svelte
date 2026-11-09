@@ -865,10 +865,10 @@
 		.side,
 		.chat {
 			position: fixed;
-			top: 60px; /* below the mode pill and account corners */
+			top: 8px; /* over the online/account corner, which is fine while a sheet is open */
 			right: max(8px, env(safe-area-inset-right));
 			bottom: 8px;
-			z-index: 30;
+			z-index: 33;
 			width: min(420px, 52vw);
 			box-sizing: border-box;
 			padding: 8px;
@@ -882,6 +882,7 @@
 			display: flex;
 			flex-direction: column;
 			overflow: hidden;
+			min-height: 0; /* the desktop minimum (480px) is taller than the sheet: it hid the message box */
 		}
 		/* Sheets are fixed, not scrolled, like the portrait tabs: only lists inside scroll. */
 		.side {
