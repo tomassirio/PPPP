@@ -68,6 +68,13 @@ class PokemonRedTest {
     }
 
     @Test
+    void starterPokedexPreviewIsNotACatch() {
+        var start = red.read(ram());
+        mem[off(0xD2F7)] = 0b0100_1011; // the game flags 1, 2, 4 and 7 while showing a starter's entry
+        assertThat(red.diff(start, red.read(ram()))).isEmpty();
+    }
+
+    @Test
     void reorderingThePartyIsNotNews() {
         addMon(0, BULBASAUR, "BULBASAUR", 5, 20, 1);
         addMon(1, PIDGEY, "BIRDY", 9, 30, 2);

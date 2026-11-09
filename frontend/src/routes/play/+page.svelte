@@ -111,16 +111,12 @@
 			<section class="side" class:off={tab !== 'vote'} aria-label="Mode and votes">
 				<ModeCard mode={game.mode} bind:votes={game.modeVotes} />
 				{#if game.mode === 'DEMOCRACY'}<VoteTally tally={game.tally} />{/if}
+				<div class="next"><UpNext /></div>
 				<GameStatus />
 			</section>
-			<div class="feed">
-				<section class="next" class:off={tab !== 'vote'} aria-label="Queue">
-					<UpNext />
-				</section>
-				<section class="chat" class:off={tab !== 'chat'} aria-label="Chat">
-					<Chat />
-				</section>
-			</div>
+			<section class="chat" class:off={tab !== 'chat'} aria-label="Chat">
+				<Chat />
+			</section>
 		</main>
 	</div>
 {:else if loadFailed}
@@ -250,24 +246,17 @@
 		gap: 16px;
 		min-width: 0;
 	}
-	.feed {
-		flex: 1 1 340px;
-		display: flex;
-		flex-direction: column;
-		gap: 16px;
-		min-width: 0;
-	}
+	/* Up next takes the middle column's spare height, so the party box lines up with the controller. */
 	.next {
-		flex: none;
-		max-height: 220px;
-		overflow-y: auto;
-		border-radius: 12px;
+		flex: 1 1 0;
+		contain: size;
+		min-height: 180px;
 	}
 	.chat {
-		flex: 1 1 0;
-		/* Its size never drives the row height; it takes whatever the game column leaves. */
+		flex: 1 1 340px;
+		/* Its size never drives the row height: it is as tall as the game column. */
 		contain: size;
-		min-height: 360px;
+		min-height: 480px;
 		display: flex;
 		flex-direction: column;
 		min-width: 0;
@@ -314,15 +303,15 @@
 		}
 		.game,
 		.side,
-		.feed {
+		.chat {
 			flex: 1 1 100%;
 			max-width: none;
 		}
 		.next {
-			max-height: none;
+			flex: none;
+			height: 260px;
 		}
 		.chat {
-			flex: none;
 			height: 70vh;
 		}
 		.off {

@@ -40,13 +40,28 @@
 	const shown = $derived(showSystem ? messages : messages.filter((m) => m.kind !== 'SYSTEM'));
 
 	const nearBottom = () => list.scrollHeight - list.scrollTop - list.clientHeight < 60;
+	/** True while the reader sits at the bottom; only their own scrolling changes it. */
+	let stick = true;
+	const pin = () => {
+		if (stick) list.scrollTop = list.scrollHeight;
+	};
 
-	/** Adds messages; follows the bottom only if the reader was already there. */
+	// Toggling system messages or a deletion changes the content, not the box: pin again.
+	$effect(() => {
+		void shown.length;
+		if (list) tick().then(pin);
+	});
+
+	function onScroll() {
+		stick = nearBottom();
+		if (list.scrollTop < 40) loadOlder();
+	}
+
+	/** Adds messages; follows the bottom unless the reader scrolled up. */
 	async function add(incoming: ChatMessage[]) {
-		const follow = nearBottom();
 		messages = merge(messages, incoming);
 		await tick();
-		if (follow) list.scrollTop = list.scrollHeight;
+		pin();
 	}
 
 	async function loadOlder() {
@@ -72,14 +87,20 @@
 				hasMore = page.length === PAGE;
 				messages = merge(messages, page);
 				await tick();
-				list.scrollTop = list.scrollHeight;
+				pin();
 			})
 			.catch(() => (error = 'Could not load chat history.'));
+		// The page re-lays out (screen size, party box loading): stay on the newest line.
+		const resized = new ResizeObserver(pin);
+		resized.observe(list);
 		const offs = [
 			on('CHAT_MESSAGE', (m: ChatMessage) => add([m])),
 			on('CHAT_DELETED', ({ id }: { id: string }) => (messages = remove(messages, id)))
 		];
-		return () => offs.forEach((off) => off());
+		return () => {
+			offs.forEach((off) => off());
+			resized.disconnect();
+		};
 	});
 
 	async function send(e?: Event) {
@@ -91,7 +112,7 @@
 		try {
 			const m = await api<ChatMessage>('POST', '/chat/messages', { text });
 			draft = '';
-			list.scrollTop = list.scrollHeight; // your own message: always jump down
+			stick = true; // your own message: always jump down
 			await add([m]);
 		} catch (err) {
 			if (!(err instanceof ApiError)) error = 'Could not send. Check your connection.';
@@ -151,7 +172,7 @@
 		{/if}
 	</header>
 
-	<ul bind:this={list} onscroll={() => list.scrollTop < 40 && loadOlder()}>
+	<ul bind:this={list} onscroll={onScroll}>
 		{#if hasMore && messages.length}
 			<li class="older">
 				<button type="button" onclick={loadOlder} disabled={loadingOlder}>

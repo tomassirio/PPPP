@@ -37,6 +37,7 @@
 	const earned = $derived(summary?.badges.filter((b) => b.earned).length ?? 0);
 	const next = $derived(summary?.badges.find((b) => !b.earned));
 	const dex = $derived(summary?.counters.find((c) => c.label === 'Pokédex'));
+	const seen = $derived(summary?.counters.find((c) => c.label === 'Seen'));
 
 	function hp(m: Member) {
 		const r = m.maxHp > 0 ? m.hp / m.maxHp : 0;
@@ -94,9 +95,14 @@
 				</li>
 			{/each}
 		</ul>
-		<p class="muted">
-			{next ? `Next: ${next.place}` : 'All badges earned'}{#if dex} · Pokédex {dex.value}/{dex.max}{/if}
-		</p>
+		<p class="muted">{next ? `Next Gym: ${next.place.replace(/ Gym$/, '')}` : 'All badges earned'}</p>
+		{#if dex}
+			<hr />
+			<div class="dex">
+				<h2 id="dex-h">Pokédex</h2>
+				<p><span class="pixel">{dex.value}</span><span class="muted"> / {dex.max} owned{#if seen} · {seen.value} seen{/if}</span></p>
+			</div>
+		{/if}
 	</section>
 {/if}
 
@@ -275,6 +281,15 @@
 	.badges .locked span {
 		filter: grayscale(1) brightness(0.55);
 		opacity: 0.45;
+	}
+	.dex {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	.dex .pixel {
+		font-size: 12px;
+		color: var(--accent);
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.bar span {

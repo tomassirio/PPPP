@@ -29,6 +29,8 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
     private static final int ROM_MON_NAMES = 0x1C21E, ROM_DEX_ORDER = 0x41024, SPECIES_COUNT = 190,
             ROM_BASE_STATS = 0x383DE, BASE_STATS_SIZE = 28, ROM_MEW_BASE_STATS = 0x425B;
 
+    /** Bulbasaur, Ivysaur, Charmander, Squirtle (bits = Pokédex number - 1). */
+    private static final BitSet STARTER_DEX = BitSet.valueOf(new byte[] {0b0100_1011});
     private static final String[] BADGE_NAMES = {"Boulder", "Cascade", "Thunder", "Rainbow", "Soul", "Marsh", "Volcano", "Earth"};
     private static final String[] LEADERS = {"Brock", "Misty", "Lt. Surge", "Erika", "Koga", "Sabrina", "Blaine", "Giovanni"};
     private static final String[] GYMS = {"Pewter Gym", "Cerulean Gym", "Vermilion Gym", "Celadon Gym", "Fuchsia Gym",
@@ -92,7 +94,11 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
                     text(ram.slice(PARTY_NICKS + i * NAME_LENGTH, NAME_LENGTH), 0, NAME_LENGTH),
                     ram.u8(base + 0x21), ram.u16(base + 1), ram.u16(base + 0x22), ram.u8(base + 4)));
         }
-        return new State(List.copyOf(party), BitSet.valueOf(ram.slice(DEX_OWNED, DEX_BYTES)),
+        BitSet owned = BitSet.valueOf(ram.slice(DEX_OWNED, DEX_BYTES));
+        // Picking a starter, the game shows its Pokédex entry by briefly marking exactly these four as owned
+        // (pokered StarterDex), before the player owns anything. Not a catch.
+        if (owned.equals(STARTER_DEX)) owned = new BitSet();
+        return new State(List.copyOf(party), owned,
                 BitSet.valueOf(ram.slice(DEX_SEEN, DEX_BYTES)), ram.u8(BADGES), ram.u16le(TOWNS_VISITED));
     }
 
