@@ -9,12 +9,13 @@
 	let status = $state('');
 	let blockedUntil = $state(0);
 	let now = $state(Date.now());
-	let compound = $state('');
 	const blocked = $derived(now < blockedUntil);
 
+	let statusError = $state(false);
 	let statusTimer: ReturnType<typeof setTimeout> | undefined;
-	function say(text: string) {
+	function say(text: string, error = true) {
 		status = text;
+		statusError = error;
 		clearTimeout(statusTimer);
 		statusTimer = setTimeout(() => (status = ''), 3000);
 	}
@@ -30,7 +31,7 @@
 		lastPress = command.toUpperCase();
 		try {
 			await api('POST', '/inputs', { command, repeat: 1 });
-			say(mode === 'DEMOCRACY' ? `Voted ${lastPress}` : `Sent ${lastPress}`);
+			say(mode === 'DEMOCRACY' ? 'Voted' : 'Sent', false);
 		} catch (e) {
 			if (!(e instanceof ApiError)) return say('Network error, try again');
 			if (e.status === 429) {
@@ -66,19 +67,11 @@
 		heldTimer = setTimeout(() => (held = null), 120); // a quick tap still shows
 	}
 
-	function submitCompound(e: SubmitEvent) {
-		e.preventDefault();
-		const c = compound.trim();
-		if (!c) return;
-		send(c);
-		compound = '';
-	}
-
-	const dpad: { b: Button; label: string; path: string; area: string }[] = [
-		{ b: 'up', label: 'Up', path: 'M6 15l6-6 6 6', area: 'up' },
-		{ b: 'left', label: 'Left', path: 'M15 6l-6 6 6 6', area: 'left' },
-		{ b: 'right', label: 'Right', path: 'M9 6l6 6-6 6', area: 'right' },
-		{ b: 'down', label: 'Down', path: 'M6 9l6 6 6-6', area: 'down' }
+	const dpad: { b: Button; label: string; path: string; area: string; key: string }[] = [
+		{ b: 'up', label: 'Up', path: 'M6 15l6-6 6 6', area: 'up', key: 'ArrowUp' },
+		{ b: 'left', label: 'Left', path: 'M15 6l-6 6 6 6', area: 'left', key: 'ArrowLeft' },
+		{ b: 'right', label: 'Right', path: 'M9 6l6 6-6 6', area: 'right', key: 'ArrowRight' },
+		{ b: 'down', label: 'Down', path: 'M6 9l6 6 6-6', area: 'down', key: 'ArrowDown' }
 	];
 </script>
 
@@ -94,6 +87,7 @@
 					class:held={held === d.b}
 					style:grid-area={d.area}
 					aria-label={d.label}
+					aria-keyshortcuts={d.key}
 					disabled={blocked}
 					onclick={() => send(d.b)}
 				>
@@ -113,47 +107,31 @@
 			<div class="hub"></div>
 		</div>
 		<div class="ab">
-			<button type="button" class="round pixel b" class:held={held === 'b'} aria-label="B button" disabled={blocked} onclick={() => send('b')}
-				>B</button
+			<button type="button" class="round pixel b" class:held={held === 'b'} aria-label="B button" aria-keyshortcuts="X" disabled={blocked} onclick={() => send('b')}
+				>B<kbd aria-hidden="true">X</kbd></button
 			>
-			<button type="button" class="round pixel" class:held={held === 'a'} aria-label="A button" disabled={blocked} onclick={() => send('a')}
-				>A</button
+			<button type="button" class="round pixel" class:held={held === 'a'} aria-label="A button" aria-keyshortcuts="Z" disabled={blocked} onclick={() => send('a')}
+				>A<kbd aria-hidden="true">Z</kbd></button
 			>
 		</div>
 	</div>
 	<div class="meta">
-		<button type="button" class="pill" class:held={held === 'select'} aria-label="Select" disabled={blocked} onclick={() => send('select')}
-			>SELECT</button
+		<button type="button" class="pill" class:held={held === 'select'} aria-label="Select" aria-keyshortcuts="Shift" disabled={blocked} onclick={() => send('select')}
+			>SELECT<kbd aria-hidden="true">Shift</kbd></button
 		>
-		<button type="button" class="pill" class:held={held === 'start'} aria-label="Start" disabled={blocked} onclick={() => send('start')}
-			>START</button
+		<button type="button" class="pill" class:held={held === 'start'} aria-label="Start" aria-keyshortcuts="Enter" disabled={blocked} onclick={() => send('start')}
+			>START<kbd aria-hidden="true">Enter</kbd></button
 		>
 	</div>
 </div>
 
 <p class="last" role="status" aria-live="polite">
-	{#if status}{status}{:else if lastPress}Your last press: <strong class="pixel">{lastPress}</strong>{/if}
-</p>
-
-{#if mode === 'ANARCHY'}
-	<form class="compound" onsubmit={submitCompound}>
-		<label for="compound">Combo</label>
-		<input
-			id="compound"
-			type="text"
-			placeholder="left2down2"
-			autocomplete="off"
-			spellcheck="false"
-			maxlength="40"
-			bind:value={compound}
-		/>
-		<button type="submit" disabled={blocked}>Send</button>
-	</form>
-{/if}
-
-<p class="hint">
-	{mode === 'DEMOCRACY' ? 'In democracy, each press is a vote. ' : ''}Keyboard: arrow keys, Z for A, X for B,
-	Enter for Start, Shift for Select.
+	{#if lastPress}
+		<span class="muted">Last press</span>
+		<strong class="chip pixel">{lastPress}</strong>
+	{/if}
+	{#if status}<span class:error={statusError} class:muted={!statusError}>{status}</span>{/if}
+	<span class="keys">Keyboard: arrows, plus the key on each button</span>
 </p>
 
 <style>
@@ -192,8 +170,7 @@
 		opacity: 0.55;
 		cursor: not-allowed;
 	}
-	button:focus-visible,
-	input:focus-visible {
+	button:focus-visible {
 		outline: 3px solid var(--accent);
 		outline-offset: 2px;
 	}
@@ -245,45 +222,58 @@
 	}
 	.last {
 		margin: 0;
-		min-height: 20px;
-		font-size: 14px;
-	}
-	.last strong {
-		font-size: 11px;
-	}
-	.compound {
+		min-height: 28px;
 		display: flex;
-		gap: 8px;
 		align-items: center;
-		font-size: 14px;
+		gap: 8px;
+		font-size: 13px;
 	}
-	.compound label {
+	.muted {
 		color: var(--muted);
 	}
-	.compound input {
-		flex: 1 1 auto;
-		min-width: 0;
-		height: 40px;
-		box-sizing: border-box;
-		background: var(--bg);
-		border: 1px solid #3a4851;
-		border-radius: 8px;
-		color: var(--text);
-		padding: 0 12px;
-		font: inherit;
-	}
-	.compound button {
-		height: 40px;
-		padding: 0 14px;
-		border-radius: 8px;
-		background: var(--accent);
-		color: var(--ink);
+	.error {
+		color: var(--danger);
 		font-weight: 600;
 	}
-	.hint {
-		margin: 0;
-		font-size: 13px;
+	.chip {
+		padding: 5px 8px;
+		border-radius: 6px;
+		background: var(--panel);
+		border: 1px solid var(--border);
+		font-size: 10px;
+		line-height: 1;
+	}
+	.keys {
+		margin-left: auto;
+		font-size: 12px;
 		color: var(--muted);
+	}
+	/* Keyboard shortcuts as keycaps on the buttons, only where there is a keyboard and mouse. */
+	button {
+		position: relative;
+	}
+	kbd {
+		display: none;
+		position: absolute;
+		right: -6px;
+		bottom: -6px;
+		padding: 2px 4px;
+		border-radius: 4px;
+		background: var(--bg);
+		color: var(--text);
+		border: 1px solid var(--border);
+		font: 600 9px/1 var(--body-font);
+		letter-spacing: 0;
+		pointer-events: none;
+	}
+	.keys {
+		display: none;
+	}
+	@media (hover: hover) and (pointer: fine) and (min-width: 761px) {
+		kbd,
+		.keys {
+			display: inline-block;
+		}
 	}
 	@media (max-width: 400px) {
 		.shell {
@@ -303,13 +293,6 @@
 		}
 		.ab {
 			gap: 10px;
-		}
-	}
-	/* Phones: no keyboard, so no combo box or key hints. */
-	@media (max-width: 760px) {
-		.compound,
-		.hint {
-			display: none;
 		}
 	}
 </style>
