@@ -8,7 +8,7 @@ Design doc: https://claude.ai/artifact/58m66h93Jn9y9LyDrqKDrm (read with the Cla
   - `pppp-core`: `model`, `exception`, `service`, `repository`, `job`, `config` — business logic. No web dependencies; Redis access only in `repository`.
   - `pppp-app`: `controller` (+ `ApiExceptionHandler`), `security`, `realtime` (SSE, screen WebSocket), `config`, `PpppApplication`.
   - Dependencies point one way: app -> core -> emulator.
-- Build/test: `cd backend && mvn -q test`. Run: `mvn -q package -DskipTests && java -jar pppp-app/target/pppp-app-*.jar` with the repo-root `.env` exported (`set -a; . ../.env; set +a`). Integration tests live in pppp-app: `@SpringBootTest @AutoConfigureMockMvc @Import(TestRedis.class)` (Testcontainers Redis; Docker required).
+- Build/test: `cd backend && mvn -q test`. Run: `mvn -q package -DskipTests && java -jar pppp-app/target/pppp-app-*.jar` with the repo-root `.env` exported (`set -a; . ../.env; set +a`). Integration tests live in pppp-app: `@SpringBootTest @DirtiesContext @AutoConfigureMockMvc @Import(TestRedis.class)` (Testcontainers Redis; Docker required). `@DirtiesContext` gives each class its own context and Redis: shared contexts leak settings, rate limits and mode between classes.
 - Auth in tests: `.with(user("x@y.z").roles("PLAYER"))` or `oidcLogin()`; mutating calls need `.with(csrf())`.
 - Emulator: Coffee GB, `eu.rekawek.coffeegb:core` from Maven Central.
 
