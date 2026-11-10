@@ -18,7 +18,9 @@ spec:
       containers:
       - name: redis
         image: {{ .Values.redis.image }}
-        args: ["redis-server", "--appendonly", "yes"]
+        # command, not args: skips the image entrypoint, which chowns /data to the redis user before dropping
+        # root. The NAS export squashes root, so that chown fails; writing as root works, like the backend.
+        command: ["redis-server", "--appendonly", "yes"]
         ports:
         - containerPort: 6379
           name: redis
