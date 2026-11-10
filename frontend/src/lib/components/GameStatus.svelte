@@ -133,7 +133,7 @@
 	}
 	.party {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+		grid-template-columns: repeat(2, minmax(0, 1fr)); /* always 2 x 3: one column made the middle column scroll */
 		gap: 8px;
 	}
 	.mon,

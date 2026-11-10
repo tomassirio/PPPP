@@ -141,8 +141,8 @@
 	});
 
 	// Desktop looks the same on every monitor: the layout is designed at a laptop's size and the whole page is
-	// zoomed to fill bigger windows (an office monitor renders like the laptop at ~120%). The spare width of a
-	// wider window goes to the Pokédex banners. Never below 1 (small windows keep their own layout), capped at 1.6.
+	// zoomed to fit the window (an office monitor renders like the laptop at ~120%, a small window shrinks it), so
+	// nothing ever scrolls. The spare width of a wider window goes to the Pokédex banners. Between 0.6 and 1.6.
 	const DESKTOP = '(min-width: 1100px) and (min-height: 600px)';
 	const REF_W = 1728;
 	const REF_H = 968;
@@ -151,7 +151,7 @@
 	$effect(() => {
 		const fit = () => {
 			uiZoom = matchMedia(DESKTOP).matches
-				? Math.min(1.6, Math.max(1, Math.min(innerWidth / REF_W, innerHeight / REF_H)))
+				? Math.min(1.6, Math.max(0.6, Math.min(innerWidth / REF_W, innerHeight / REF_H)))
 				: 1;
 			pageH = innerHeight / uiZoom;
 		};
