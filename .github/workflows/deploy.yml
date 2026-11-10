@@ -1,0 +1,136 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image-tag:
+        description: 'Existing image tag to deploy (empty = build this commit)'
+        required: false
+        type: string
+        default: ''
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  NAMESPACE: pppp
+
+jobs:
+  build:
+    if: ${{ inputs.image-tag == '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        app: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        if: matrix.app == 'backend'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Test backend
+        if: matrix.app == 'backend'
+        working-directory: backend
+        run: mvn -q -B test
+
+      - name: Set up Node
+        if: matrix.app == 'frontend'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Test frontend
+        if: matrix.app == 'frontend'
+        working-directory: frontend
+        run: npm ci && npm run check && npm test
+
+      - uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.app }}
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/pppp-${{ matrix.app }}:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/pppp-${{ matrix.app }}:latest
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
+
+  deploy:
+    needs: build
+    if: ${{ !cancelled() && (needs.build.result == 'success' || needs.build.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    environment: prod
+    env:
+      IMAGE_TAG: ${{ inputs.image-tag || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Connect to Twingate
+        uses: twingate/github-action@v1
+        with:
+          service-key: ${{ secrets.TWINGATE_SERVICE_KEY }}
+
+      - name: Setup Kubernetes
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_CONTENT }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+          CLUSTER_NAME=$(kubectl config view -o jsonpath='{.clusters[0].name}')
+          kubectl config set-cluster "$CLUSTER_NAME" --insecure-skip-tls-verify=true
+          kubectl cluster-info
+
+      - name: Deploy backend
+        env:
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          PPPP_ADMINS: ${{ vars.PPPP_ADMINS }}
+        run: |
+          # --set splits on commas; the admin list is comma-separated.
+          ADMINS="${PPPP_ADMINS//,/\\,}"
+          helm upgrade --install pppp-backend ./backend/chart \
+            --namespace "$NAMESPACE" --create-namespace \
+            --set image.repository="ghcr.io/${{ github.repository_owner }}/pppp-backend" \
+            --set image.tag="$IMAGE_TAG" \
+            --set-string application.admins="$ADMINS" \
+            --set-string application.google.clientId="${{ vars.GOOGLE_CLIENT_ID }}" \
+            --set-string application.google.clientSecret="$GOOGLE_CLIENT_SECRET" \
+            --wait --timeout 5m
+
+      - name: Deploy frontend
+        run: |
+          helm upgrade --install pppp-frontend ./frontend/chart \
+            --namespace "$NAMESPACE" \
+            --set image.repository="ghcr.io/${{ github.repository_owner }}/pppp-frontend" \
+            --set image.tag="$IMAGE_TAG" \
+            --wait --timeout 5m
+
+      - name: Show state on failure
+        if: failure()
+        run: |
+          kubectl get pods,svc,pvc -n "$NAMESPACE" || true
+          kubectl logs -l app=pppp-backend -n "$NAMESPACE" --tail=100 || true
+          kubectl logs -l app=pppp-frontend -n "$NAMESPACE" --tail=50 || true

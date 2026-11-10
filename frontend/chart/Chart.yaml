@@ -1,0 +1,6 @@
+apiVersion: v2
+name: pppp-frontend
+description: PPPP frontend (SvelteKit SPA on nginx), proxies /api, /ws and OAuth to the backend; Cloudflare Tunnel points here
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

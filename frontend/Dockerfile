@@ -1,4 +1,5 @@
-FROM node:22-alpine AS build
+# Build on the runner's own arch: the static output is portable.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 WORKDIR /src
 COPY package.json package-lock.json .npmrc ./
 RUN npm ci
