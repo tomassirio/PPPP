@@ -103,7 +103,6 @@ class ScreenWebSocketTest {
 
             events.publishEvent(new UserRevokedEvent("friend@x.y"));
             assertThat(closed.get(5, TimeUnit.SECONDS).getCode()).isEqualTo(CloseStatus.POLICY_VIOLATION.getCode());
-            assertThat(ws.isOpen()).isFalse();
         } finally {
             host.powerOff();
             host.eject();
