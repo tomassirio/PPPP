@@ -1,5 +1,6 @@
 package dev.pppp.controller;
 
+import dev.pppp.SchedulerThread;
 import dev.pppp.TestRedis;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -188,7 +189,7 @@ class InputApiTest {
     private static void await(Check check) throws Exception {
         long deadline = System.currentTimeMillis() + 5000;
         while (!check.ok()) {
-            if (System.currentTimeMillis() > deadline) throw new AssertionError("condition not met within 5 s");
+            if (System.currentTimeMillis() > deadline) throw new AssertionError("condition not met within 5 s; " + SchedulerThread.stack());
             Thread.sleep(20);
         }
     }

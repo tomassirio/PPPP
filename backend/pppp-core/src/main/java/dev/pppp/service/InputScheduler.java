@@ -68,7 +68,10 @@ public class InputScheduler implements SmartLifecycle {
     @Override
     public void start() {
         queue.createGroup();
-        thread = Thread.ofPlatform().name("input-scheduler").daemon().start(this::loop);
+        // Assign before starting: loop() runs only while thread == itself, so a thread that starts first would exit at once.
+        Thread t = Thread.ofPlatform().name("input-scheduler").daemon().unstarted(this::loop);
+        thread = t;
+        t.start();
     }
 
     @Override
