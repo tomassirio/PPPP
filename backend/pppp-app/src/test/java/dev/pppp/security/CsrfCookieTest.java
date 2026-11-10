@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 // Own context: spring-security-test's csrf() swaps the CSRF repository inside a shared cached context.
 @SpringBootTest(properties = "spring.application.name=csrf-cookie-test")
+@DirtiesContext
 @AutoConfigureMockMvc
 @Import(TestRedis.class)
 class CsrfCookieTest {

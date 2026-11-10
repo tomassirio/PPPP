@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.quartz.CronTrigger;
 import org.quartz.Scheduler;
 import org.quartz.TriggerKey;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -47,6 +48,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 @SpringBootTest
+@DirtiesContext
 @AutoConfigureMockMvc
 @Import(TestRedis.class)
 class AdminApiTest {
