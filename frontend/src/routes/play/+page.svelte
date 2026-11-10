@@ -442,17 +442,26 @@
 			min-height: 0;
 			width: 100%;
 			flex-wrap: nowrap;
+			max-width: calc(var(--game-w) + 880px); /* 1440px with the old 560px game column */
 		}
 		.game,
 		.side {
 			min-height: 0;
 			overflow-y: auto;
 		}
-		/* Tall windows: the screen is width-bound, so the slot stops at the bezel's height and the screen and
-		   controller stay together, centred in the column, instead of leaving a gap between them. */
+		/* The game column is as wide as the screen the window's height allows, so the screen fills the column
+		   top to bottom on any monitor. 557px = header 75 + main padding 32 + controller 366 + gap 16 + bezel 68.
+		   ponytail: fixed controller/header heights; re-measure if those change. If the column still ends up
+		   narrower (narrow windows), the slot stops at the bezel and screen + controller stay centred together. */
+		.page {
+			--game-w: calc((100dvh - 557px) * 160 / 144 + 32px);
+		}
 		.game {
 			container-type: inline-size;
 			justify-content: center;
+			flex: 0 1 var(--game-w);
+			max-width: none;
+			min-width: 380px; /* the controller's minimum; short windows get a centred, smaller screen */
 		}
 		.screen-slot {
 			flex: 0 1 calc((100cqw - 32px) * 144 / 160 + 68px);
@@ -494,7 +503,7 @@
 			box-sizing: border-box;
 		}
 		main {
-			flex: 0 1 1440px;
+			flex: 0 1 calc(var(--game-w) + 880px);
 		}
 	}
 	:global(.page :focus-visible) {
