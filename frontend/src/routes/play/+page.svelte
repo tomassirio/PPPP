@@ -448,14 +448,20 @@
 			min-height: 0;
 			overflow-y: auto;
 		}
+		/* Tall windows: the screen is width-bound, so the slot stops at the bezel's height and the screen and
+		   controller stay together, centred in the column, instead of leaving a gap between them. */
+		.game {
+			container-type: inline-size;
+			justify-content: center;
+		}
 		.screen-slot {
-			flex: 1 1 0;
+			flex: 0 1 calc((100cqw - 32px) * 144 / 160 + 68px);
 			min-height: 200px;
 		}
 		.screen-slot :global(.fit) {
 			container-type: size;
-			/* Largest screen that fits: bezel padding 32px across, 76px of padding + LIVE strip down. */
-			--bezel-width: min(100cqw, (100cqh - 76px) * 160 / 144 + 32px);
+			/* Largest screen that fits: bezel padding 32px across, 68px of padding + LIVE strip down. */
+			--bezel-width: min(100cqw, (100cqh - 68px) * 160 / 144 + 32px);
 		}
 		/* Every pixel of height goes to the screen: tighter page padding and controller. */
 		main {
