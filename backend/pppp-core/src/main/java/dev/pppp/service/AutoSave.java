@@ -40,7 +40,7 @@ public class AutoSave {
     public SaveState run() {
         SaveState state = saves.takeAuto();
         if (state == null) return null;
-        chat.postSystem("Autosaved (" + state.id() + ")");
+        chat.postAdmin("Autosaved (" + state.id() + ")");
         return state;
     }
 

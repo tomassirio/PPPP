@@ -43,7 +43,7 @@ public class SaveStateService {
     /** Manual snapshot, announced in chat. IllegalStateException when the console is off or empty. */
     public SaveState takeManual() {
         SaveState state = take(SaveState.Kind.manual);
-        chat.postSystem("Save state taken (" + state.id() + ")");
+        chat.postAdmin("Save state taken (" + state.id() + ")");
         return state;
     }
 
@@ -65,7 +65,7 @@ public class SaveStateService {
         }
         host.loadState(states.read(cartridgeId, id));
         SaveState state = states.findAll(cartridgeId).stream().filter(s -> s.id().equals(id)).findFirst().orElseThrow();
-        chat.postSystem("Save state " + id + " loaded");
+        chat.postAdmin("Save state " + id + " loaded");
         events.publishEvent(new LiveEvent("CONSOLE_CHANGED", host.status()));
         return state;
     }

@@ -145,7 +145,7 @@ class AdminApiTest {
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.cartridgeId").value("blue"));
         verify(host).insert(eq("blue"), eq(DATA.resolve("roms/blue.gb")), eq(DATA.resolve("saves/blue.sav")));
-        verify(chat).postSystem(anyString());
+        verify(chat).postAdmin(anyString());
 
         console(EmulatorHost.Power.ON, "blue");
         mvc.perform(put("/api/v1/admin/console/power").with(ADMIN).with(csrf())

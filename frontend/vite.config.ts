@@ -4,6 +4,7 @@ import { defineConfig } from 'vitest/config';
 
 const backend = 'http://localhost:8080';
 
+
 export default defineConfig({
 	plugins: [
 		sveltekit({

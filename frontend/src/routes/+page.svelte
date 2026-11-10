@@ -6,6 +6,11 @@
 	import { loadMe } from '#lib/session.svelte.js';
 	import pibs from '#lib/assets/banner-pibs.webp';
 	import play from '#lib/assets/banner-play.webp';
+	import face from '#lib/assets/konami-face.webp';
+	import SignInAbout from '#lib/components/SignInAbout.svelte';
+	import SignInBackdrop from '#lib/components/SignInBackdrop.svelte';
+	import { bootChime, counter, fanfare, loadTeaser, type Teaser } from '#lib/teaser.js';
+
 
 	const BOOT_MS = 2900;
 
@@ -15,6 +20,74 @@
 	let held = $state<string | null>(null);
 	let dir = $state<string | null>(null);
 	let start: HTMLAnchorElement;
+
+	// Konami code (↑↑↓↓←→←→ B A; keys: arrows, X, Z; or taps): a wild PIBSIGNO. appears and the shell goes rainbow.
+	const KONAMI = ['up', 'up', 'down', 'down', 'left', 'right', 'left', 'right', 'b', 'a'];
+	let typed: string[] = [];
+	let glitch = $state(false);
+
+	// Fireworks: bursts at random spots, each a ring of stars and little faces flying out.
+	type Spark = { face: boolean; dx: number; dy: number; hue: number };
+	type Burst = { id: number; x: number; y: number; delay: number; sparks: Spark[] };
+	let bursts = $state<Burst[]>([]);
+	let burstId = 0;
+
+	function fireworks() {
+		bursts = Array.from({ length: 7 }, (_, i) => {
+			const n = 12;
+			return {
+				id: burstId++,
+				x: 10 + Math.random() * 80,
+				y: 10 + Math.random() * 60,
+				delay: i * 0.45,
+				sparks: Array.from({ length: n }, (_, k) => {
+					const angle = (k / n) * 2 * Math.PI + Math.random() * 0.3;
+					const dist = 90 + Math.random() * 70;
+					return { face: k % 3 === 0, dx: Math.cos(angle) * dist, dy: Math.sin(angle) * dist, hue: Math.random() * 360 };
+				})
+			};
+		});
+	}
+	let eatClick = false;
+
+	function input(key: string) {
+		typed = [...typed, key].slice(-KONAMI.length);
+		if (typed.join() !== KONAMI.join()) return false;
+		typed = [];
+		glitch = true;
+		fanfare();
+		fireworks();
+		setTimeout(() => ((glitch = false), (bursts = [])), 6000);
+		return true;
+	}
+
+	let teaser = $state<Teaser | null>(null);
+
+	// Attract mode: after a while with no input the screen cycles demo slides (party, progress) like an arcade
+	// cabinet; any key or tap brings the title back.
+	const IDLE_MS = 20000;
+	const SLIDE_MS = 4500;
+	let idle = $state(false);
+	let slide = $state(0);
+	let idleTimer: ReturnType<typeof setTimeout>;
+	const slides = $derived(
+		teaser ? (['party', 'progress', 'title'] as const).filter((k) => k !== 'party' || teaser!.party.length) : []
+	);
+	const attract = $derived(idle && !glitch && !denied && slides.length > 0 ? slides[slide % slides.length] : 'title');
+	const badges = $derived(counter(teaser, 'Badges'));
+	const caught = $derived(counter(teaser, 'Pokédex'));
+
+	// Sound is only allowed after a gesture: the first key or tap plays the power-on chime.
+	let chimed = false;
+	function activity() {
+		if (!chimed) {
+			chimed = true;
+			bootChime();
+		}
+		idle = false;
+		clearTimeout(idleTimer);
+		idleTimer = setTimeout(() => ((idle = true), (slide = 0)), IDLE_MS);
+	}
 
 	function skip() {
 		if (!booting) return false;
@@ -34,22 +107,33 @@
 		ArrowRight: 'right'
 	};
 
+	const FACE_KEYS: Record<string, string> = { KeyZ: 'a', KeyX: 'b' };
+
 	function onkeydown(e: KeyboardEvent) {
 		const t = e.target as HTMLElement;
 		if (e.metaKey || e.ctrlKey || e.altKey) return;
+		activity();
 		if (t.closest('input, textarea, select, [contenteditable]')) return;
-		if (skip()) return e.preventDefault();
+		// Any key skips the boot; only Enter/Space stop there (no sign-in mid-boot). Arrows, Z and X still count for the code.
+		if (skip() && !ARROWS[e.key] && !FACE_KEYS[e.code]) return e.preventDefault();
 		if (e.key === 'Enter' || e.key === ' ') {
 			e.preventDefault();
 			if (!e.repeat) signIn();
 		} else if (ARROWS[e.key]) {
 			e.preventDefault();
 			dir = ARROWS[e.key];
+			if (!e.repeat) input(dir);
+		} else if (FACE_KEYS[e.code]) {
+			// Z is A, X is B, as on /play. By physical key, so Caps Lock and other layouts work; the button presses in.
+			e.preventDefault();
+			held = FACE_KEYS[e.code];
+			if (!e.repeat) input(held);
 		}
 	}
 
 	function onkeyup(e: KeyboardEvent) {
 		if (ARROWS[e.key] === dir) dir = null;
+		if (FACE_KEYS[e.code] === held) held = null;
 	}
 
 	// Which D-pad arm the pointer landed on, from its offset to the pad's centre.
@@ -58,6 +142,7 @@
 		const x = e.clientX - r.left - r.width / 2;
 		const y = e.clientY - r.top - r.height / 2;
 		dir = Math.abs(x) > Math.abs(y) ? (x < 0 ? 'left' : 'right') : y < 0 ? 'up' : 'down';
+		input(dir);
 	}
 
 	function release() {
@@ -72,14 +157,27 @@
 			.catch(() => {});
 		if (matchMedia('(prefers-reduced-motion: reduce)').matches) booting = false;
 		const t = setTimeout(() => (booting = false), BOOT_MS);
-		return () => clearTimeout(t);
+		// The teaser is public; refreshed while the page is open. Fails quietly (the page works without it).
+		const refresh = () => loadTeaser().then((v) => (teaser = v), () => {});
+		refresh();
+		const poll = setInterval(refresh, 30000);
+		const slides = setInterval(() => idle && slide++, SLIDE_MS);
+		idleTimer = setTimeout(() => (idle = true), IDLE_MS);
+		return () => {
+			clearTimeout(t);
+			clearTimeout(idleTimer);
+			clearInterval(poll);
+			clearInterval(slides);
+		};
 	});
 </script>
 
-<svelte:window {onkeydown} {onkeyup} onpointerdown={skip} onpointerup={release} onblur={release} />
+<svelte:window {onkeydown} {onkeyup} onpointerdown={() => (skip(), activity())} onpointerup={release} onblur={release} />
+
+<SignInBackdrop {teaser} />
 
 <main>
-	<div class="device" class:booting>
+	<div class="device" class:booting class:glitch>
 		<div class="shell" aria-hidden="true"></div>
 
 		<div class="bezel">
@@ -90,8 +188,33 @@
 						><img src={play} alt="PlayPokemon" width="720" height="171" /></span
 					>
 				</h1>
-				<p class="press" aria-hidden="true">PRESS START</p>
-				{#if denied}
+				{#if attract === 'party' && teaser}
+					<div class="attract" aria-hidden="true">
+						<p class="slide-title">OUR TEAM</p>
+						<ul class="team">
+							{#each teaser.party.slice(0, 6) as m, i (i)}
+								<li>
+									{#if m.icon}<img src="/api/v1/game/icons/{m.icon}.png" alt="" />{/if}
+									<span>L{m.level}</span>
+								</li>
+							{/each}
+						</ul>
+					</div>
+				{:else if attract === 'progress' && teaser}
+					<div class="attract" aria-hidden="true">
+						<p class="slide-title">OUR JOURNEY</p>
+						<dl class="journey">
+							{#if badges}<dt>BADGES</dt><dd>{badges.value}/{badges.max}</dd>{/if}
+							{#if caught}<dt>CAUGHT</dt><dd>{caught.value}/{caught.max}</dd>{/if}
+							{#if teaser.playTime}<dt>TIME</dt><dd>{teaser.playTime}</dd>{/if}
+							<dt>ONLINE</dt><dd>{teaser.online}</dd>
+						</dl>
+					</div>
+				{/if}
+				<p class="press" aria-hidden="true">PRESS START TO SIGN IN</p>
+				{#if glitch}
+					<p class="textbox" role="status">A wild PIBSIGNO. appeared!</p>
+				{:else if denied}
 					<p class="textbox" role="alert">You're not on the trainer list. Ask the host to add you.</p>
 				{/if}
 				<span class="flash" aria-hidden="true"></span>
@@ -107,14 +230,25 @@
 
 		<div class="face" aria-hidden="true">
 			<!-- svelte-ignore a11y_no_static_element_interactions (decorative, hidden from AT) -->
-			<span class="round b" class:down={held === 'b'} onpointerdown={() => (held = 'b')}>B</span>
+			<span class="round b" class:down={held === 'b'} onpointerdown={() => {
+					held = 'b';
+					input('b');
+				}}>B</span>
 			<a
 				class="round a"
 				class:down={held === 'a'}
 				href="/oauth2/authorization/google"
 				data-sveltekit-reload
 				tabindex="-1"
-				onpointerdown={() => (held = 'a')}>A</a
+				onpointerdown={() => {
+					held = 'a';
+					eatClick = input('a');
+				}}
+				onclick={(e) => {
+					// The A that finishes the code shows the egg instead of signing in.
+					if (eatClick) e.preventDefault();
+					eatClick = false;
+				}}>A</a
 			>
 		</div>
 
@@ -137,7 +271,23 @@
 		<div class="speaker" aria-hidden="true"></div>
 	</div>
 
-	<p class="help">Press START to sign in with Google.</p>
+	<SignInAbout {teaser} />
+
+	{#if bursts.length}
+		<div class="fireworks" aria-hidden="true">
+			{#each bursts as b (b.id)}
+				<div class="burst" style:left="{b.x}%" style:top="{b.y}%" style:--delay="{b.delay}s">
+					{#each b.sparks as sp, k (k)}
+						{#if sp.face}
+							<img class="spark me" src={face} alt="" style:--dx="{sp.dx}px" style:--dy="{sp.dy}px" />
+						{:else}
+							<span class="spark" style:--dx="{sp.dx}px" style:--dy="{sp.dy}px" style:color="hsl({sp.hue} 95% 60%)">★</span>
+						{/if}
+					{/each}
+				</div>
+			{/each}
+		</div>
+	{/if}
 </main>
 
 <style>
@@ -152,14 +302,22 @@
 		gap: 24px;
 		padding: 20px 12px;
 		overflow: hidden;
-		background: radial-gradient(ellipse 60% 55% at 50% 42%, #1d1a28, var(--bg) 75%);
+		position: relative;
+		z-index: 1; /* above the backdrop */
+	}
+	/* The backdrop is see-through; the page colour sits under it. */
+	:global(body:has(main > .device)) {
+		background: var(--bg);
+	}
+	/* Wide: the about card beside the device. */
+	@media (min-width: 900px) {
+		main {
+			flex-direction: row;
+			gap: 56px;
+		}
 	}
 	p {
 		margin: 0;
-	}
-	.help {
-		font-size: 14px;
-		color: var(--muted);
 	}
 
 	/* Everything on the device is sized in cqw: 1cqw is 1% of the device width. */
@@ -176,8 +334,8 @@
 		--rubber: #2e2935;
 		--pixel: #1f1a33;
 		position: relative;
-		/* 1.67 is the device's height/width; 84px leaves room for the help line. */
-		width: min(410px, calc(100vw - 24px), calc((100dvh - 84px) / 1.67));
+		/* 1.67 is the device's height/width; 40px is the page padding, plus the about strip under it on phones. */
+		width: min(410px, calc(100vw - 24px), calc((100dvh - 40px - var(--below, 0px)) / 1.67));
 		min-width: 280px;
 		aspect-ratio: 100 / 167;
 		container-type: inline-size;
@@ -362,7 +520,7 @@
 		top: 79%;
 		width: 100%;
 		text-align: center;
-		font: 2.9cqw/1 var(--pixel-font);
+		font: 2.3cqw/1 var(--pixel-font); /* 22 square glyphs fit the 57cqw glass */
 		color: var(--pixel);
 		/* One running blink; dropping the delay from two whole cycles to 0 when boot ends keeps its phase. */
 		animation:
@@ -626,6 +784,154 @@
 		background:
 			var(--hole) 0 0 / 6cqw 2.85cqw,
 			var(--hole) 3cqw 1.42cqw / 6cqw 2.85cqw;
+	}
+
+	/* Konami egg: the press prompt makes way for the textbox; the shell cycles through every colour. */
+	.glitch .press {
+		visibility: hidden;
+	}
+	.glitch .shell {
+		animation: rainbow 1.2s linear infinite;
+	}
+	.fireworks {
+		position: fixed;
+		inset: 0;
+		z-index: 50;
+		pointer-events: none;
+		overflow: hidden;
+	}
+	.burst {
+		position: absolute;
+	}
+	/* Each spark starts at the burst's centre, flies out to (--dx, --dy), drifts down a little and fades. */
+	.spark {
+		position: absolute;
+		translate: -50% -50%;
+		font-size: 22px;
+		line-height: 1;
+		text-shadow: 0 0 8px currentColor;
+		opacity: 0;
+		animation: spark 1.6s cubic-bezier(0.15, 0.8, 0.3, 1) var(--delay) both;
+	}
+	/* Faces stay upright (the stars spin; a spun face ends upside down), with a little wobble instead. */
+	.spark.me {
+		animation-name: spark-face;
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		box-shadow: 0 0 0 2px #fff, 0 0 12px rgb(255 255 255 / 0.7);
+	}
+	@keyframes spark-face {
+		0% {
+			opacity: 1;
+			transform: translate(0, 0) scale(0.3) rotate(-12deg);
+		}
+		50% {
+			transform: translate(calc(var(--dx) * 0.8), calc(var(--dy) * 0.8 + 10px)) scale(0.9) rotate(12deg);
+		}
+		70% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+			transform: translate(var(--dx), calc(var(--dy) + 40px)) scale(1) rotate(0deg);
+		}
+	}
+	@keyframes spark {
+		0% {
+			opacity: 1;
+			transform: translate(0, 0) scale(0.3) rotate(0deg);
+		}
+		70% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+			transform: translate(var(--dx), calc(var(--dy) + 40px)) scale(1) rotate(200deg);
+		}
+	}
+	@keyframes rainbow {
+		to {
+			filter: hue-rotate(360deg);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.glitch .shell {
+			animation: none;
+			filter: hue-rotate(180deg);
+		}
+		/* No flying: the faces and stars just appear around each burst, then go with the egg. */
+		.spark,
+		.spark.me {
+			animation: none;
+			opacity: 1;
+			transform: translate(calc(var(--dx) * 0.6), calc(var(--dy) * 0.6));
+		}
+	}
+
+	@media (max-width: 899px) {
+		.device {
+			--below: 100px;
+		}
+		main {
+			gap: 14px;
+		}
+	}
+
+	/* Attract mode slides: drawn on the glass like the title, in the pixel font. */
+	.attract {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 3cqw;
+		padding-bottom: 8cqw;
+		background: inherit;
+		font-family: var(--pixel-font);
+		color: var(--pixel);
+		animation: slide-in 0.35s steps(4) both;
+	}
+	.slide-title {
+		font-size: 3cqw;
+	}
+	.team {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		display: grid;
+		grid-template-columns: repeat(3, 13cqw);
+		gap: 1.5cqw 3cqw;
+	}
+	.team li {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.6cqw;
+		font-size: 1.9cqw;
+	}
+	.team img {
+		width: 11cqw;
+		height: 11cqw;
+		object-fit: contain;
+		image-rendering: pixelated;
+	}
+	.journey {
+		margin: 0;
+		display: grid;
+		grid-template-columns: auto auto;
+		gap: 2cqw 5cqw;
+		font-size: 2.4cqw;
+	}
+	.journey dd {
+		margin: 0;
+		text-align: right;
+	}
+	@keyframes slide-in {
+		from {
+			clip-path: inset(0 100% 0 0);
+		}
 	}
 
 	@keyframes blink {

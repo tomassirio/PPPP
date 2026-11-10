@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 public class AllowlistRepository {
     private static final String ALLOWLIST = "allowlist";
     private static final String BANS = "bans";
+    private static final String PICTURES = "users:pictures";
 
     private final StringRedisTemplate redis;
 
@@ -46,6 +47,17 @@ public class AllowlistRepository {
     /** Returns false if the id was not on the allowlist. */
     public boolean remove(String id) {
         return redis.opsForHash().delete(ALLOWLIST, id) > 0;
+    }
+
+    /** users:pictures: user id -> Google profile photo URL. */
+    public void savePicture(String id, String url) {
+        redis.opsForHash().put(PICTURES, id, url);
+    }
+
+    public Map<String, String> pictures() {
+        Map<String, String> out = new java.util.HashMap<>();
+        redis.opsForHash().entries(PICTURES).forEach((k, v) -> out.put(k.toString(), v.toString()));
+        return out;
     }
 
     public boolean isBanned(String id) {

@@ -3,20 +3,20 @@ package dev.pppp.service;
 import dev.pppp.emulator.EmulatorHost;
 import dev.pppp.model.LiveEvent;
 import dev.pppp.repository.ConsoleStateRepository;
-import jakarta.annotation.PreDestroy;
 import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 /**
  * Admin console actions. Each one announces itself in chat, publishes CONSOLE_CHANGED and is remembered
- * in Redis, so a run survives a restart: on boot the cartridge and power state are restored; on shutdown
- * the running game gets an automatic save state. Depends on EmulatorHost, so @PreDestroy runs before the
- * emulator stops.
+ * in Redis, so a run survives a restart: on shutdown the running game gets an automatic save state; on boot
+ * the cartridge and power state are restored and the newest save state is loaded, so play resumes where it
+ * stopped.
  */
 @Service
 public class ConsoleService {
@@ -69,14 +69,35 @@ public class ConsoleService {
         if (cartridgeId == null) return;
         try {
             host.insert(cartridgeId, cartridges.require(cartridgeId), cartridges.batterySave(cartridgeId));
-            if (state.poweredOn()) host.powerOn();
+            if (state.poweredOn()) {
+                host.powerOn();
+                resume(cartridgeId);
+            }
             log.info("Restored console: {}", host.status());
         } catch (RuntimeException e) {
             log.warn("Could not restore console from Redis", e);
         }
     }
 
-    @PreDestroy
+    /**
+     * On ContextClosedEvent, the first step of shutdown: Redis (a lifecycle bean) is stopped before any
+     * @PreDestroy runs, and taking a save state needs it, so a @PreDestroy save always failed.
+     */
+    /**
+     * Loads the cartridge's newest save state, normally the one taken at shutdown. (Not compared with the battery
+     * save: the emulator rewrites that file while stopping, after the shutdown state.)
+     */
+    private void resume(String cartridgeId) {
+        var newest = saves.list().stream().findFirst().orElse(null);
+        if (newest == null) return;
+        try {
+            saves.load(newest.id());
+        } catch (RuntimeException e) {
+            log.warn("Could not resume {} from save state {}", cartridgeId, newest.id(), e); // e.g. other hardware
+        }
+    }
+
+    @EventListener(ContextClosedEvent.class)
     public void saveOnShutdown() {
         try {
             saves.takeAuto();
@@ -89,7 +110,7 @@ public class ConsoleService {
         EmulatorHost.Status s = host.status();
         if (s.cartridgeId() == null) state.clear();
         else state.save(s.cartridgeId(), s.power().name());
-        chat.postSystem(message);
+        chat.postAdmin(message);
         events.publishEvent(new LiveEvent("CONSOLE_CHANGED", s));
         return s;
     }

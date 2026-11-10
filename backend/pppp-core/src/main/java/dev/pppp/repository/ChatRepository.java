@@ -50,6 +50,17 @@ public class ChatRepository {
         return removed != null && removed > 0;
     }
 
+    /** Deletes every non-USER line (SYSTEM, ADMIN); returns how many. */
+    public int deleteNonUser() {
+        // ponytail: one XRANGE over the whole stream; fine while it is capped at ~5000 entries.
+        List<MapRecord<String, Object, Object>> all = redis.opsForStream().range(STREAM, Range.unbounded());
+        if (all == null) return 0;
+        String[] ids = all.stream().filter(r -> !"USER".equals(r.getValue().get("kind")))
+                .map(r -> r.getId().getValue()).toArray(String[]::new);
+        if (ids.length > 0) redis.opsForStream().delete(STREAM, ids);
+        return ids.length;
+    }
+
     public void muteUntil(String userId, long untilEpochMs) {
         redis.opsForHash().put(MUTES, userId, Long.toString(untilEpochMs));
     }

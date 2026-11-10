@@ -7,6 +7,7 @@ import dev.pppp.model.ChatMessage;
 import dev.pppp.model.LiveEvent;
 import dev.pppp.repository.ChatRepository;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -42,25 +43,53 @@ public class ChatService {
         return store(userId, displayName, text, "USER", bridge.trySubmit(userId, text));
     }
 
-    /** Stores a SYSTEM message in chat:stream and publishes CHAT_MESSAGE. Must never throw. */
+    /** A SYSTEM message everyone sees (mode changes, game events). Stored in chat:stream, published as CHAT_MESSAGE. Never throws. */
     public void postSystem(String text) {
+        post(text, "SYSTEM");
+    }
+
+    /** An ADMIN message: console and moderation notices only admins see, in history and live. Never throws. */
+    public void postAdmin(String text) {
+        post(text, "ADMIN");
+    }
+
+    private void post(String text, String kind) {
         try {
-            store("system", "System", text, "SYSTEM", false);
+            store("system", "System", text, kind, false);
         } catch (RuntimeException e) {
-            log.warn("Could not post system message '{}'", text, e);
+            log.warn("Could not post {} message '{}'", kind, text, e);
         }
     }
 
-    /** Newest first, strictly older than {@code before} when given. */
-    public List<ChatMessage> history(String before, int limit) {
+    /** Newest first, strictly older than {@code before} when given. ADMIN messages only for admins. */
+    public List<ChatMessage> history(String before, int limit, boolean admin) {
         if (before != null && !before.matches("\\d+-\\d+")) throw new IllegalArgumentException("Invalid message id");
         if (limit < 1 || limit > 100) throw new IllegalArgumentException("limit must be 1 to 100");
-        return repo.newestBefore(before, limit);
+        if (admin) return repo.newestBefore(before, limit);
+        List<ChatMessage> out = new ArrayList<>(limit);
+        String cursor = before;
+        while (out.size() < limit) { // skip admin lines but still fill the page
+            List<ChatMessage> page = repo.newestBefore(cursor, limit);
+            for (ChatMessage m : page) {
+                if (!"ADMIN".equals(m.kind()) && out.size() < limit) out.add(m);
+            }
+            if (page.size() < limit) break;
+            cursor = page.getLast().id();
+        }
+        return out;
     }
 
     public void delete(String id) {
         if (!repo.delete(id)) throw new NotFoundException("No such message");
         events.publishEvent(new LiveEvent("CHAT_DELETED", Map.of("id", id)));
+    }
+
+    /** Removes all SYSTEM and ADMIN lines (players' messages stay), tells browsers via CHAT_CLEARED, logs who did it. */
+    public int clearSystem(String adminId) {
+        int removed = repo.deleteNonUser();
+        events.publishEvent(new LiveEvent("CHAT_CLEARED", Map.of("removed", removed)));
+        postAdmin(adminId + " cleared " + removed + " system messages");
+        return removed;
     }
 
     public void mute(String userId, int minutes) {

@@ -23,7 +23,7 @@
 		<dt>Paused</dt><dd>{c.paused ? 'yes' : 'no'}</dd>
 		<dt>Speed</dt><dd>{c.speed === null ? 'unknown' : `${c.speed}x`}</dd>
 	</dl>
-	<div class="row">
+	<div class="row actions">
 		{#if c.power === 'ON'}
 			<button class="danger" onclick={() => consoleAction('Power off', 'PUT', '/power', { state: 'OFF' }, 'Power the console off?')}>Power off</button>
 		{:else}

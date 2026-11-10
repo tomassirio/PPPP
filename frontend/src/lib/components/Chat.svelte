@@ -4,7 +4,7 @@
 	import { api, ApiError } from '../api';
 	import { on } from '../events';
 	import { session, isAdmin } from '../session.svelte';
-	import { merge, modeParts, remove, nameColor, type ChatMessage } from '../chat/messages';
+	import { merge, remove, nameColor, systemParts, type ChatMessage } from '../chat/messages';
 
 	const PAGE = 50;
 	const MAX = 300;
@@ -21,7 +21,7 @@
 
 	const admin = $derived(isAdmin(session.me));
 
-	// Per-viewer preference: hide SYSTEM lines so only people chatting show.
+	// Per-viewer preference: hide SYSTEM (and, for admins, ADMIN) lines so only people chatting show.
 	let showSystem = $state(read() !== '0');
 	function read() {
 		try {
@@ -37,16 +37,32 @@
 			// storage blocked: preference lasts this page only
 		}
 	});
-	const shown = $derived(showSystem ? messages : messages.filter((m) => m.kind !== 'SYSTEM'));
+	const isSystem = (m: ChatMessage) => m.kind === 'SYSTEM' || m.kind === 'ADMIN';
+	const shown = $derived(showSystem ? messages : messages.filter((m) => !isSystem(m)));
 
 	const nearBottom = () => list.scrollHeight - list.scrollTop - list.clientHeight < 60;
+	/** True while the reader sits at the bottom; only their own scrolling changes it. */
+	let stick = true;
+	const pin = () => {
+		if (stick) list.scrollTop = list.scrollHeight;
+	};
 
-	/** Adds messages; follows the bottom only if the reader was already there. */
+	// Toggling system messages or a deletion changes the content, not the box: pin again.
+	$effect(() => {
+		void shown.length;
+		if (list) tick().then(pin);
+	});
+
+	function onScroll() {
+		stick = nearBottom();
+		if (list.scrollTop < 40) loadOlder();
+	}
+
+	/** Adds messages; follows the bottom unless the reader scrolled up. */
 	async function add(incoming: ChatMessage[]) {
-		const follow = nearBottom();
 		messages = merge(messages, incoming);
 		await tick();
-		if (follow) list.scrollTop = list.scrollHeight;
+		pin();
 	}
 
 	async function loadOlder() {
@@ -72,14 +88,21 @@
 				hasMore = page.length === PAGE;
 				messages = merge(messages, page);
 				await tick();
-				list.scrollTop = list.scrollHeight;
+				pin();
 			})
 			.catch(() => (error = 'Could not load chat history.'));
+		// The page re-lays out (screen size, party box loading): stay on the newest line.
+		const resized = new ResizeObserver(pin);
+		resized.observe(list);
 		const offs = [
 			on('CHAT_MESSAGE', (m: ChatMessage) => add([m])),
-			on('CHAT_DELETED', ({ id }: { id: string }) => (messages = remove(messages, id)))
+			on('CHAT_DELETED', ({ id }: { id: string }) => (messages = remove(messages, id))),
+			on('CHAT_CLEARED', () => (messages = messages.filter((m) => !isSystem(m))))
 		];
-		return () => offs.forEach((off) => off());
+		return () => {
+			offs.forEach((off) => off());
+			resized.disconnect();
+		};
 	});
 
 	async function send(e?: Event) {
@@ -91,7 +114,7 @@
 		try {
 			const m = await api<ChatMessage>('POST', '/chat/messages', { text });
 			draft = '';
-			list.scrollTop = list.scrollHeight; // your own message: always jump down
+			stick = true; // your own message: always jump down
 			await add([m]);
 		} catch (err) {
 			if (!(err instanceof ApiError)) error = 'Could not send. Check your connection.';
@@ -125,7 +148,9 @@
 		}
 	}
 
-	const time = (at: number) => new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+	/** "9 Nov, 11:46" in the viewer's locale. */
+	const time = (at: number) =>
+		new Date(at).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 </script>
 
 <!-- Keys typed or pressed anywhere in chat must never reach the game's keyboard controls. -->
@@ -151,7 +176,7 @@
 		{/if}
 	</header>
 
-	<ul bind:this={list} onscroll={() => list.scrollTop < 40 && loadOlder()}>
+	<ul bind:this={list} onscroll={onScroll}>
 		{#if hasMore && messages.length}
 			<li class="older">
 				<button type="button" onclick={loadOlder} disabled={loadingOlder}>
@@ -160,12 +185,15 @@
 			</li>
 		{/if}
 		{#each shown as m (m.id)}
-			{@const system = m.kind === 'SYSTEM'}
-			<li class:system class:mine={m.user === session.me?.id} title={time(m.at)}>
-				<span class="who" style:color={system ? undefined : nameColor(m.user)}>{m.name}</span>
+			{@const system = isSystem(m)}
+			<li class:system class:mine={m.user === session.me?.id}>
+				<time class="ts" datetime={new Date(m.at).toISOString()}>{time(m.at)}</time>
+				<!-- System lines need no sender; admin-only ones keep a tag so admins know players don't see them. -->
+				{#if system}<span class="sr-only">System: </span>{:else}<span class="who" style:--name={nameColor(m.user)}>{m.name}</span>{/if}
+				{#if m.kind === 'ADMIN'}<span class="tag admin-only">admin only</span>{/if}
 				{#if m.command}<span class="tag">command</span>{/if}
 				<span class="text"
-					>{#if system}{#each modeParts(m.text) as part, i (i)}{#if part === 'ANARCHY' || part === 'DEMOCRACY'}<span class="mode {part.toLowerCase()}">{part}</span>{:else}{part}{/if}{/each}{:else}{m.text}{/if}</span
+					>{#if system}{#each systemParts(m.text) as part, i (i)}{#if part.mode}<span class="mode {part.mode}">{part.text}</span>{:else if part.town === 'rainbow'}<span class="town rainbow">{part.text}</span>{:else if part.town}<span class="town" style:--town={part.town}>{part.text}</span>{:else}{part.text}{/if}{/each}{:else}{m.text}{/if}</span
 				>
 				{#if admin && !system}
 					<span class="mod">
@@ -232,7 +260,7 @@
 		color: var(--muted);
 	}
 	.toggle input {
-		accent-color: var(--accent);
+		accent-color: var(--accent-text);
 	}
 	.mode {
 		font-style: normal;
@@ -240,6 +268,28 @@
 	}
 	.anarchy {
 		color: var(--anarchy);
+	}
+	.town {
+		font-style: normal;
+		font-weight: 700;
+		/* Badge colours are tuned for dark; on light they are pulled toward the text colour like chat names. */
+		color: color-mix(in oklab, var(--town, var(--text)), var(--text) var(--name-dim));
+	}
+	.town.rainbow {
+		background: linear-gradient(90deg, #ff6b5b, #ffa53a, #f5c542, #4cd17a, #5cb8ff, #b9a3ff);
+		background-clip: text;
+		-webkit-background-clip: text;
+		color: transparent;
+	}
+	/* First in the line but floated right, so long messages wrap under it. */
+	.ts {
+		float: right;
+		margin-left: 8px;
+		line-height: 20px;
+		font-size: 11px;
+		font-style: normal;
+		font-variant-numeric: tabular-nums;
+		color: var(--muted);
 	}
 	.democracy {
 		color: var(--democracy);
@@ -251,7 +301,7 @@
 	select,
 	textarea {
 		background: var(--bg);
-		border: 1px solid #3a4851;
+		border: 1px solid var(--border-strong);
 		border-radius: 8px;
 		color: var(--text);
 		font: inherit;
@@ -268,6 +318,7 @@
 		overflow-y: auto;
 	}
 	li {
+		position: relative; /* anchors the screen-reader-only "System:" inside the scrolled list */
 		font-size: 14px;
 		line-height: 20px;
 		overflow-wrap: anywhere;
@@ -277,14 +328,21 @@
 	}
 	.who {
 		font-weight: 700;
+		color: color-mix(in oklab, var(--name, var(--text)), var(--text) var(--name-dim));
 	}
-	.system,
-	.system .who {
+	/* Status lines, quieter than people's messages: smaller, muted, italic, a touch of indent. */
+	.system {
+		padding-left: 10px;
+		font-size: 13px;
 		color: var(--muted);
 		font-style: italic;
 	}
+	.admin-only {
+		font-style: normal;
+		margin-right: 4px;
+	}
 	.mine {
-		border-left: 2px solid var(--accent);
+		border-left: 2px solid var(--accent-text);
 		padding-left: 8px;
 	}
 	.tag {
@@ -343,7 +401,7 @@
 	textarea:focus-visible,
 	select:focus-visible,
 	input:focus-visible {
-		outline: 2px solid var(--accent);
+		outline: 2px solid var(--accent-text);
 		outline-offset: 2px;
 	}
 	.foot {
@@ -375,5 +433,15 @@
 		overflow: hidden;
 		clip: rect(0 0 0 0);
 		white-space: nowrap;
+	}
+	/* Phones: the send button and the checkbox in the player's plate colour (set on the play page). */
+	@media (max-width: 760px), (orientation: landscape) and (max-height: 520px) {
+		.toggle input {
+			accent-color: var(--plate, var(--accent-text));
+		}
+		form button {
+			background: var(--plate, var(--accent));
+			color: var(--plate-ink, var(--ink));
+		}
 	}
 </style>

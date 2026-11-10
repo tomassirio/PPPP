@@ -1,35 +1,105 @@
 package dev.pppp.realtime;
 
+import dev.pppp.model.Viewer;
 import java.io.IOException;
-import java.util.Set;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.session.events.SessionDestroyedEvent;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
  * Fan-out for GET /api/v1/events. Event types: INPUT_EXECUTED, MODE_CHANGED, MODE_VOTES, VOTE_TALLY,
- * CONSOLE_CHANGED, CHAT_MESSAGE, CHAT_DELETED, GAME_EVENT.
+ * CONSOLE_CHANGED, CHAT_MESSAGE, CHAT_DELETED, GAME_EVENT, GAME_STATE, PRESENCE.
+ *
+ * <p>Presence = who has a stream open, kept in memory (single instance). PRESENCE carries the list of
+ * viewers, one entry per user however many tabs they have open.
  */
 @Component
 public class EventPublisher {
-    private final Set<SseEmitter> emitters = ConcurrentHashMap.newKeySet();
+    /** sessionId: the login session that opened the stream (null in tests); it closes when that session ends. */
+    private record Stream(Viewer viewer, boolean admin, String sessionId) {}
+    private static final Logger log = LoggerFactory.getLogger(EventPublisher.class);
 
-    public SseEmitter subscribe() {
+    private final Map<SseEmitter, Stream> emitters = new ConcurrentHashMap<>();
+
+    public SseEmitter subscribe(Viewer viewer, boolean admin, String sessionId) {
         var emitter = new SseEmitter(0L);
-        emitters.add(emitter);
-        emitter.onCompletion(() -> emitters.remove(emitter));
-        emitter.onTimeout(() -> emitters.remove(emitter));
-        emitter.onError(e -> emitters.remove(emitter));
+        emitters.put(emitter, new Stream(viewer, admin, sessionId));
+        log.info("Stream opened for {} ({} streams)", viewer.id(), emitters.size());
+        emitter.onCompletion(() -> drop(emitter));
+        emitter.onTimeout(() -> drop(emitter));
+        emitter.onError(e -> drop(emitter));
+        publish("PRESENCE", viewers());
         return emitter;
     }
 
+    /** Distinct viewers, sorted by name. */
+    public List<Viewer> viewers() {
+        return emitters.values().stream()
+                .map(Stream::viewer)
+                .distinct()
+                .sorted(Comparator.comparing(Viewer::name, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
     public void publish(String type, Object data) {
-        for (var emitter : emitters) {
+        send(type, data, false);
+    }
+
+    /** Only to admins' streams (ADMIN chat lines). */
+    public void publishToAdmins(String type, Object data) {
+        send(type, data, true);
+    }
+
+    private void send(String type, Object data, boolean adminsOnly) {
+        for (var entry : emitters.entrySet()) {
+            if (adminsOnly && !entry.getValue().admin()) continue;
+            var emitter = entry.getKey();
             try {
                 emitter.send(SseEmitter.event().name(type).data(data));
             } catch (IOException | IllegalStateException e) {
-                emitters.remove(emitter);
+                drop(emitter);
             }
         }
+    }
+
+    /**
+     * Sign-out, expiry or revocation: close that session's streams. Other tabs of a signed-out user would
+     * otherwise keep their streams (authorised when opened) and stay online; they cannot reconnect after this.
+     */
+    @EventListener
+    public void onSessionEnded(SessionDestroyedEvent e) {
+        emitters.forEach((emitter, stream) -> {
+            if (e.getSessionId().equals(stream.sessionId())) {
+                emitter.complete();
+                drop(emitter);
+            }
+        });
+    }
+
+    /** A closed tab is only noticed on the next write; ping so presence drops it within ~15 s. */
+    @Scheduled(fixedDelay = 15_000)
+    void heartbeat() {
+        for (var emitter : emitters.keySet()) {
+            try {
+                emitter.send(SseEmitter.event().comment("ping"));
+            } catch (IOException | IllegalStateException e) {
+                drop(emitter);
+            }
+        }
+    }
+
+    private void drop(SseEmitter emitter) {
+        Stream gone = emitters.remove(emitter);
+        if (gone == null) return;
+        log.info("Stream closed for {} ({} streams)", gone.viewer().id(), emitters.size());
+        publish("PRESENCE", viewers());
     }
 }

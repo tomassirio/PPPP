@@ -21,7 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class InputController {
-    public record InputRequest(String command, Integer repeat) {}
+    /** walk: the player is holding a direction (see InputService.submit). */
+    public record InputRequest(String command, Integer repeat, Boolean walk) {}
     public record ModeVote(String mode) {}
 
     private final InputService inputs;
@@ -40,7 +41,8 @@ public class InputController {
 
     @PostMapping("/api/v1/inputs")
     public ResponseEntity<InputAccepted> submit(@RequestBody InputRequest req, Authentication auth) {
-        var accepted = inputs.submit(CurrentUser.id(auth), req.command(), req.repeat() == null ? 1 : req.repeat());
+        var accepted = inputs.submit(CurrentUser.id(auth), req.command(), req.repeat() == null ? 1 : req.repeat(),
+                Boolean.TRUE.equals(req.walk()));
         return ResponseEntity.accepted().location(URI.create("/api/v1/inputs/" + accepted.id())).body(accepted);
     }
 

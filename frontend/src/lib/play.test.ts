@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { backoff, formatCommand, keyToButton, tallyRows } from './play';
+import { afterArrowRelease, backoff, formatCommand, keyToButton, tallyRows } from './play';
 
 describe('play helpers', () => {
 	it('maps keys, but not while typing or for held keys', () => {
@@ -28,5 +28,32 @@ describe('play helpers', () => {
 
 	it('groups repeated steps', () => {
 		expect(formatCommand('LEFT,LEFT,DOWN')).toBe('LEFT ×2 DOWN');
+	});
+});
+
+import { inkFor, SHELLS, shellVars } from './shells';
+
+describe('shells', () => {
+	it('picks readable ink and keeps the original first', () => {
+		expect(inkFor('#ffffff')).toBe('#1d1f1c');
+		expect(inkFor('#141416')).toBe('#ffffff');
+		expect(inkFor('rgb(235 235 242 / 0.45)')).toBe('#1d1f1c'); // translucent "Clear" shells
+		expect(inkFor('rgb(40 140 225 / 0.65)')).toBe('#ffffff');
+		expect(SHELLS[0].id).toBe('original');
+		expect(new Set(SHELLS.map((s) => s.id)).size).toBe(SHELLS.length);
+		expect(shellVars(SHELLS[0])).toContain('--ab:#bc4b51');
+	});
+});
+
+describe('walking with held arrows', () => {
+	it('keeps walking the new direction when the old arrow is let go', () => {
+		// holding UP, pressed LEFT (now walking LEFT), then UP goes up
+		expect(afterArrowRelease(['left'], 'left', 'up')).toBe('keep');
+	});
+	it('goes back to the arrow still held when the walked one is let go', () => {
+		expect(afterArrowRelease(['up'], 'left', 'left')).toBe('up');
+	});
+	it('stops when nothing is held', () => {
+		expect(afterArrowRelease([], 'left', 'left')).toBeNull();
 	});
 });

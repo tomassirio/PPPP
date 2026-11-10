@@ -9,6 +9,7 @@
 	import SaveStatesPanel from '#lib/components/admin/SaveStatesPanel.svelte';
 	import SettingsPanel from '#lib/components/admin/SettingsPanel.svelte';
 	import PeoplePanel from '#lib/components/admin/PeoplePanel.svelte';
+	import UserMenu from '#lib/components/UserMenu.svelte';
 	import '#lib/components/admin/admin.css';
 
 	let loadFailed = $state(false);
@@ -31,7 +32,9 @@
 <div class="admin">
 	<header>
 		<h1 class="pixel">Admin</h1>
-		<a href="/play">Back to play</a>
+		<span class="header-end"
+			><a href="/play">Back to play</a>{#if session.me}<UserMenu me={session.me} />{/if}</span
+		>
 	</header>
 
 	{#if session.me && isAdmin(session.me)}

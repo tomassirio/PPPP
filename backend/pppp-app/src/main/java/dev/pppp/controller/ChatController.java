@@ -2,6 +2,7 @@ package dev.pppp.controller;
 
 import dev.pppp.model.ChatMessage;
 import dev.pppp.service.ChatService;
+import dev.pppp.service.game.RamWatcher;
 
 import dev.pppp.security.CurrentUser;
 import jakarta.validation.Valid;
@@ -28,9 +29,22 @@ class ChatController {
     record SendRequest(String text) {}
     record MuteRequest(@Min(1) @Max(525600) int minutes) {}
 
-    private final ChatService chat;
+    record Cleared(int removed) {}
 
-    ChatController(ChatService chat) { this.chat = chat; }
+    private final ChatService chat;
+    private final RamWatcher games;
+
+    ChatController(ChatService chat, RamWatcher games) {
+        this.chat = chat;
+        this.games = games;
+    }
+
+    /** Fresh start: all system and admin lines out of chat, and the game event history emptied. */
+    @DeleteMapping("/admin/chat/system-messages")
+    Cleared clearSystem(Authentication auth) {
+        games.clearHistory();
+        return new Cleared(chat.clearSystem(CurrentUser.id(auth)));
+    }
 
     @PostMapping("/chat/messages")
     @ResponseStatus(HttpStatus.CREATED)
@@ -42,8 +56,8 @@ class ChatController {
 
     @GetMapping("/chat/messages")
     List<ChatMessage> history(@RequestParam(required = false) String before,
-                              @RequestParam(defaultValue = "50") int limit) {
-        return chat.history(before, limit);
+                              @RequestParam(defaultValue = "50") int limit, Authentication auth) {
+        return chat.history(before, limit, CurrentUser.isAdmin(auth));
     }
 
     @DeleteMapping("/admin/chat/messages/{id}")

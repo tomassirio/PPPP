@@ -73,21 +73,31 @@
 	});
 </script>
 
-<div class="bezel">
-	<div class="screen">
-		<canvas bind:this={canvas} width="160" height="144" aria-label="Live game screen"></canvas>
-		{#if overlay}
-			<div class="overlay pixel" aria-hidden="true">{overlay}</div>
-		{/if}
-		<p class="sr-only" role="status">{overlay ?? ''}</p>
-	</div>
-	<div class="strip">
-		<span class="live" class:off={!!overlay}>● {overlay ? 'OFFLINE' : 'LIVE'}</span>
-		{@render controls?.()}
+<!-- .fit is a size container the play page can stretch; the bezel then hugs the largest 160:144 screen that fits. -->
+<div class="fit">
+	<div class="bezel">
+		<div class="screen">
+			<canvas bind:this={canvas} width="160" height="144" aria-label="Live game screen"></canvas>
+			{#if overlay}
+				<div class="overlay pixel" aria-hidden="true">{overlay}</div>
+			{/if}
+			<p class="sr-only" role="status">{overlay ?? ''}</p>
+		</div>
+		<div class="strip">
+			<span class="live" class:off={!!overlay}><span class="dot" aria-hidden="true">●</span> {overlay ? 'OFFLINE' : 'LIVE'}</span>
+			{@render controls?.()}
+		</div>
 	</div>
 </div>
 
 <style>
+	.fit {
+		container-type: inline-size;
+		display: flex;
+		justify-content: center;
+		align-items: flex-start;
+		height: 100%;
+	}
 	.bezel {
 		background: #3b3f45;
 		border-radius: 10px;
@@ -95,6 +105,9 @@
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
+		box-sizing: border-box;
+		/* 100% normally; the play page sets --bezel-width when it gives .fit a fixed height. */
+		width: var(--bezel-width, 100%);
 	}
 	.screen {
 		position: relative;
@@ -146,6 +159,10 @@
 	}
 	.live.off {
 		color: var(--muted);
+	}
+	/* On air: console on, game running, stream connected. */
+	.live:not(.off) .dot {
+		color: #ff4d4f;
 	}
 	@media (max-width: 640px) {
 		.bezel {

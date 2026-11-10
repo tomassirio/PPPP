@@ -31,6 +31,11 @@ public class ScreenWebSocketHandler extends AbstractWebSocketHandler {
         host.onFrame(encoder::offer);
     }
 
+    /** The newest frame as PNG, or null before the first one. */
+    public byte[] latest() {
+        return latest;
+    }
+
     private void broadcast(int[] pixels) {
         byte[] png = FrameEncoder.png(pixels);
         latest = png;

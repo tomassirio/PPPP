@@ -29,9 +29,9 @@
 
 <section class="panel card" aria-labelledby="mode-h">
 	<h2 id="mode-h">Mode</h2>
-	<div>
+	<div class="current">
 		<p class="mode {mode.toLowerCase()}">{label(mode)}</p>
-		<p class="muted">
+		<p class="muted desc">
 			{dem ? 'Each window runs the most-voted button.' : 'Every press runs in arrival order.'}
 		</p>
 	</div>
@@ -121,7 +121,7 @@
 		font-size: 14px;
 	}
 	button:focus-visible {
-		outline: 3px solid var(--accent);
+		outline: 3px solid var(--accent-text);
 		outline-offset: 2px;
 	}
 	.primary {
@@ -146,13 +146,30 @@
 		background: var(--democracy);
 	}
 	.ghost {
-		border: 1px solid #3a4851;
+		border: 1px solid var(--border-strong);
 		background: transparent;
 		color: var(--text);
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.bar div {
 			transition: none;
+		}
+	}
+	/* Phones: the header pill already shows the mode, so just the switch vote: line, bar, two equal buttons. */
+	@media (max-width: 760px), (orientation: landscape) and (max-height: 520px) {
+		.card {
+			padding: 12px 16px;
+			gap: 10px;
+		}
+		h2,
+		.current {
+			display: none;
+		}
+		.actions {
+			flex-wrap: nowrap;
+		}
+		.actions button {
+			flex: 1 1 0;
 		}
 	}
 </style>
