@@ -139,6 +139,26 @@
 		return () => offs.forEach((off) => off());
 	});
 
+	// Desktop looks the same on every monitor: the layout is designed at a laptop's size and the whole page is
+	// zoomed to fill bigger windows (an office monitor renders like the laptop at ~120%). The spare width of a
+	// wider window goes to the Pokédex banners. Never below 1 (small windows keep their own layout), capped at 1.6.
+	const DESKTOP = '(min-width: 1100px) and (min-height: 600px)';
+	const REF_W = 1728;
+	const REF_H = 968;
+	let uiZoom = $state(1);
+	let pageH = $state(0);
+	$effect(() => {
+		const fit = () => {
+			uiZoom = matchMedia(DESKTOP).matches
+				? Math.min(1.6, Math.max(1, Math.min(innerWidth / REF_W, innerHeight / REF_H)))
+				: 1;
+			pageH = innerHeight / uiZoom;
+		};
+		fit();
+		addEventListener('resize', fit);
+		return () => removeEventListener('resize', fit);
+	});
+
 	// The screen frame sizes itself to the height left over; on desktop the controller matches its width.
 	let screenSlot = $state<HTMLDivElement>();
 	let frameWidth = $state(0);
@@ -190,7 +210,7 @@
 <svelte:window onpointerdowncapture={closeSheetOnOutsideTap} onclickcapture={swallowClosingClick} />
 
 {#if me}
-	<div class="page play-root" class:big={bigScreen} style:--plate={currentShell.value.shell} style:--plate-ink={inkFor(currentShell.value.shell)}>
+	<div class="page play-root" class:big={bigScreen} style:zoom={uiZoom === 1 ? null : uiZoom} style:--page-h={uiZoom === 1 ? null : `${pageH}px`} style:--plate={currentShell.value.shell} style:--plate-ink={inkFor(currentShell.value.shell)}>
 		<header>
 			<div class="brand">
 				<img class="logo" src={banner} alt="Pibs&amp;PibettesPlayPokemon" width="924" height="111" />
@@ -424,7 +444,10 @@
 			overflow: hidden; /* one-screen layout: the page never scrolls, only panels inside it */
 		}
 		.page {
-			height: 100dvh;
+			/* Zoomed (see uiZoom): px lengths are scaled by the zoom, viewport units not reliably, so the height
+			   comes from JS as the window height in unzoomed px. */
+			height: var(--page-h, 100dvh);
+			min-height: 0;
 			display: flex;
 			flex-direction: column;
 			overflow: hidden;
@@ -442,26 +465,17 @@
 			min-height: 0;
 			width: 100%;
 			flex-wrap: nowrap;
-			max-width: calc(var(--game-w) + 880px); /* 1440px with the old 560px game column */
 		}
 		.game,
 		.side {
 			min-height: 0;
 			overflow-y: auto;
 		}
-		/* The game column is as wide as the screen the window's height allows, so the screen fills the column
-		   top to bottom on any monitor. 557px = header 75 + main padding 32 + controller 366 + gap 16 + bezel 68.
-		   ponytail: fixed controller/header heights; re-measure if those change. If the column still ends up
-		   narrower (narrow windows), the slot stops at the bezel and screen + controller stay centred together. */
-		.page {
-			--game-w: calc((100dvh - 557px) * 160 / 144 + 32px);
-		}
+		/* Windows taller than the reference shape: the screen is width-bound, so the slot stops at the bezel's
+		   height and screen + controller stay together, centred, instead of leaving a gap between them. */
 		.game {
 			container-type: inline-size;
 			justify-content: center;
-			flex: 0 1 var(--game-w);
-			max-width: none;
-			min-width: 380px; /* the controller's minimum; short windows get a centred, smaller screen */
 		}
 		.screen-slot {
 			flex: 0 1 calc((100cqw - 32px) * 144 / 160 + 68px);
@@ -503,7 +517,7 @@
 			box-sizing: border-box;
 		}
 		main {
-			flex: 0 1 calc(var(--game-w) + 880px);
+			flex: 0 1 1440px;
 		}
 	}
 	:global(.page :focus-visible) {
