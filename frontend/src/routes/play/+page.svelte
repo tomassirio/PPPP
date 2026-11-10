@@ -1,6 +1,7 @@
 <!-- /play: game screen, pad, mode/votes/queue and chat. Desktop = columns, phone = screen + Play/Vote/Chat tabs. -->
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { dexBanners } from '#lib/dex.svelte.ts';
 	import { api } from '#lib/api.ts';
 	import { on } from '#lib/events.ts';
 	import { loadMe, session } from '#lib/session.svelte.ts';
@@ -224,7 +225,7 @@
 		</header>
 
 		<div class="stage">
-			<aside class="dex" aria-label="Pokédex, first half"><PokedexBanner from={1} to={76} /></aside>
+			<aside class="dex" class:off-dex={!dexBanners.on} aria-label="Pokédex, first half"><PokedexBanner from={1} to={76} /></aside>
 		<main>
 			<section class="game" aria-label="Game" style:--frame-w={frameWidth ? `${frameWidth}px` : null}>
 				<div class="screen-slot" bind:this={screenSlot}>
@@ -282,7 +283,7 @@
 				<Chat />
 			</section>
 		</main>
-			<aside class="dex" aria-label="Pokédex, second half"><PokedexBanner from={77} to={151} /></aside>
+			<aside class="dex" class:off-dex={!dexBanners.on} aria-label="Pokédex, second half"><PokedexBanner from={77} to={151} /></aside>
 		</div>
 	</div>
 {:else if loadFailed}
@@ -511,6 +512,11 @@
 	@media (min-width: 1520px) and (min-height: 600px) {
 		.dex {
 			display: block;
+		}
+		.dex.off-dex {
+			display: none; /* turned off in the account menu */
+		}
+		.dex {
 			flex: 1 1 0;
 			min-width: 210px;
 			padding: 16px 12px;
