@@ -613,6 +613,15 @@
 			max-width: none;
 			overflow-y: auto;
 		}
+		/* The controller never scrolls: it keeps its full height and the screen above gives way instead. */
+		.screen-slot {
+			flex: 0 1 auto;
+			min-height: 120px;
+		}
+		.pad {
+			flex: 1 0 auto;
+			overflow: hidden;
+		}
 		/* Vote and Party are fixed, not scrolled: their content is sized to fit; only lists inside scroll. */
 		.side {
 			gap: 12px;
