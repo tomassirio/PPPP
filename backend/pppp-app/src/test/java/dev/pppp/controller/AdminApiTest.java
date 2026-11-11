@@ -23,6 +23,7 @@ import dev.pppp.emulator.EmulatorHost;
 import dev.pppp.model.Settings;
 import dev.pppp.service.SettingsService;
 import dev.pppp.service.ConsoleService;
+import dev.pppp.service.LaunchCountdown;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -71,6 +72,7 @@ class AdminApiTest {
     @Autowired SettingsService settings;
     @Autowired Scheduler scheduler;
     @Autowired ConsoleService consoleService;
+    @Autowired LaunchCountdown launch;
     @MockitoBean EmulatorHost host;
     @MockitoBean ChatService chat;
 
@@ -196,6 +198,29 @@ class AdminApiTest {
         mvc.perform(get("/api/v1/admin/save-states").with(ADMIN))
                 .andExpect(jsonPath("$[0].kind").value("auto"))
                 .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
+    void scheduledStartCountsDownThenPowersOn() throws Exception {
+        String past = "{\"enabled\":true,\"at\":\"2000-01-01T00:00:00Z\"}";
+        mvc.perform(put("/api/v1/admin/settings/launch").with(ADMIN).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(past))
+                .andExpect(status().isBadRequest());
+        String at = java.time.Instant.now().plusSeconds(3600).truncatedTo(java.time.temporal.ChronoUnit.SECONDS).toString();
+        String future = "{\"enabled\":true,\"at\":\"" + at + "\"}";
+        mvc.perform(put("/api/v1/admin/settings/launch").with(PLAYER).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(future))
+                .andExpect(status().isForbidden());
+        mvc.perform(put("/api/v1/admin/settings/launch").with(ADMIN).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(future))
+                .andExpect(status().isOk());
+
+        mvc.perform(get("/api/v1/state").with(PLAYER)).andExpect(jsonPath("$.launchAt").value(at));
+        assertThat(scheduler.getTrigger(TriggerKey.triggerKey("launch")).getStartTime().toInstant().toString()).isEqualTo(at);
+
+        console(EmulatorHost.Power.OFF, "red");
+        launch.fire();
+        verify(host).powerOn();
+        assertThat(settings.launch().enabled()).isFalse();
+        assertThat(scheduler.getTrigger(TriggerKey.triggerKey("launch"))).isNull();
+        mvc.perform(get("/api/v1/state").with(PLAYER)).andExpect(jsonPath("$.launchAt").doesNotExist());
     }
 
     @Test

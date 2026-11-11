@@ -34,7 +34,8 @@
 		mode: 'ANARCHY',
 		queueDepth: 0,
 		tally: null,
-		modeVotes: { ANARCHY: 0, DEMOCRACY: 0 }
+		modeVotes: { ANARCHY: 0, DEMOCRACY: 0 },
+		launchAt: null
 	});
 	type Tab = 'play' | 'vote' | 'party' | 'chat';
 	let tab = $state<Tab>('play');
@@ -199,6 +200,7 @@
 				game.tally = null;
 			}),
 			on('MODE_VOTES', (v) => (game.modeVotes = v)),
+			on('LAUNCH', (e) => (game.launchAt = e.at)),
 			on('VOTE_TALLY', (t) => (game.tally = t)),
 			on('INPUT_EXECUTED', (e) => {
 				if (e.window && e.window === game.tally?.window) game.tally = null;
@@ -229,7 +231,7 @@
 		<main>
 			<section class="game" aria-label="Game" style:--frame-w={frameWidth ? `${frameWidth}px` : null}>
 				<div class="screen-slot" bind:this={screenSlot}>
-					<GameScreen power={game.power} paused={game.paused}>
+					<GameScreen power={game.power} paused={game.paused} launchAt={game.launchAt}>
 						{#snippet controls()}<span class="bezel-controls"><ChatOverlayToggle /><SoundControl /></span>{/snippet}
 					</GameScreen>
 					<GameToasts />

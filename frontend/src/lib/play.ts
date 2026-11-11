@@ -12,7 +12,17 @@ export type GameState = {
 	queueDepth: number;
 	tally: Tally | null;
 	modeVotes: Record<string, number>;
+	launchAt: string | null; // ISO instant the console powers itself on (the countdown), or null
 };
+
+/** Time left as "2d 04:12:09", or "04:12:09" under a day; "00:00:00" once it is over. */
+export function countdown(ms: number): string {
+	const s = Math.max(0, Math.ceil(ms / 1000));
+	const pad = (n: number) => String(n).padStart(2, '0');
+	const hms = `${pad(Math.floor(s / 3600) % 24)}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}`;
+	const days = Math.floor(s / 86400);
+	return days ? `${days}d ${hms}` : hms;
+}
 
 const KEYS: Record<string, Button> = {
 	ArrowUp: 'up',
