@@ -1,6 +1,7 @@
 <!-- /play: game screen, pad, mode/votes/queue and chat. Desktop = columns, phone = screen + Play/Vote/Chat tabs. -->
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { dexBanners } from '#lib/dex.svelte.ts';
 	import { api } from '#lib/api.ts';
 	import { on } from '#lib/events.ts';
 	import { loadMe, session } from '#lib/session.svelte.ts';
@@ -139,6 +140,26 @@
 		return () => offs.forEach((off) => off());
 	});
 
+	// Desktop looks the same on every monitor: the layout is designed at a laptop's size and the whole page is
+	// zoomed to fit the window (an office monitor renders like the laptop at ~120%, a small window shrinks it), so
+	// nothing ever scrolls. The spare width of a wider window goes to the Pokédex banners. Between 0.6 and 1.6.
+	const DESKTOP = '(min-width: 1100px) and (min-height: 600px)';
+	const REF_W = 1728;
+	const REF_H = 968;
+	let uiZoom = $state(1);
+	let pageH = $state(0);
+	$effect(() => {
+		const fit = () => {
+			uiZoom = matchMedia(DESKTOP).matches
+				? Math.min(1.6, Math.max(0.6, Math.min(innerWidth / REF_W, innerHeight / REF_H)))
+				: 1;
+			pageH = innerHeight / uiZoom;
+		};
+		fit();
+		addEventListener('resize', fit);
+		return () => removeEventListener('resize', fit);
+	});
+
 	// The screen frame sizes itself to the height left over; on desktop the controller matches its width.
 	let screenSlot = $state<HTMLDivElement>();
 	let frameWidth = $state(0);
@@ -190,7 +211,7 @@
 <svelte:window onpointerdowncapture={closeSheetOnOutsideTap} onclickcapture={swallowClosingClick} />
 
 {#if me}
-	<div class="page play-root" class:big={bigScreen} style:--plate={currentShell.value.shell} style:--plate-ink={inkFor(currentShell.value.shell)}>
+	<div class="page play-root" class:big={bigScreen} style:zoom={uiZoom === 1 ? null : uiZoom} style:--page-h={uiZoom === 1 ? null : `${pageH}px`} style:--plate={currentShell.value.shell} style:--plate-ink={inkFor(currentShell.value.shell)}>
 		<header>
 			<div class="brand">
 				<img class="logo" src={banner} alt="Pibs&amp;PibettesPlayPokemon" width="924" height="111" />
@@ -204,7 +225,7 @@
 		</header>
 
 		<div class="stage">
-			<aside class="dex" aria-label="Pokédex, first half"><PokedexBanner from={1} to={76} /></aside>
+			<aside class="dex" class:off-dex={!dexBanners.on} aria-label="Pokédex, first half"><PokedexBanner from={1} to={76} /></aside>
 		<main>
 			<section class="game" aria-label="Game" style:--frame-w={frameWidth ? `${frameWidth}px` : null}>
 				<div class="screen-slot" bind:this={screenSlot}>
@@ -262,7 +283,7 @@
 				<Chat />
 			</section>
 		</main>
-			<aside class="dex" aria-label="Pokédex, second half"><PokedexBanner from={77} to={151} /></aside>
+			<aside class="dex" class:off-dex={!dexBanners.on} aria-label="Pokédex, second half"><PokedexBanner from={77} to={151} /></aside>
 		</div>
 	</div>
 {:else if loadFailed}
@@ -424,7 +445,10 @@
 			overflow: hidden; /* one-screen layout: the page never scrolls, only panels inside it */
 		}
 		.page {
-			height: 100dvh;
+			/* Zoomed (see uiZoom): px lengths are scaled by the zoom, viewport units not reliably, so the height
+			   comes from JS as the window height in unzoomed px. */
+			height: var(--page-h, 100dvh);
+			min-height: 0;
 			display: flex;
 			flex-direction: column;
 			overflow: hidden;
@@ -448,14 +472,20 @@
 			min-height: 0;
 			overflow-y: auto;
 		}
+		/* Windows taller than the reference shape: the screen is width-bound, so the slot stops at the bezel's
+		   height and screen + controller stay together, centred, instead of leaving a gap between them. */
+		.game {
+			container-type: inline-size;
+			justify-content: center;
+		}
 		.screen-slot {
-			flex: 1 1 0;
+			flex: 0 1 calc((100cqw - 32px) * 144 / 160 + 68px);
 			min-height: 200px;
 		}
 		.screen-slot :global(.fit) {
 			container-type: size;
-			/* Largest screen that fits: bezel padding 32px across, 76px of padding + LIVE strip down. */
-			--bezel-width: min(100cqw, (100cqh - 76px) * 160 / 144 + 32px);
+			/* Largest screen that fits: bezel padding 32px across, 68px of padding + LIVE strip down. */
+			--bezel-width: min(100cqw, (100cqh - 68px) * 160 / 144 + 32px);
 		}
 		/* Every pixel of height goes to the screen: tighter page padding and controller. */
 		main {
@@ -482,6 +512,11 @@
 	@media (min-width: 1520px) and (min-height: 600px) {
 		.dex {
 			display: block;
+		}
+		.dex.off-dex {
+			display: none; /* turned off in the account menu */
+		}
+		.dex {
 			flex: 1 1 0;
 			min-width: 210px;
 			padding: 16px 12px;
@@ -583,6 +618,15 @@
 			min-height: 0;
 			max-width: none;
 			overflow-y: auto;
+		}
+		/* The controller never scrolls: it keeps its full height and the screen above gives way instead. */
+		.screen-slot {
+			flex: 0 1 auto;
+			min-height: 120px;
+		}
+		.pad {
+			flex: 1 0 auto;
+			overflow: hidden;
 		}
 		/* Vote and Party are fixed, not scrolled: their content is sized to fit; only lists inside scroll. */
 		.side {

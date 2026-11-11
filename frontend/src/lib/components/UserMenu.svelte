@@ -1,9 +1,10 @@
-<!-- The avatar in the top bar opens this menu: who you are, light/dark (sun/moon), Admin (admins only; Play when
+<!-- The avatar in the top bar opens this menu: who you are, light/dark (sun/moon), Pokédex banners (wide desktops), Admin (admins only; Play when
      already on /admin), Sign out. -->
 <script lang="ts">
 	import { page } from '$app/state';
 	import { isAdmin, logout, type Me } from '#lib/session.svelte.ts';
 	import { setTheme, theme } from '#lib/theme.svelte.ts';
+	import { dexBanners, setDexBanners } from '#lib/dex.svelte.ts';
 
 	let { me }: { me: Me } = $props();
 
@@ -94,6 +95,13 @@
 				</div>
 			</div>
 
+			{#if !page.url.pathname.startsWith('/admin')}
+				<label class="row dex-row">
+					<span>Pokédex on the sides</span>
+					<input type="checkbox" checked={dexBanners.on} onchange={(e) => setDexBanners(e.currentTarget.checked)} />
+				</label>
+			{/if}
+
 			{#if page.url.pathname.startsWith('/admin')}
 				<a class="item" href="/play">Play</a>
 			{:else if isAdmin(me)}
@@ -105,6 +113,23 @@
 </div>
 
 <style>
+	/* Only where /play shows the banners (its wide media query); elsewhere the option would do nothing. */
+	.row.dex-row {
+		display: none;
+		cursor: pointer;
+	}
+	@media (min-width: 1520px) and (min-height: 600px) {
+		.row.dex-row {
+			display: flex;
+		}
+	}
+	.dex-row input {
+		width: 16px;
+		height: 16px;
+		margin: 0;
+		accent-color: var(--accent-text);
+		cursor: pointer;
+	}
 	.menu {
 		position: relative;
 	}

@@ -1,5 +1,5 @@
 <!-- Party and badges read from the game's RAM: GET /api/v1/game/state, kept current by GAME_STATE.
-     Hidden for games without a profile. Sprites come from the ROM via /api/v1/game/icons/{id}.png. -->
+     The party box always shows (six empty slots before a game is running); badges and Pokédex need a game profile. Sprites come from the ROM via /api/v1/game/icons/{id}.png. -->
 <script lang="ts">
 	import { game, watchGame, type Member } from '#lib/game.svelte.ts';
 
@@ -9,7 +9,8 @@
 	const summary = $derived(game.summary);
 	$effect(() => watchGame());
 
-	const slots = $derived(summary ? [...summary.party, ...Array(Math.max(0, 6 - summary.party.length)).fill(null)] : []);
+	const party = $derived(summary?.party ?? []);
+	const slots = $derived([...party, ...Array(Math.max(0, 6 - party.length)).fill(null)]);
 	const earned = $derived(summary?.badges.filter((b) => b.earned).length ?? 0);
 	const next = $derived(summary?.badges.find((b) => !b.earned));
 	const dex = $derived(summary?.counters.find((c) => c.label === 'Pokédex'));
@@ -21,11 +22,10 @@
 	}
 </script>
 
-{#if summary}
-	<section class="panel card" aria-labelledby="party-h">
+<section class="panel card" aria-labelledby="party-h">
 		<div class="head">
 			<h2 id="party-h">Party</h2>
-			<span class="muted">{summary.party.length} / 6</span>
+			<span class="muted">{party.length} / 6</span>
 		</div>
 		<ol class="party">
 			{#each slots as m, i (i)}
@@ -56,7 +56,7 @@
 				{/if}
 			{/each}
 		</ol>
-
+	{#if summary}
 		<hr />
 
 		<div class="head">
@@ -89,8 +89,8 @@
 				{/if}
 			</div>
 		{/if}
+	{/if}
 	</section>
-{/if}
 
 <style>
 	.card {
@@ -133,7 +133,7 @@
 	}
 	.party {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+		grid-template-columns: repeat(2, minmax(0, 1fr)); /* always 2 x 3: one column made the middle column scroll */
 		gap: 8px;
 	}
 	.mon,

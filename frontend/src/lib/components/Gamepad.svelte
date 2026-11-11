@@ -525,16 +525,19 @@
 	.keys-only {
 		display: none;
 	}
+	/* Phones: the row keeps its space before the first press, so nothing moves or resizes when it fills in. */
 	.controls.idle {
-		display: none;
+		visibility: hidden;
 	}
 	@media (hover: hover) and (pointer: fine) and (min-width: 761px) {
 		h2.keys-only {
 			display: block;
 		}
-		.keys.keys-only,
-		.controls.idle {
+		.keys.keys-only {
 			display: flex;
+		}
+		.controls.idle {
+			visibility: visible;
 		}
 	}
 	@media (max-width: 400px) {
@@ -596,6 +599,7 @@
 			justify-content: center;
 			align-items: center;
 			gap: 0;
+			min-height: 26px; /* the height of a filled row, also while still empty */
 		}
 		.head {
 			display: contents;
