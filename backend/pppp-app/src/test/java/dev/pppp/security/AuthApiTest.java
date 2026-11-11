@@ -59,7 +59,7 @@ class AuthApiTest {
 
     @BeforeEach
     void reset() {
-        redis.delete(List.of("allowlist", "bans", "ratelimit:me@x.com", "users:pictures"));
+        redis.delete(List.of("allowlist", "bans", "ratelimit:me@x.com", "users:pictures", "access:requests", "access:rejected"));
     }
 
     @Test
@@ -78,6 +78,34 @@ class AuthApiTest {
                 .isInstanceOf(OAuth2AuthenticationException.class);
         assertThatThrownBy(() -> oidcUsers.loadUser(googleLogin("banned@x.com")))
                 .isInstanceOf(OAuth2AuthenticationException.class);
+    }
+
+    @Test
+    void strangersBecomeAccessRequestsAdminsCanAcceptOrReject() throws Exception {
+        assertThatThrownBy(() -> oidcUsers.loadUser(googleLogin("New@x.com")))
+                .isInstanceOfSatisfying(OAuth2AuthenticationException.class,
+                        e -> assertThat(e.getError().getErrorCode()).isEqualTo("access_requested"));
+        assertThatThrownBy(() -> oidcUsers.loadUser(googleLogin("spam@x.com")))
+                .isInstanceOf(OAuth2AuthenticationException.class);
+
+        var admin = user("boss@x.com").roles("PLAYER", "ADMIN");
+        mvc.perform(get("/api/v1/admin/access-requests").with(user("p@x.com").roles("PLAYER"))).andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/admin/access-requests").with(admin))
+                .andExpect(jsonPath("$[*].email", org.hamcrest.Matchers.containsInAnyOrder("new@x.com", "spam@x.com")));
+
+        mvc.perform(post("/api/v1/admin/access-requests/new@x.com/accept").with(admin).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"role\":\"PLAYER\"}"))
+                .andExpect(status().isNoContent());
+        assertThat(oidcUsers.loadUser(googleLogin("new@x.com")).getAuthorities())
+                .extracting(a -> a.getAuthority()).containsExactly("ROLE_PLAYER");
+
+        mvc.perform(delete("/api/v1/admin/access-requests/spam@x.com").with(admin).with(csrf())).andExpect(status().isNoContent());
+        mvc.perform(delete("/api/v1/admin/access-requests/spam@x.com").with(admin).with(csrf())).andExpect(status().isNotFound());
+        // Rejected: still turned away, but not listed again.
+        assertThatThrownBy(() -> oidcUsers.loadUser(googleLogin("spam@x.com")))
+                .isInstanceOfSatisfying(OAuth2AuthenticationException.class,
+                        e -> assertThat(e.getError().getErrorCode()).isEqualTo("access_denied"));
+        mvc.perform(get("/api/v1/admin/access-requests").with(admin)).andExpect(jsonPath("$.length()").value(0));
     }
 
     @Test
@@ -180,10 +208,10 @@ class AuthApiTest {
     void seedsConfiguredAdminsOnlyWhenAllowlistIsEmpty() {
         // An empty PPPP_ADMINS binds to [""].
         var props = new PpppProperties(List.of("", "Boss@X.com"), null);
-        new AllowlistService(repo, events, chat, props).seedAdmins();
+        new AllowlistService(repo, null, events, chat, props).seedAdmins();
         assertThat(redis.opsForHash().entries("allowlist")).isEqualTo(Map.of("boss@x.com", "ADMIN"));
 
-        new AllowlistService(repo, events, chat,
+        new AllowlistService(repo, null, events, chat,
                 new PpppProperties(List.of("other@x.com"), null)).seedAdmins();
         assertThat(redis.opsForHash().size("allowlist")).isEqualTo(1);
     }

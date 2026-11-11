@@ -2,10 +2,13 @@ package dev.pppp.service;
 
 import dev.pppp.config.PpppProperties;
 import dev.pppp.exception.NotFoundException;
+import dev.pppp.model.AccessRequest;
+import dev.pppp.model.LiveEvent;
 import dev.pppp.model.Role;
 import dev.pppp.model.User;
 import dev.pppp.model.UserRevokedEvent;
 import dev.pppp.model.UserSessionsEndedEvent;
+import dev.pppp.repository.AccessRequestRepository;
 import dev.pppp.repository.AllowlistRepository;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -24,14 +27,19 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class AllowlistService {
+    /** ponytail: hard cap on pending requests, so strangers can't fill Redis; raise it if a real crowd shows up. */
+    static final int MAX_REQUESTS = 200;
+
     private final AllowlistRepository repo;
+    private final AccessRequestRepository requests;
     private final ApplicationEventPublisher events;
     private final ChatService chat;
     private final PpppProperties props;
 
-    public AllowlistService(AllowlistRepository repo, ApplicationEventPublisher events, ChatService chat,
-                            PpppProperties props) {
+    public AllowlistService(AllowlistRepository repo, AccessRequestRepository requests, ApplicationEventPublisher events,
+                            ChatService chat, PpppProperties props) {
         this.repo = repo;
+        this.requests = requests;
         this.events = events;
         this.chat = chat;
         this.props = props;
@@ -83,12 +91,58 @@ public class AllowlistService {
                 .toList();
     }
 
-    /** Adds or changes a role. A role change ends the user's sessions so it applies on next login. */
+    /**
+     * Adds or changes a role. A role change ends the user's sessions so it applies on next login. Adding someone
+     * also settles any access request of theirs.
+     */
     public void put(String email, Role role) {
         String id = normalize(email);
         Role old = repo.role(id);
         repo.put(id, role);
+        requests.unreject(id);
+        if (requests.remove(id)) requestsChanged();
         if (old != null && old != role) events.publishEvent(new UserSessionsEndedEvent(id));
+    }
+
+    /**
+     * A verified Google account that is not on the allowlist tried to sign in: keep it for the admins to decide.
+     * Returns false when it is not kept (rejected before, or too many pending), so the sign-in page can say so.
+     */
+    public boolean requestAccess(String email, String name, String picture) {
+        String id = normalize(email);
+        if (requests.isRejected(id)) return false;
+        boolean known = requests.exists(id);
+        if (!known && requests.count() >= MAX_REQUESTS) return false;
+        requests.save(new AccessRequest(id, name, picture != null && picture.startsWith("https://") ? picture : null,
+                System.currentTimeMillis()));
+        if (!known) requestsChanged();
+        return true;
+    }
+
+    /** Pending requests, oldest first. */
+    public List<AccessRequest> accessRequests() {
+        return requests.findAll().stream().sorted(Comparator.comparingLong(AccessRequest::requestedAt)).toList();
+    }
+
+    /** Lets a requester in with that role. */
+    public void accept(String email, Role role) {
+        String id = normalize(email);
+        if (!requests.exists(id)) throw new NotFoundException("No access request from " + id);
+        put(id, role);
+        chat.postAdmin(id + " was let in");
+    }
+
+    /** Turns a request down; later sign-in attempts from that account are not listed again (adding them still works). */
+    public void reject(String email) {
+        String id = normalize(email);
+        if (!requests.remove(id)) throw new NotFoundException("No access request from " + id);
+        requests.reject(id);
+        requestsChanged();
+    }
+
+    /** Only the count goes out (to every browser); admins fetch the list itself. */
+    private void requestsChanged() {
+        events.publishEvent(new LiveEvent("ACCESS_REQUESTS", java.util.Map.of("pending", requests.count())));
     }
 
     /** Like put, but only for someone already allowlisted. */
