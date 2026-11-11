@@ -97,7 +97,8 @@
 		const offs = [
 			on('CHAT_MESSAGE', (m: ChatMessage) => add([m])),
 			on('CHAT_DELETED', ({ id }: { id: string }) => (messages = remove(messages, id))),
-			on('CHAT_CLEARED', () => (messages = messages.filter((m) => !isSystem(m))))
+			on('CHAT_CLEARED', () => (messages = messages.filter((m) => !isSystem(m)))),
+			on('APP_RESET', () => (messages = []))
 		];
 		return () => {
 			offs.forEach((off) => off());

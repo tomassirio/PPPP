@@ -41,7 +41,7 @@ public class RamWatcher {
     private final ApplicationEventPublisher events;
 
     private volatile String lastPlayer;
-    private volatile boolean rebaseline;
+    private volatile boolean rebaseline, forget;
     private volatile GameSummary summary;
     private String cartridgeId; // poll thread only
     private volatile Tracker<?> tracker;
@@ -82,6 +82,12 @@ public class RamWatcher {
         repo.clear();
     }
 
+    /** New game: the history emptied and, on the next poll, the party box back to empty until the game is in play. */
+    public void newGame() {
+        repo.clear();
+        forget = true;
+    }
+
     @EventListener
     public void onLiveEvent(LiveEvent e) {
         if ("CONSOLE_CHANGED".equals(e.type())) rebaseline = true;
@@ -101,7 +107,16 @@ public class RamWatcher {
                 summary = tracker == null ? null : tracker.profile.summary(null);
                 if (summary != null) events.publishEvent(new LiveEvent("GAME_STATE", summary));
             }
-            if (tracker == null) return;
+            if (tracker == null) {
+                forget = false;
+                return;
+            }
+            if (forget) {
+                forget = false;
+                tracker.reset();
+                summary = tracker.profile.summary(null);
+                events.publishEvent(new LiveEvent("GAME_STATE", summary));
+            }
             if (rebaseline || s.power() != EmulatorHost.Power.ON) {
                 rebaseline = false;
                 tracker.reset();
