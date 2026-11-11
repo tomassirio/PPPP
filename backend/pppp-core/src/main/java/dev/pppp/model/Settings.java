@@ -35,4 +35,9 @@ public final class Settings {
 
         public static final Autosave DEFAULT = new Autosave(true, "0 0/30 * * * ?", 48);
     }
+
+    /** A scheduled start: while enabled, the console powers itself on at `at` (players see a countdown until then). */
+    public record Launch(boolean enabled, java.time.Instant at) {
+        public static final Launch DEFAULT = new Launch(false, null);
+    }
 }

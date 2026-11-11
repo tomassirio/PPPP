@@ -1,6 +1,7 @@
 package dev.pppp.controller;
 
 import dev.pppp.model.Settings;
+import dev.pppp.service.LaunchCountdown;
 import dev.pppp.service.SettingsService;
 
 import jakarta.validation.Valid;
@@ -14,9 +15,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/admin/settings")
 public class SettingsController {
     private final SettingsService settings;
+    private final LaunchCountdown launch;
 
-    public SettingsController(SettingsService settings) {
+    public SettingsController(SettingsService settings, LaunchCountdown launch) {
         this.settings = settings;
+        this.launch = launch;
     }
 
     @GetMapping("/input")
@@ -36,4 +39,10 @@ public class SettingsController {
 
     @PutMapping("/autosave")
     public Settings.Autosave autosave(@Valid @RequestBody Settings.Autosave s) { settings.save(s); return s; }
+
+    @GetMapping("/launch")
+    public Settings.Launch launch() { return settings.launch(); }
+
+    @PutMapping("/launch")
+    public Settings.Launch launch(@RequestBody Settings.Launch s) { return launch.update(s); }
 }

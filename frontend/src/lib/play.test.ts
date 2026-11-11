@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { afterArrowRelease, backoff, formatCommand, keyToButton, tallyRows } from './play';
+import { afterArrowRelease, backoff, countdown, formatCommand, keyToButton, tallyRows } from './play';
 
 describe('play helpers', () => {
 	it('maps keys, but not while typing or for held keys', () => {
@@ -55,5 +55,15 @@ describe('walking with held arrows', () => {
 	});
 	it('stops when nothing is held', () => {
 		expect(afterArrowRelease([], 'left', 'left')).toBeNull();
+	});
+});
+
+describe('countdown', () => {
+	it('formats hours, minutes and seconds, days when there are any, and stops at zero', () => {
+		expect(countdown(0)).toBe('00:00:00');
+		expect(countdown(-5000)).toBe('00:00:00');
+		expect(countdown(1)).toBe('00:00:01'); // rounds up: never shows 0 while time is left
+		expect(countdown(((4 * 60 + 12) * 60 + 9) * 1000)).toBe('04:12:09');
+		expect(countdown((2 * 86400 + 3600) * 1000)).toBe('2d 01:00:00');
 	});
 });
