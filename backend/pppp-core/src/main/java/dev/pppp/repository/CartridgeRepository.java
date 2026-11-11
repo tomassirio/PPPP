@@ -70,6 +70,14 @@ public class CartridgeRepository {
         return saves.resolve(id + ".sav");
     }
 
+    public void deleteBatterySave(String id) {
+        try {
+            Files.deleteIfExists(batterySave(id));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     private static Cartridge describe(String id, Path rom) {
         try {
             byte[] header = new byte[Cartridge.HEADER_SIZE];

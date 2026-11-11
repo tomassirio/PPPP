@@ -80,6 +80,11 @@ public class SaveStateService {
         return state;
     }
 
+    /** Deletes every save state, manual and automatic, of a cartridge. */
+    public synchronized void deleteAll(String cartridgeId) {
+        states.findAll(cartridgeId).forEach(states::delete);
+    }
+
     /** Deletes the oldest automatic states beyond keep. Manual states are never pruned. */
     private synchronized void prune(String cartridgeId, int keep) {
         List<SaveState> autos = states.findAll(cartridgeId).stream().filter(s -> s.kind() == SaveState.Kind.auto).toList();

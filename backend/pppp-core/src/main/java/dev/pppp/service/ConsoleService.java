@@ -54,6 +54,21 @@ public class ConsoleService {
 
     public EmulatorHost.Status reset() { host.reset(); return changed("Console reset"); }
 
+    /**
+     * Wipes the inserted cartridge's progress: every save state and the battery save. A running console is powered
+     * off first (which writes the battery one last time), then on again, so the game boots with no save at all.
+     */
+    public EmulatorHost.Status newGame() {
+        EmulatorHost.Status s = host.status();
+        if (s.cartridgeId() == null) return s;
+        boolean on = s.power() == EmulatorHost.Power.ON;
+        if (on) host.powerOff();
+        saves.deleteAll(s.cartridgeId());
+        cartridges.deleteBatterySave(s.cartridgeId());
+        if (on) host.powerOn();
+        return changed("New game: " + s.cartridgeId() + " wiped");
+    }
+
     public EmulatorHost.Status pause() { host.pause(); return changed("Game paused"); }
 
     public EmulatorHost.Status resume() { host.resume(); return changed("Game resumed"); }

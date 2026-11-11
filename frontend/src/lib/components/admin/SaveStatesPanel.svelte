@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { api } from '#lib/api.ts';
+	import { on } from '#lib/events.ts';
 	import { act, consoleStatus } from './admin.svelte';
 	import Pager from './Pager.svelte';
 
@@ -20,6 +21,8 @@
 		void consoleStatus.cartridgeId;
 		load();
 	});
+
+	$effect(() => on('APP_RESET', load));
 
 	async function create(label: string, path: string) {
 		if (await act(label, () => api('POST', path))) await load();

@@ -224,6 +224,31 @@ class AdminApiTest {
     }
 
     @Test
+    void factoryResetWipesTheRun() throws Exception {
+        console(EmulatorHost.Power.ON, "green");
+        when(host.saveState()).thenReturn(new byte[] {7});
+        mvc.perform(post("/api/v1/admin/save-states").with(ADMIN).with(csrf())).andExpect(status().isCreated());
+        Path battery = DATA.resolve("saves/green.sav");
+        Files.createDirectories(battery.getParent());
+        Files.write(battery, new byte[] {1});
+        redis.opsForStream().add("game:events", Map.of("type", "BADGE"));
+        redis.opsForHash().put("mode:votes", "p@x.y", "DEMOCRACY");
+
+        mvc.perform(post("/api/v1/admin/factory-reset").with(PLAYER).with(csrf())).andExpect(status().isForbidden());
+        mvc.perform(post("/api/v1/admin/factory-reset").with(ADMIN).with(csrf())).andExpect(status().isOk());
+
+        var order = org.mockito.Mockito.inOrder(host);
+        order.verify(host).powerOff();
+        order.verify(host).powerOn();
+        assertThat(battery).doesNotExist();
+        mvc.perform(get("/api/v1/admin/save-states").with(ADMIN)).andExpect(jsonPath("$.length()").value(0));
+        assertThat(redis.hasKey("game:events")).isFalse();
+        assertThat(redis.hasKey("mode:votes")).isFalse();
+        verify(chat).clearAll();
+        verify(chat).postAdmin(org.mockito.ArgumentMatchers.contains("reset everything"));
+    }
+
+    @Test
     void autosavePrunesOnlyAutos() throws Exception {
         settings.save(new Settings.Autosave(false, "0 0/30 * * * ?", 2));
         console(EmulatorHost.Power.ON, "gold");
