@@ -47,6 +47,26 @@ final class GenOnePic {
                 img.setRGB(x, y, argb);
             }
         }
+        return encode(img);
+    }
+
+    /**
+     * PNG of an uncompressed overworld sprite sheet: frames of 2x2 tiles (top-left, top-right, bottom-left,
+     * bottom-right, 2bpp), stacked top to bottom in a 16px-wide strip, colours 0-3 from argb.
+     */
+    static byte[] sheet(byte[] rom, int offset, int frames, int[] argb) {
+        BufferedImage img = new BufferedImage(16, 16 * frames, BufferedImage.TYPE_INT_ARGB);
+        for (int tile = 0; tile < frames * 4; tile++) {
+            int x0 = (tile & 1) * 8, y0 = (tile >> 2) * 16 + (tile >> 1 & 1) * 8;
+            for (int y = 0; y < 8; y++) {
+                int lo = rom[offset + tile * 16 + 2 * y] & 0xFF, hi = rom[offset + tile * 16 + 2 * y + 1] & 0xFF;
+                for (int x = 0; x < 8; x++) img.setRGB(x0 + x, y0 + y, argb[(lo >> 7 - x & 1) | (hi >> 7 - x & 1) << 1]);
+            }
+        }
+        return encode(img);
+    }
+
+    private static byte[] encode(BufferedImage img) {
         var out = new ByteArrayOutputStream();
         try {
             ImageIO.write(img, "png", out);

@@ -37,4 +37,9 @@ public interface GameProfile<S> {
     default byte[] icon(int id) {
         return null;
     }
+
+    /** PNG sprite sheet of the player walking around, or null. Called from request threads. */
+    default byte[] playerSprite() {
+        return null;
+    }
 }

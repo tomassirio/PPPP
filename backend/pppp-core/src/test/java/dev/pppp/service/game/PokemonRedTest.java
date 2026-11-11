@@ -3,7 +3,9 @@ package dev.pppp.service.game;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.pppp.model.GameEvent;
+import java.io.ByteArrayInputStream;
 import java.util.List;
+import javax.imageio.ImageIO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -156,6 +158,27 @@ class PokemonRedTest {
 
     Ram ram() {
         return new Ram(red.ramStart(), mem.clone());
+    }
+
+    @Test
+    void playerSpriteComesFromTheSpriteSheetTable() throws Exception {
+        byte[] rom = new byte[0x42000];
+        System.arraycopy("POKEMON RED".getBytes(), 0, rom, 0x134, 11);
+        rom[0x14A] = 1;
+        assertThat(new PokemonRed(rom).playerSprite()).isNull(); // empty table: no sprite, no crash
+        rom[0x17B27] = (byte) 0x80; // dw $4180, db $C0, db bank 5 -> ROM offset 0x14180
+        rom[0x17B28] = 0x41;
+        rom[0x17B29] = (byte) 0xC0;
+        rom[0x17B2A] = 5;
+        rom[0x14180] = (byte) 0x80; // first frame, top-left pixel: colour 1 (low plane bit only)
+        rom[0x14180 + 3 * 16 + 15] = 0x01; // tile 3 (bottom-right), last row, last pixel: colour 2
+
+        var img = ImageIO.read(new ByteArrayInputStream(new PokemonRed(rom).playerSprite()));
+        assertThat(img.getWidth()).isEqualTo(16);
+        assertThat(img.getHeight()).isEqualTo(96);
+        assertThat(img.getRGB(0, 0)).isEqualTo(0xFFF8D0A8);
+        assertThat(img.getRGB(15, 15)).isEqualTo(0xFFE04848);
+        assertThat(img.getRGB(1, 0) >>> 24).isZero(); // colour 0 is transparent
     }
 
     static List<String> types(List<GameEvent> events) {

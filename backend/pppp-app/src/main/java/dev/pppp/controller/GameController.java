@@ -35,6 +35,14 @@ class GameController {
         return s == null ? ResponseEntity.noContent().build() : ResponseEntity.ok(s);
     }
 
+    /** The player's overworld sprite sheet (16x96, see PokemonRed#playerSprite), drawn from the inserted ROM. */
+    @GetMapping("/game/icons/player.png")
+    ResponseEntity<byte[]> player() {
+        byte[] png = watcher.playerSprite();
+        if (png == null) throw new NotFoundException("No player sprite");
+        return ResponseEntity.ok().contentType(MediaType.IMAGE_PNG).cacheControl(CacheControl.maxAge(Duration.ofDays(1))).body(png);
+    }
+
     /** A party member's sprite, drawn from the inserted ROM. */
     @GetMapping("/game/icons/{id}.png")
     ResponseEntity<byte[]> icon(@PathVariable int id) {

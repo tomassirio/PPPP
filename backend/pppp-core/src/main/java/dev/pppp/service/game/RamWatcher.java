@@ -66,6 +66,12 @@ public class RamWatcher {
         return t == null ? null : t.profile.icon(id);
     }
 
+    /** PNG sprite sheet of the player, or null. */
+    public byte[] playerSprite() {
+        Tracker<?> t = tracker;
+        return t == null ? null : t.profile.playerSprite();
+    }
+
     public List<GameEvent> history(int limit) {
         if (limit < 1 || limit > 100) throw new IllegalArgumentException("limit must be 1 to 100");
         return repo.newest(limit);
