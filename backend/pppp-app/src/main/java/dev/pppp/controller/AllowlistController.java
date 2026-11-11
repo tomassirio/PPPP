@@ -1,5 +1,6 @@
 package dev.pppp.controller;
 
+import dev.pppp.model.AccessRequest;
 import dev.pppp.model.Role;
 import dev.pppp.model.User;
 import dev.pppp.security.CurrentUser;
@@ -80,6 +81,23 @@ public class AllowlistController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void remove(@PathVariable String email) {
         allowlist.remove(email);
+    }
+
+    @GetMapping("/admin/access-requests")
+    public List<AccessRequest> accessRequests() {
+        return allowlist.accessRequests();
+    }
+
+    @PostMapping("/admin/access-requests/{email}/accept")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void accept(@PathVariable String email, @Valid @RequestBody RoleChange c) {
+        allowlist.accept(email, c.role());
+    }
+
+    @DeleteMapping("/admin/access-requests/{email}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void reject(@PathVariable String email) {
+        allowlist.reject(email);
     }
 
     @GetMapping("/admin/users")

@@ -21,6 +21,8 @@ import org.springframework.stereotype.Service;
 /** Lets in only verified, allowlisted, unbanned Google accounts; grants ROLE_PLAYER (+ ROLE_ADMIN). */
 @Service
 public class AllowlistOidcUserService implements OAuth2UserService<OidcUserRequest, OidcUser> {
+    /** OAuth2Error code for "not allowed yet, request recorded"; SecurityConfig sends these to /?error=requested. */
+    static final String ACCESS_REQUESTED = "access_requested";
     private final OidcUserService delegate = new OidcUserService();
     private final AllowlistService allowlist;
 
@@ -34,7 +36,12 @@ public class AllowlistOidcUserService implements OAuth2UserService<OidcUserReque
         String email = google.getEmail();
         if (email == null || !Boolean.TRUE.equals(google.getEmailVerified())) throw denied("unverified email");
         Role role = allowlist.role(email);
-        if (role == null) throw denied("not on the allowlist");
+        if (role == null) {
+            // Not on the list yet: the attempt becomes an access request admins can accept or reject.
+            boolean requested = allowlist.requestAccess(email, google.getFullName(), google.getPicture());
+            throw requested ? new OAuth2AuthenticationException(new OAuth2Error(ACCESS_REQUESTED, "access requested", null))
+                    : denied("not on the allowlist");
+        }
         if (allowlist.isBanned(email)) throw denied("banned");
 
         List<GrantedAuthority> roles = new ArrayList<>(List.of(new SimpleGrantedAuthority("ROLE_PLAYER")));

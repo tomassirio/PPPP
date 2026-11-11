@@ -14,7 +14,10 @@
 
 	const BOOT_MS = 2900;
 
-	const denied = $derived(page.url.searchParams.get('error') === 'denied');
+	// denied: turned away. requested: not on the list yet, so the sign-in became an access request for the admins.
+	const error = $derived(page.url.searchParams.get('error'));
+	const requested = $derived(error === 'requested');
+	const denied = $derived(error === 'denied' || requested);
 
 	let booting = $state(true);
 	let held = $state<string | null>(null);
@@ -214,6 +217,8 @@
 				<p class="press" aria-hidden="true">PRESS START TO SIGN IN</p>
 				{#if glitch}
 					<p class="textbox" role="status">A wild PIBSIGNO. appeared!</p>
+				{:else if requested}
+					<p class="textbox" role="status">Request sent! A host will check the trainer list. Try again later.</p>
 				{:else if denied}
 					<p class="textbox" role="alert">You're not on the trainer list. Ask the host to add you.</p>
 				{/if}

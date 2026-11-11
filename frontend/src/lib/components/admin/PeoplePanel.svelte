@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { api } from '#lib/api.ts';
+	import { on } from '#lib/events.ts';
 	import { act } from './admin.svelte';
 	import Pager from './Pager.svelte';
 
@@ -20,6 +21,8 @@
 		if (list) users = list;
 	}
 	onMount(load);
+	// Someone let in from Access requests joins the list.
+	$effect(() => on('ACCESS_REQUESTS', load));
 
 	const enc = encodeURIComponent;
 	const until = (ms: number) => new Date(ms).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
