@@ -92,6 +92,11 @@ public class ChatService {
         return removed;
     }
 
+    /** Deletes every chat line, players' included. Mutes stay. Browsers are told by the caller. */
+    public void clearAll() {
+        repo.clear();
+    }
+
     public void mute(String userId, int minutes) {
         repo.muteUntil(userId, System.currentTimeMillis() + Duration.ofMinutes(minutes).toMillis());
     }

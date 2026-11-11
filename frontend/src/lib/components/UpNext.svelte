@@ -25,8 +25,10 @@
 			clearTimeout(t);
 			t = setTimeout(refresh, 300);
 		});
+		const offReset = on('APP_RESET', refresh);
 		return () => {
 			off();
+			offReset();
 			clearTimeout(t);
 		};
 	});

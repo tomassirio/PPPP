@@ -50,6 +50,11 @@ public class ChatRepository {
         return removed != null && removed > 0;
     }
 
+    /** Deletes every line. Mutes stay. */
+    public void clear() {
+        redis.delete(STREAM);
+    }
+
     /** Deletes every non-USER line (SYSTEM, ADMIN); returns how many. */
     public int deleteNonUser() {
         // ponytail: one XRANGE over the whole stream; fine while it is capped at ~5000 entries.

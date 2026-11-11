@@ -57,4 +57,8 @@ public class CartridgeService {
     public Path batterySave(String id) {
         return roms.batterySave(id);
     }
+
+    public void deleteBatterySave(String id) {
+        roms.deleteBatterySave(id);
+    }
 }

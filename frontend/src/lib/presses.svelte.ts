@@ -30,10 +30,15 @@ export function needPicture(user: string) {
 export function watchPresses(): () => void {
 	if (watchers++ === 0) {
 		loadPictures(true);
-		off = on('INPUT_EXECUTED', (e: Press) => {
+		const offPress = on('INPUT_EXECUTED', (e: Press) => {
 			presses.recent = [...presses.recent, e].slice(-30);
 			needPicture(e.user);
 		});
+		const offReset = on('APP_RESET', () => (presses.recent = []));
+		off = () => {
+			offPress();
+			offReset();
+		};
 	}
 	return () => {
 		if (--watchers === 0) off?.();

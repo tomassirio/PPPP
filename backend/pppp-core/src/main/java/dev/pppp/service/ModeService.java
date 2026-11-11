@@ -72,6 +72,12 @@ public class ModeService {
         return counts;
     }
 
+    /** Drops every mode vote; the mode itself (a setting) stays. */
+    public void clearVotes() {
+        votes.clearModeVotes();
+        events.publishEvent(new LiveEvent("MODE_VOTES", counts()));
+    }
+
     /** Mode votes of currently active players. */
     public Map<String, Long> counts() {
         Set<String> active = activePlayers();
