@@ -30,6 +30,10 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
             PLAY_HOURS = 0xDA41, PLAY_MINUTES = 0xDA43; // wPlayTimeHours, (wPlayTimeMaxed), wPlayTimeMinutes
     private static final int ROM_MON_NAMES = 0x1C21E, ROM_DEX_ORDER = 0x41024, SPECIES_COUNT = 190,
             ROM_BASE_STATS = 0x383DE, BASE_STATS_SIZE = 28, ROM_MEW_BASE_STATS = 0x425B;
+    /** SpriteSheetPointerTable (pret/pokered): dw address, db size, db bank per overworld sprite; the player's is first. */
+    private static final int ROM_SPRITE_SHEETS = 0x17B27, PLAYER_FRAMES = 6;
+    /** The player on the colour handheld's red palette: transparent, skin, red, near-black. */
+    private static final int[] PLAYER_COLOURS = {0, 0xFFF8D0A8, 0xFFE04848, 0xFF181818};
 
     /** Bulbasaur, Ivysaur, Charmander, Squirtle (bits = Pokédex number - 1). */
     private static final BitSet STARTER_DEX = BitSet.valueOf(new byte[] {0b0100_1011});
@@ -48,6 +52,7 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
     private final int[] speciesByDex = new int[DEX_SIZE + 1];
     private final byte[] rom;
     private final Map<Integer, byte[]> icons = new ConcurrentHashMap<>();
+    private volatile byte[] player;
     /** ROM offsets of the colour hack's per-Pokémon palette ids and its palettes; -1 when the ROM has none. */
     private final int monsterPalettes, superPalettes;
 
@@ -186,6 +191,20 @@ final class PokemonRed implements GameProfile<PokemonRed.State> {
             int pointer = (rom[stats + 0x0B] & 0xFF) | (rom[stats + 0x0C] & 0xFF) << 8;
             return GenOnePic.png(rom, picBank(dex, stats) * 0x4000 + pointer - 0x4000, 1, palette(dex));
         });
+    }
+
+    /**
+     * The player's overworld sprite sheet from the ROM, 16x96: facing down, up, left, then the walking frame of each.
+     */
+    @Override
+    public byte[] playerSprite() {
+        if (player == null) {
+            int address = (rom[ROM_SPRITE_SHEETS] & 0xFF) | (rom[ROM_SPRITE_SHEETS + 1] & 0xFF) << 8;
+            int offset = (rom[ROM_SPRITE_SHEETS + 3] & 0xFF) * 0x4000 + address - 0x4000;
+            if (address < 0x4000 || offset + PLAYER_FRAMES * 64 > rom.length) return null;
+            player = GenOnePic.sheet(rom, offset, PLAYER_FRAMES, PLAYER_COLOURS);
+        }
+        return player;
     }
 
     /**

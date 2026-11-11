@@ -263,7 +263,8 @@
 				class:down={held === 'start'}
 				href="/oauth2/authorization/google"
 				data-sveltekit-reload
-				aria-label="Sign in with Google"
+				tabindex="-1"
+				aria-hidden="true"
 				onpointerdown={() => (held = 'start')}>START</a
 			>
 		</div>
@@ -313,7 +314,7 @@
 	@media (min-width: 900px) {
 		main {
 			flex-direction: row;
-			gap: 56px;
+			gap: 72px;
 		}
 	}
 	p {
@@ -729,9 +730,9 @@
 		top: 5cqw;
 		left: 50%;
 		translate: -50% 0;
-		font: 600 2.4cqw/1 var(--body-font);
+		font: 700 2.4cqw/1 var(--body-font);
 		letter-spacing: 0.06em;
-		color: var(--emboss);
+		color: color-mix(in oklab, var(--shell), black 50%);
 		text-shadow: 0 0.15cqw 0 var(--emboss-hi);
 	}
 	a.pill::after {
@@ -871,7 +872,7 @@
 
 	@media (max-width: 899px) {
 		.device {
-			--below: 100px;
+			--below: 150px;
 		}
 		main {
 			gap: 14px;

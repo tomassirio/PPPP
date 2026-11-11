@@ -12,6 +12,7 @@
 	--border-strong: #3a4851;
 	--name-dim: 0%; /* how much chat name colours are pulled toward --text (pastels need it on light) */
 	--glow: #1d1a28; /* sign-in backdrop behind the handheld */
+	--scenery-filter: brightness(0.62) saturate(0.85); /* sign-in overworld, dimmed for the dark theme */
 	--pad-edge: transparent; /* outline for the beige gamepad on light backgrounds */
 	--ink: #1d1f1c;
 	--grass: #9bbc0f;
@@ -38,6 +39,7 @@
 	--name-dim: 50%;
 	--pad-edge: #c2bba8;
 	--glow: #e6e0f2;
+	--scenery-filter: none;
 	color-scheme: light;
 }
 @media (prefers-color-scheme: light) {
@@ -55,6 +57,7 @@
 		--name-dim: 50%;
 		--pad-edge: #c2bba8;
 		--glow: #e6e0f2;
+		--scenery-filter: none;
 		color-scheme: light;
 	}
 }
