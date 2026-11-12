@@ -25,6 +25,7 @@
 	import LastPressed from '#lib/components/LastPressed.svelte';
 	import VoteTally from '#lib/components/VoteTally.svelte';
 	import ViewportDebug from '#lib/components/ViewportDebug.svelte';
+	import PokeballRain from '#lib/components/PokeballRain.svelte';
 	import { page } from '$app/state';
 	import banner from '#lib/assets/banner.webp';
 	import ppppLogo from '#lib/assets/pppp-logo.png';
@@ -291,6 +292,7 @@
 		</div>
 		{#if page.url.searchParams.has('debug')}<ViewportDebug />{/if}
 	</div>
+	<PokeballRain />
 {:else if loadFailed}
 	<section class="load-error" role="alert">
 		<p>Couldn't load your session. The server may be restarting.</p>
