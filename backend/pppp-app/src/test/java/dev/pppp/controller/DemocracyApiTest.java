@@ -1,13 +1,10 @@
 package dev.pppp.controller;
 
 import dev.pppp.SchedulerThread;
+import dev.pppp.HostStub;
 import dev.pppp.TestRedis;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -23,8 +20,6 @@ import dev.pppp.service.InputService;
 import dev.pppp.service.ModeService;
 import dev.pppp.model.Settings;
 import dev.pppp.service.SettingsService;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,7 +30,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.convention.TestBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
@@ -52,18 +47,23 @@ class DemocracyApiTest {
     @Autowired InputService inputs;
     @Autowired ModeService modes;
     @Autowired StringRedisTemplate redis;
-    @MockitoBean EmulatorHost host;
+    static final HostStub STUB = new HostStub();
+    @TestBean EmulatorHost host;
 
-    final List<Button> presses = Collections.synchronizedList(new ArrayList<>());
+    static EmulatorHost host() {
+        return STUB.mock();
+    }
+
+    final List<Button> presses = STUB.presses;
 
     @BeforeEach
     void setUp() throws Exception {
         settings.save(Settings.Input.DEFAULT);
         settings.save(Settings.RateLimit.DEFAULT);
-        when(host.status()).thenReturn(ON);
-        doAnswer(inv -> presses.add(inv.getArgument(0))).when(host).press(any(), anyInt(), anyInt());
+        STUB.status = ON;
         inputs.flush("test");
         await(() -> inputs.depth() == 0);
+        presses.clear();
         redis.delete(List.of("players:active", "mode:votes"));
     }
 

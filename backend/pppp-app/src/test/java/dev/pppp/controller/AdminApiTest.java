@@ -4,9 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -17,6 +17,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import dev.pppp.HostStub;
 import dev.pppp.TestRedis;
 import dev.pppp.service.ChatService;
 import dev.pppp.emulator.EmulatorHost;
@@ -44,6 +45,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.convention.TestBean;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
@@ -73,7 +75,13 @@ class AdminApiTest {
     @Autowired Scheduler scheduler;
     @Autowired ConsoleService consoleService;
     @Autowired LaunchCountdown launch;
-    @MockitoBean EmulatorHost host;
+    static final HostStub STUB = new HostStub();
+    @TestBean EmulatorHost host;
+
+    static EmulatorHost host() {
+        return STUB.mock();
+    }
+
     @MockitoBean ChatService chat;
 
     static final RequestPostProcessor ADMIN = user("a@x.y").roles("PLAYER", "ADMIN");
@@ -81,12 +89,14 @@ class AdminApiTest {
 
     @BeforeEach
     void off() {
-        reset(host, chat);
+        clearInvocations(host);
+        reset(chat);
+        STUB.saveState = null;
         console(EmulatorHost.Power.OFF, null);
     }
 
     void console(EmulatorHost.Power power, String cartridgeId) {
-        when(host.status()).thenReturn(new EmulatorHost.Status(power, cartridgeId, false, 1.0));
+        STUB.status = new EmulatorHost.Status(power, cartridgeId, false, 1.0);
     }
 
     /** 32 KB with a valid header checksum. */
@@ -164,7 +174,7 @@ class AdminApiTest {
         mvc.perform(post("/api/v1/admin/console/reset").with(PLAYER).with(csrf())).andExpect(status().isForbidden());
 
         // A restart re-inserts and powers on.
-        reset(host);
+        clearInvocations(host);
         console(EmulatorHost.Power.ON, "blue");
         consoleService.restore();
         verify(host).insert(eq("blue"), any(), any());
@@ -176,7 +186,7 @@ class AdminApiTest {
         mvc.perform(post("/api/v1/admin/save-states").with(ADMIN).with(csrf())).andExpect(status().isConflict());
 
         console(EmulatorHost.Power.ON, "yellow");
-        when(host.saveState()).thenReturn(new byte[] {1, 2, 3});
+        STUB.saveState = new byte[] {1, 2, 3};
         String id = com.jayway.jsonpath.JsonPath.read(
                 mvc.perform(post("/api/v1/admin/save-states").with(ADMIN).with(csrf()))
                         .andExpect(status().isCreated())
@@ -226,7 +236,7 @@ class AdminApiTest {
     @Test
     void factoryResetWipesTheRun() throws Exception {
         console(EmulatorHost.Power.ON, "green");
-        when(host.saveState()).thenReturn(new byte[] {7});
+        STUB.saveState = new byte[] {7};
         mvc.perform(post("/api/v1/admin/save-states").with(ADMIN).with(csrf())).andExpect(status().isCreated());
         Path battery = DATA.resolve("saves/green.sav");
         Files.createDirectories(battery.getParent());
@@ -252,7 +262,7 @@ class AdminApiTest {
     void autosavePrunesOnlyAutos() throws Exception {
         settings.save(new Settings.Autosave(false, "0 0/30 * * * ?", 2));
         console(EmulatorHost.Power.ON, "gold");
-        when(host.saveState()).thenReturn(new byte[] {9});
+        STUB.saveState = new byte[] {9};
 
         mvc.perform(post("/api/v1/admin/save-states").with(ADMIN).with(csrf())).andExpect(status().isCreated());
         for (int i = 0; i < 4; i++) {
