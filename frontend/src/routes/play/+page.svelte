@@ -154,11 +154,17 @@
 			uiZoom = matchMedia(DESKTOP).matches
 				? Math.min(1.6, Math.max(0.6, Math.min(innerWidth / REF_W, innerHeight / REF_H)))
 				: 1;
-			pageH = innerHeight / uiZoom;
+			// The visible height: mobile browsers' 100dvh can include the area under their bottom bars.
+			const vv = visualViewport;
+			pageH = (vv ? vv.height * vv.scale : innerHeight) / uiZoom;
 		};
 		fit();
 		addEventListener('resize', fit);
-		return () => removeEventListener('resize', fit);
+		visualViewport?.addEventListener('resize', fit);
+		return () => {
+			removeEventListener('resize', fit);
+			visualViewport?.removeEventListener('resize', fit);
+		};
 	});
 
 	// The screen frame sizes itself to the height left over; on desktop the controller matches its width.
@@ -213,7 +219,7 @@
 <svelte:window onpointerdowncapture={closeSheetOnOutsideTap} onclickcapture={swallowClosingClick} />
 
 {#if me}
-	<div class="page play-root" class:big={bigScreen} style:zoom={uiZoom === 1 ? null : uiZoom} style:--page-h={uiZoom === 1 ? null : `${pageH}px`} style:--plate={currentShell.value.shell} style:--plate-ink={inkFor(currentShell.value.shell)}>
+	<div class="page play-root" class:big={bigScreen} style:zoom={uiZoom === 1 ? null : uiZoom} style:--page-h={pageH ? `${pageH}px` : null} style:--plate={currentShell.value.shell} style:--plate-ink={inkFor(currentShell.value.shell)}>
 		<header>
 			<div class="brand">
 				<img class="logo" src={banner} alt="Pibs&amp;PibettesPlayPokemon" width="924" height="111" />
@@ -569,9 +575,9 @@
 			padding: 5px 9px;
 		}
 		/* App-like: the page is one screen tall. Screen on top, the active tab fills the middle and scrolls
-		   inside itself, the tab bar sits at the bottom. */
+		   inside itself, the tab bar sits at the bottom. Height from JS (see pageH), not 100dvh. */
 		.page {
-			height: 100dvh;
+			height: var(--page-h, 100dvh);
 			display: flex;
 			flex-direction: column;
 			overflow: hidden;
@@ -726,7 +732,7 @@
 			--gutter: min(260px, 34vw); /* the screen fills everything; controls use the outer band */
 		}
 		.page {
-			height: 100dvh;
+			height: var(--page-h, 100dvh);
 			display: flex;
 			flex-direction: column;
 			overflow: hidden;
