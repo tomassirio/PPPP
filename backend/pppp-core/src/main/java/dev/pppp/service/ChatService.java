@@ -19,8 +19,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class ChatService {
     static final int MAX_LENGTH = 300;
-    /** The reactions players can pick; the frontend draws each as a Pokémon sprite, in this order. */
-    public static final List<String> REACTIONS = List.of("like", "love", "haha", "wow", "sad", "fire");
+    /** The reactions players can pick; the frontend draws each as a Pikachu face, in this order. */
+    public static final List<String> REACTIONS = List.of("like", "love", "haha", "wow", "sad", "angry");
     private static final Logger log = LoggerFactory.getLogger(ChatService.class);
 
     private final ChatRepository repo;

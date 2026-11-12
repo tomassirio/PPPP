@@ -28,8 +28,6 @@
 	let muteMinutes = $state(60);
 	/** Message whose reaction choices are open, or null. */
 	let picking = $state<string | null>(null);
-	/** No ROM sprites (no game inserted yet): draw reactions as emoji. */
-	let noSprites = $state(false);
 	let list: HTMLUListElement;
 
 	const admin = $derived(isAdmin(session.me));
@@ -263,8 +261,7 @@
 									title={r.label}
 									onclick={() => react(m, r.id)}
 								>
-									{#if noSprites}<span class="emoji" aria-hidden="true">{r.emoji}</span
-										>{:else}<img src="/api/v1/game/icons/{r.dex}.png" alt="" onerror={() => (noSprites = true)} />{/if}
+									<img src={r.src} alt="" />
 									{#if n}<span class="n">{n}</span>{/if}
 								</button>
 							{/if}
@@ -479,14 +476,9 @@
 		background: color-mix(in oklab, var(--accent-text) 15%, var(--bg));
 	}
 	.reaction img {
-		width: 28px;
-		height: 28px;
-		image-rendering: pixelated;
-	}
-	.reaction .emoji {
 		width: 24px;
-		text-align: center;
-		font-size: 15px;
+		height: 24px;
+		object-fit: contain;
 	}
 	.mod button:hover {
 		color: var(--danger);

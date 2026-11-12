@@ -262,7 +262,7 @@ class ChatApiTest {
         chat.postSystem("Caught a PIKACHU");
         String system = chat.history(null, 1, true).getFirst().id();
         chat.mute("loud@y.z", 5);
-        react("loud@y.z", system, "fire").andExpect(status().isForbidden());
-        react("p@y.z", system, "fire").andExpect(status().isOk());
+        react("loud@y.z", system, "angry").andExpect(status().isForbidden());
+        react("p@y.z", system, "angry").andExpect(status().isOk());
     }
 }

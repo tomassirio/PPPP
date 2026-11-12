@@ -28,9 +28,9 @@ describe('chat messages', () => {
 	});
 
 	it('sets one message\'s reactions and finds the viewer\'s own', () => {
-		const list = setReactions([msg('1-0'), msg('2-0')], '2-0', { like: ['a', 'b'], fire: ['c'] });
+		const list = setReactions([msg('1-0'), msg('2-0')], '2-0', { like: ['a', 'b'], angry: ['c'] });
 		expect(list[0].reactions).toBeUndefined();
-		expect(myReaction(list[1], 'c')).toBe('fire');
+		expect(myReaction(list[1], 'c')).toBe('angry');
 		expect(myReaction(list[1], 'z')).toBeUndefined();
 		expect(myReaction(list[0], 'a')).toBeUndefined();
 	});

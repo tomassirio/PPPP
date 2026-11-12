@@ -1,8 +1,10 @@
 import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { loadEnv } from 'vite';
 import { defineConfig } from 'vitest/config';
 
-const backend = process.env.PPPP_BACKEND ?? 'http://localhost:8080';
+// PPPP_BACKEND from the shell or a .env file.
+const backend = loadEnv('', '.', 'PPPP_').PPPP_BACKEND ?? 'http://localhost:8080';
 
 
 export default defineConfig({

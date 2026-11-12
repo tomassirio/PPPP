@@ -1,4 +1,10 @@
 // Pure chat list logic: Redis stream ids ("<ms>-<seq>") order messages; ids dedupe them.
+import like from '../assets/reactions/like.png';
+import love from '../assets/reactions/love.png';
+import haha from '../assets/reactions/haha.png';
+import wow from '../assets/reactions/wow.png';
+import sad from '../assets/reactions/sad.png';
+import angry from '../assets/reactions/angry.png';
 
 export type ChatMessage = {
 	id: string;
@@ -11,14 +17,14 @@ export type ChatMessage = {
 	reactions?: Record<string, string[]>; // reaction id -> user ids
 };
 
-/** Reactions in display order: the backend's ChatService.REACTIONS, drawn as the Pokémon's ROM sprite (emoji if none). */
+/** Reactions in display order: the backend's ChatService.REACTIONS, each a Pikachu face. */
 export const REACTIONS = [
-	{ id: 'like', label: 'Like', dex: 25, emoji: '👍' }, // Pikachu
-	{ id: 'love', label: 'Love', dex: 35, emoji: '❤️' }, // Clefairy
-	{ id: 'haha', label: 'Haha', dex: 94, emoji: '😂' }, // Gengar
-	{ id: 'wow', label: 'Wow', dex: 54, emoji: '😮' }, // Psyduck
-	{ id: 'sad', label: 'Sad', dex: 104, emoji: '😢' }, // Cubone
-	{ id: 'fire', label: 'Fire', dex: 4, emoji: '🔥' } // Charmander
+	{ id: 'like', label: 'Like', src: like },
+	{ id: 'love', label: 'Love', src: love },
+	{ id: 'haha', label: 'Haha', src: haha },
+	{ id: 'wow', label: 'Wow', src: wow },
+	{ id: 'sad', label: 'Sad', src: sad },
+	{ id: 'angry', label: 'Angry', src: angry }
 ] as const;
 
 /** The user's reaction to a message, or undefined. */
