@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compareIds, merge, myReaction, remove, setReactions, systemParts, type ChatMessage } from './messages';
+import { compareIds, nameColor, merge, myReaction, remove, setReactions, systemParts, type ChatMessage } from './messages';
 
 const msg = (id: string): ChatMessage => ({
 	id,
@@ -33,6 +33,12 @@ describe('chat messages', () => {
 		expect(myReaction(list[1], 'c')).toBe('fire');
 		expect(myReaction(list[1], 'z')).toBeUndefined();
 		expect(myReaction(list[0], 'a')).toBeUndefined();
+	});
+
+	it('gives each user a stable colour, mostly distinct', () => {
+		expect(nameColor('carlo@y.z')).toBe(nameColor('carlo@y.z'));
+		const users = ['camilo@y.z', 'eze@y.z', 'carlo@y.z', 'dan@y.z', 'tomas@y.z', 'ana@y.z'];
+		expect(new Set(users.map(nameColor)).size).toBe(users.length);
 	});
 
 	it('removes by id', () => {

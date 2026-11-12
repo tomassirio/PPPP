@@ -45,13 +45,11 @@ export function merge(list: ChatMessage[], incoming: ChatMessage[]): ChatMessage
 
 export const remove = (list: ChatMessage[], id: string) => list.filter((m) => m.id !== id);
 
-const NAME_COLORS = ['#f2c14e', '#7fd1c7', '#f4a259', '#c9a7eb', '#a7d676', '#8ab4f8'];
-
-/** Stable per-user name color from the design palette. */
+/** Stable per-user name color: a hue from the user id's FNV-1a hash, same lightness and chroma for every user. */
 export function nameColor(user: string): string {
-	let h = 0;
-	for (const c of user) h = (h * 31 + c.charCodeAt(0)) | 0;
-	return NAME_COLORS[Math.abs(h) % NAME_COLORS.length];
+	let h = 0x811c9dc5;
+	for (const c of user) h = Math.imul(h ^ c.charCodeAt(0), 0x01000193);
+	return `oklch(0.8 0.13 ${(h >>> 0) % 360})`;
 }
 
 /**
