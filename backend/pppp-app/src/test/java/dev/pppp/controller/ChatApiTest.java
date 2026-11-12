@@ -23,6 +23,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -32,6 +33,7 @@ import dev.pppp.realtime.EventPublisher;
 import dev.pppp.service.InputService;
 import dev.pppp.model.Settings;
 import dev.pppp.service.SettingsService;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -217,5 +219,50 @@ class ChatApiTest {
         send("i@y.z", "hello there").andExpect(jsonPath("$.command").value(false));
         verify(inputs, never()).submit(eq("i@y.z"), anyString(), anyInt());
         assertThat(chat.history(null, 50, true)).anySatisfy(m -> assertThat(m.command()).isTrue());
+    }
+
+    ResultActions react(String userId, String id, String reaction) throws Exception {
+        return mvc.perform(put("/api/v1/chat/messages/" + id + "/reaction").with(user(userId).roles("PLAYER")).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of("reaction", reaction))));
+    }
+
+    @Test
+    void reactionsOnePerUserLiveAndInHistory() throws Exception {
+        String id = json.readTree(send("p@y.z", "gg").andReturn().getResponse().getContentAsString()).get("id").asText();
+        react("a@y.z", id, "like").andExpect(status().isOk()).andExpect(jsonPath("$.like[0]").value("a@y.z"));
+        react("b@y.z", id, "like").andExpect(jsonPath("$.like.length()").value(2));
+        Thread.sleep(300);
+        react("a@y.z", id, "haha").andExpect(status().isOk()) // replaces a's like
+                .andExpect(jsonPath("$.like.length()").value(1)).andExpect(jsonPath("$.like[0]").value("b@y.z"))
+                .andExpect(jsonPath("$.haha.length()").value(1)).andExpect(jsonPath("$.haha[0]").value("a@y.z"));
+        react("a@y.z", id, "haha").andExpect(status().isTooManyRequests());
+        verify(events).publish("CHAT_REACTION", Map.of("id", id, "reactions",
+                Map.of("haha", List.of("a@y.z"), "like", List.of("b@y.z"))));
+
+        mvc.perform(get("/api/v1/chat/messages").with(user("x@y.z").roles("PLAYER")))
+                .andExpect(jsonPath("$[0].reactions.haha[0]").value("a@y.z"));
+
+        mvc.perform(delete("/api/v1/chat/messages/" + id + "/reaction").with(user("b@y.z").roles("PLAYER")).with(csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.like").doesNotExist());
+
+        react("c@y.z", id, "😀").andExpect(status().isBadRequest());
+        react("c@y.z", "nope", "like").andExpect(status().isBadRequest());
+        react("c@y.z", "1-0", "like").andExpect(status().isNotFound());
+
+        chat.delete(id);
+        assertThat(redis.hasKey("chat:reactions:" + id)).isFalse();
+    }
+
+    @Test
+    void noReactionsOnAdminLinesOrWhenMuted() throws Exception {
+        chat.postAdmin("Console reset");
+        String id = chat.history(null, 1, true).getFirst().id();
+        react("a@y.z", id, "like").andExpect(status().isNotFound());
+
+        chat.postSystem("Caught a PIKACHU");
+        String system = chat.history(null, 1, true).getFirst().id();
+        chat.mute("loud@y.z", 5);
+        react("loud@y.z", system, "fire").andExpect(status().isForbidden());
+        react("p@y.z", system, "fire").andExpect(status().isOk());
     }
 }

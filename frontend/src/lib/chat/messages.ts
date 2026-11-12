@@ -8,7 +8,26 @@ export type ChatMessage = {
 	kind: string; // 'USER' | 'SYSTEM' (everyone) | 'ADMIN' (admins only)
 	command: boolean;
 	at: number;
+	reactions?: Record<string, string[]>; // reaction id -> user ids
 };
+
+/** Reactions in display order: the backend's ChatService.REACTIONS, drawn as the Pokémon's ROM sprite (emoji if none). */
+export const REACTIONS = [
+	{ id: 'like', label: 'Like', dex: 25, emoji: '👍' }, // Pikachu
+	{ id: 'love', label: 'Love', dex: 35, emoji: '❤️' }, // Clefairy
+	{ id: 'haha', label: 'Haha', dex: 94, emoji: '😂' }, // Gengar
+	{ id: 'wow', label: 'Wow', dex: 54, emoji: '😮' }, // Psyduck
+	{ id: 'sad', label: 'Sad', dex: 104, emoji: '😢' }, // Cubone
+	{ id: 'fire', label: 'Fire', dex: 4, emoji: '🔥' } // Charmander
+] as const;
+
+/** The user's reaction to a message, or undefined. */
+export const myReaction = (m: ChatMessage, user: string | undefined) =>
+	user ? Object.keys(m.reactions ?? {}).find((r) => m.reactions![r].includes(user)) : undefined;
+
+/** Replaces one message's reactions (CHAT_REACTION or a PUT/DELETE response). */
+export const setReactions = (list: ChatMessage[], id: string, reactions: Record<string, string[]>) =>
+	list.map((m) => (m.id === id ? { ...m, reactions } : m));
 
 /** Orders stream ids numerically ("10-0" after "9-5"). */
 export function compareIds(a: string, b: string): number {

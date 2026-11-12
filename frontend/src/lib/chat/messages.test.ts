@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compareIds, merge, remove, systemParts, type ChatMessage } from './messages';
+import { compareIds, merge, myReaction, remove, setReactions, systemParts, type ChatMessage } from './messages';
 
 const msg = (id: string): ChatMessage => ({
 	id,
@@ -25,6 +25,14 @@ describe('chat messages', () => {
 		list = merge(list, [msg('4-0')]); // same message via SSE
 		list = merge(list, [msg('0-1'), msg('0-0')]); // older page
 		expect(ids(list)).toEqual(['0-0', '0-1', '1-0', '2-0', '3-0', '4-0']);
+	});
+
+	it('sets one message\'s reactions and finds the viewer\'s own', () => {
+		const list = setReactions([msg('1-0'), msg('2-0')], '2-0', { like: ['a', 'b'], fire: ['c'] });
+		expect(list[0].reactions).toBeUndefined();
+		expect(myReaction(list[1], 'c')).toBe('fire');
+		expect(myReaction(list[1], 'z')).toBeUndefined();
+		expect(myReaction(list[0], 'a')).toBeUndefined();
 	});
 
 	it('removes by id', () => {

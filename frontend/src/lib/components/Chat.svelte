@@ -4,7 +4,16 @@
 	import { api, ApiError } from '../api';
 	import { on } from '../events';
 	import { session, isAdmin } from '../session.svelte';
-	import { merge, remove, nameColor, systemParts, type ChatMessage } from '../chat/messages';
+	import {
+		merge,
+		remove,
+		nameColor,
+		systemParts,
+		REACTIONS,
+		myReaction,
+		setReactions,
+		type ChatMessage
+	} from '../chat/messages';
 
 	const PAGE = 50;
 	const MAX = 300;
@@ -17,6 +26,10 @@
 	let error = $state('');
 	let note = $state('');
 	let muteMinutes = $state(60);
+	/** Message whose reaction choices are open, or null. */
+	let picking = $state<string | null>(null);
+	/** No ROM sprites (no game inserted yet): draw reactions as emoji. */
+	let noSprites = $state(false);
 	let list: HTMLUListElement;
 
 	const admin = $derived(isAdmin(session.me));
@@ -97,6 +110,11 @@
 		const offs = [
 			on('CHAT_MESSAGE', (m: ChatMessage) => add([m])),
 			on('CHAT_DELETED', ({ id }: { id: string }) => (messages = remove(messages, id))),
+			on('CHAT_REACTION', async ({ id, reactions }: { id: string; reactions: Record<string, string[]> }) => {
+				messages = setReactions(messages, id, reactions);
+				await tick();
+				pin();
+			}),
 			on('CHAT_CLEARED', () => (messages = messages.filter((m) => !isSystem(m)))),
 			on('APP_RESET', () => (messages = []))
 		];
@@ -136,6 +154,23 @@
 			messages = remove(messages, m.id);
 		} catch (e) {
 			error = e instanceof ApiError ? e.detail : 'Could not delete.';
+		}
+	}
+
+	/** Picks a reaction, or takes yours back when you pick the one you already have. */
+	async function react(m: ChatMessage, reaction: string) {
+		picking = null;
+		const undo = myReaction(m, session.me?.id) === reaction;
+		const path = `/chat/messages/${encodeURIComponent(m.id)}/reaction`;
+		try {
+			const reactions = await api<Record<string, string[]>>(undo ? 'DELETE' : 'PUT', path, undo ? undefined : { reaction });
+			messages = setReactions(messages, m.id, reactions);
+			await tick();
+			pin();
+		} catch (e) {
+			if (!(e instanceof ApiError)) error = 'Could not react. Check your connection.';
+			else if (e.status === 429) error = 'Slow down a little.';
+			else error = e.detail;
 		}
 	}
 
@@ -196,6 +231,16 @@
 				<span class="text"
 					>{#if system}{#each systemParts(m.text) as part, i (i)}{#if part.mode}<span class="mode {part.mode}">{part.text}</span>{:else if part.town === 'rainbow'}<span class="town rainbow">{part.text}</span>{:else if part.town}<span class="town" style:--town={part.town}>{part.text}</span>{:else}{part.text}{/if}{/each}{:else}{m.text}{/if}</span
 				>
+				{#if m.kind !== 'ADMIN'}
+					<button
+						type="button"
+						class="react"
+						class:open={picking === m.id}
+						aria-expanded={picking === m.id}
+						aria-label="React to {system ? 'system message' : `message from ${m.name}`}"
+						onclick={() => (picking = picking === m.id ? null : m.id)}>React</button
+					>
+				{/if}
 				{#if admin && !system}
 					<span class="mod">
 						<button type="button" onclick={() => del(m)} aria-label="Delete message from {m.name}">Delete</button>
@@ -203,6 +248,28 @@
 							<button type="button" onclick={() => mute(m)} aria-label="Mute {m.name}">Mute</button>
 						{/if}
 					</span>
+				{/if}
+				{#if m.kind !== 'ADMIN' && (picking === m.id || Object.keys(m.reactions ?? {}).length)}
+					{@const mine = myReaction(m, session.me?.id)}
+					<div class="reactions">
+						{#each REACTIONS as r (r.id)}
+							{@const n = m.reactions?.[r.id]?.length ?? 0}
+							{#if n || picking === m.id}
+								<button
+									type="button"
+									class="reaction"
+									aria-pressed={mine === r.id}
+									aria-label="{r.label}{n ? `, ${n}` : ''}"
+									title={r.label}
+									onclick={() => react(m, r.id)}
+								>
+									{#if noSprites}<span class="emoji" aria-hidden="true">{r.emoji}</span
+										>{:else}<img src="/api/v1/game/icons/{r.dex}.png" alt="" onerror={() => (noSprites = true)} />{/if}
+									{#if n}<span class="n">{n}</span>{/if}
+								</button>
+							{/if}
+						{/each}
+					</div>
 				{/if}
 			</li>
 		{/each}
@@ -365,6 +432,61 @@
 		font-size: 12px;
 		padding: 2px 4px;
 		text-decoration: underline;
+	}
+	/* React: shown on hover or focus (always on touch screens) without shifting the line. */
+	.react {
+		background: none;
+		border: none;
+		color: var(--muted);
+		font-size: 12px;
+		font-style: normal;
+		padding: 2px 4px;
+		text-decoration: underline;
+		opacity: 0;
+	}
+	li:hover .react,
+	li:focus-within .react,
+	.react.open {
+		opacity: 1;
+	}
+	@media (hover: none) {
+		.react {
+			opacity: 1;
+		}
+	}
+	.reactions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px;
+		margin-top: 4px;
+		font-style: normal;
+	}
+	.reaction {
+		display: inline-flex;
+		align-items: center;
+		gap: 2px;
+		height: 30px;
+		padding: 0 6px 0 2px;
+		border-radius: 15px;
+		border: 1px solid var(--border);
+		background: var(--bg);
+		color: var(--text);
+		font-size: 12px;
+		font-variant-numeric: tabular-nums;
+	}
+	.reaction[aria-pressed='true'] {
+		border-color: var(--accent-text);
+		background: color-mix(in oklab, var(--accent-text) 15%, var(--bg));
+	}
+	.reaction img {
+		width: 28px;
+		height: 28px;
+		image-rendering: pixelated;
+	}
+	.reaction .emoji {
+		width: 24px;
+		text-align: center;
+		font-size: 15px;
 	}
 	.mod button:hover {
 		color: var(--danger);

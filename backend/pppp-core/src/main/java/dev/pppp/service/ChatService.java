@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class ChatService {
     static final int MAX_LENGTH = 300;
+    /** The reactions players can pick; the frontend draws each as a Pokémon sprite, in this order. */
+    public static final List<String> REACTIONS = List.of("like", "love", "haha", "wow", "sad", "fire");
     private static final Logger log = LoggerFactory.getLogger(ChatService.class);
 
     private final ChatRepository repo;
@@ -79,6 +81,30 @@ public class ChatService {
         return out;
     }
 
+    /** Sets the user's one reaction to a USER or SYSTEM line (replacing any other), tells browsers via CHAT_REACTION. */
+    public Map<String, List<String>> react(String userId, String id, String reaction) {
+        if (!REACTIONS.contains(reaction)) throw new IllegalArgumentException("Unknown reaction");
+        return changeReaction(userId, id, reaction);
+    }
+
+    /** Removes the user's reaction to a line, if any. */
+    public Map<String, List<String>> unreact(String userId, String id) {
+        return changeReaction(userId, id, null);
+    }
+
+    private Map<String, List<String>> changeReaction(String userId, String id, String reaction) {
+        if (id == null || !id.matches("\\d+-\\d+")) throw new IllegalArgumentException("Invalid message id");
+        String kind = repo.kindOf(id);
+        if (kind == null || "ADMIN".equals(kind)) throw new NotFoundException("No such message");
+        if (isMuted(userId)) throw new ForbiddenException("You are muted");
+        if (!repo.tryAcquireReactionSlot(userId, Duration.ofMillis(250))) throw new RateLimitedException("Too many reactions");
+        if (reaction == null) repo.unreact(id, userId);
+        else repo.react(id, userId, reaction);
+        Map<String, List<String>> reactions = repo.reactions(id);
+        events.publishEvent(new LiveEvent("CHAT_REACTION", Map.of("id", id, "reactions", reactions)));
+        return reactions;
+    }
+
     public void delete(String id) {
         if (!repo.delete(id)) throw new NotFoundException("No such message");
         events.publishEvent(new LiveEvent("CHAT_DELETED", Map.of("id", id)));
@@ -92,7 +118,7 @@ public class ChatService {
         return removed;
     }
 
-    /** Deletes every chat line, players' included. Mutes stay. Browsers are told by the caller. */
+    /** Deletes every chat line and reaction, players' included. Mutes stay. Browsers are told by the caller. */
     public void clearAll() {
         repo.clear();
     }
