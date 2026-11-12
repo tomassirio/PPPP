@@ -2,7 +2,7 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<meta name="text-scale" content="scale" />
 		<!-- Add to home screen: opens full screen, without the browser bars. -->
 		<link rel="manifest" href="/manifest.webmanifest" />
@@ -13,10 +13,6 @@
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 		<meta name="apple-mobile-web-app-title" content="PPPP" />
 		<script>
-			// Edge to edge only when installed. In a browser tab, cover lets the page run under Safari's and
-			// Chrome's bottom bars (100dvh included), which hid the /play tab bar.
-			if (matchMedia('(display-mode: standalone)').matches || navigator.standalone)
-				document.querySelector('meta[name=viewport]').content += ', viewport-fit=cover';
 			try {
 				var t = localStorage.getItem('pppp.theme');
 				if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
