@@ -192,7 +192,10 @@
 <section
 	class="panel chat"
 	aria-label="Chat"
-	onkeydown={(e) => e.stopPropagation()}
+	onkeydown={(e) => {
+		e.stopPropagation();
+		if (e.key === 'Escape') picking = null;
+	}}
 	onkeyup={(e) => e.stopPropagation()}
 >
 	<header>
@@ -222,13 +225,6 @@
 			{@const system = isSystem(m)}
 			<li class:system class:mine={m.user === session.me?.id}>
 				<time class="ts" datetime={new Date(m.at).toISOString()}>{time(m.at)}</time>
-				<!-- System lines need no sender; admin-only ones keep a tag so admins know players don't see them. -->
-				{#if system}<span class="sr-only">System: </span>{:else}<span class="who" style:--name={nameColor(m.user)}>{m.name}</span>{/if}
-				{#if m.kind === 'ADMIN'}<span class="tag admin-only">admin only</span>{/if}
-				{#if m.command}<span class="tag">command</span>{/if}
-				<span class="text"
-					>{#if system}{#each systemParts(m.text) as part, i (i)}{#if part.mode}<span class="mode {part.mode}">{part.text}</span>{:else if part.town === 'rainbow'}<span class="town rainbow">{part.text}</span>{:else if part.town}<span class="town" style:--town={part.town}>{part.text}</span>{:else}{part.text}{/if}{/each}{:else}{m.text}{/if}</span
-				>
 				{#if m.kind !== 'ADMIN'}
 					<button
 						type="button"
@@ -236,9 +232,17 @@
 						class:open={picking === m.id}
 						aria-expanded={picking === m.id}
 						aria-label="React to {system ? 'system message' : `message from ${m.name}`}"
-						onclick={() => (picking = picking === m.id ? null : m.id)}>React</button
+						title="React"
+						onclick={() => (picking = picking === m.id ? null : m.id)}><img src={REACTIONS[0].src} alt="" /></button
 					>
 				{/if}
+				<!-- System lines need no sender; admin-only ones keep a tag so admins know players don't see them. -->
+				{#if system}<span class="sr-only">System: </span>{:else}<span class="who" style:--name={nameColor(m.user)}>{m.name}</span>{/if}
+				{#if m.kind === 'ADMIN'}<span class="tag admin-only">admin only</span>{/if}
+				{#if m.command}<span class="tag">command</span>{/if}
+				<span class="text"
+					>{#if system}{#each systemParts(m.text) as part, i (i)}{#if part.mode}<span class="mode {part.mode}">{part.text}</span>{:else if part.town === 'rainbow'}<span class="town rainbow">{part.text}</span>{:else if part.town}<span class="town" style:--town={part.town}>{part.text}</span>{:else}{part.text}{/if}{/each}{:else}{m.text}{/if}</span
+				>
 				{#if admin && !system}
 					<span class="mod">
 						<button type="button" onclick={() => del(m)} aria-label="Delete message from {m.name}">Delete</button>
@@ -430,26 +434,30 @@
 		padding: 2px 4px;
 		text-decoration: underline;
 	}
-	/* React: shown on hover or focus (always on touch screens) without shifting the line. */
+	/* React: a greyed Pikachu left of the time on every line; full colour on hover, focus or while open. */
 	.react {
+		float: right;
+		display: grid;
+		place-items: center;
+		width: 24px;
+		height: 20px;
+		margin-left: 4px;
+		padding: 0;
 		background: none;
 		border: none;
-		color: var(--muted);
-		font-size: 12px;
-		font-style: normal;
-		padding: 2px 4px;
-		text-decoration: underline;
-		opacity: 0;
+		border-radius: 6px;
 	}
-	li:hover .react,
-	li:focus-within .react,
-	.react.open {
+	.react img {
+		width: 18px;
+		height: 18px;
+		filter: grayscale(1);
+		opacity: 0.45;
+	}
+	.react:hover img,
+	.react:focus-visible img,
+	.react.open img {
+		filter: none;
 		opacity: 1;
-	}
-	@media (hover: none) {
-		.react {
-			opacity: 1;
-		}
 	}
 	.reactions {
 		display: flex;
@@ -462,8 +470,8 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 2px;
-		height: 30px;
-		padding: 0 6px 0 2px;
+		height: 28px;
+		padding: 0 8px 0 4px;
 		border-radius: 15px;
 		border: 1px solid var(--border);
 		background: var(--bg);
@@ -476,9 +484,12 @@
 		background: color-mix(in oklab, var(--accent-text) 15%, var(--bg));
 	}
 	.reaction img {
-		width: 24px;
-		height: 24px;
-		object-fit: contain;
+		width: 22px;
+		height: 22px;
+	}
+	.reaction .n {
+		min-width: 1ch;
+		line-height: 1;
 	}
 	.mod button:hover {
 		color: var(--danger);
