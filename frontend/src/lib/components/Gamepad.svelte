@@ -7,6 +7,7 @@
 	import ShellPicker from './ShellPicker.svelte';
 	import Who from './Who.svelte';
 	import { presses, watchPresses } from '#lib/presses.svelte.ts';
+	import { konamiPress } from '#lib/konami.svelte.ts';
 
 	let { mode }: { mode: 'ANARCHY' | 'DEMOCRACY' } = $props();
 
@@ -41,6 +42,7 @@
 
 	/** walk: a held direction, pressed by the server long enough to chain steps (see InputScheduler). */
 	async function send(command: string, walk = false) {
+		if (!walk) konamiPress(command);
 		if (Date.now() < blockedUntil) return;
 		lastPress = command.toUpperCase();
 		inFlight = true;

@@ -44,3 +44,5 @@ export const bootChime = () => chime([[1046.5, 0.09], [2093, 0.35]]);
 /** Konami: a rising arpeggio. */
 export const fanfare = () =>
 	chime([[523.3, 0.1], [659.3, 0.1], [784, 0.1], [1046.5, 0.1], [784, 0.1], [1046.5, 0.4]]);
+/** Konami on /play: the ball shakes three times, then the catch. */
+export const gotcha = () => chime([[330, 0.12], [262, 0.12], [330, 0.12], [262, 0.12], [330, 0.12], [1318.5, 0.08], [1568, 0.5]]);
