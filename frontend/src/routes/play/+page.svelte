@@ -581,6 +581,7 @@
 			left: 0;
 			right: 0;
 			height: 100svh;
+			min-height: 0; /* the base 100vh is the bars-hidden height on phones: it overrode every height above */
 			display: flex;
 			flex-direction: column;
 			overflow: hidden;
@@ -736,6 +737,7 @@
 		}
 		.page {
 			height: 100dvh;
+			min-height: 0;
 			display: flex;
 			flex-direction: column;
 			overflow: hidden;
