@@ -24,6 +24,8 @@
 	import UpNext from '#lib/components/UpNext.svelte';
 	import LastPressed from '#lib/components/LastPressed.svelte';
 	import VoteTally from '#lib/components/VoteTally.svelte';
+	import ViewportDebug from '#lib/components/ViewportDebug.svelte';
+	import { page } from '$app/state';
 	import banner from '#lib/assets/banner.webp';
 	import ppppLogo from '#lib/assets/pppp-logo.png';
 
@@ -287,6 +289,7 @@
 		</main>
 			<aside class="dex" class:off-dex={!dexBanners.on} aria-label="Pokédex, second half"><PokedexBanner from={77} to={151} /></aside>
 		</div>
+		{#if page.url.searchParams.has('debug')}<ViewportDebug />{/if}
 	</div>
 {:else if loadFailed}
 	<section class="load-error" role="alert">
