@@ -31,6 +31,12 @@ spring:
 
 server:
   forward-headers-strategy: framework
+  servlet:
+    session:
+      # Stay signed in across tab/browser restarts: 30-day idle timeout and a persistent (not session-only) cookie.
+      timeout: 30d
+      cookie:
+        max-age: 30d
   shutdown: graceful
 
 management:
