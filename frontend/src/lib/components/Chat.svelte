@@ -308,9 +308,9 @@
 	}
 	header {
 		display: flex;
-		justify-content: space-between;
-		align-items: baseline;
-		gap: 8px;
+		align-items: center;
+		gap: 12px;
+		min-height: 28px;
 	}
 	h2 {
 		margin: 0;
@@ -329,6 +329,7 @@
 		color: var(--muted);
 	}
 	.toggle input {
+		margin: 0;
 		accent-color: var(--accent-text);
 	}
 	.mode {
@@ -364,8 +365,14 @@
 		color: var(--democracy);
 	}
 	.mute-pick {
+		display: flex;
+		align-items: center;
+		gap: 6px;
 		font-size: 12px;
 		color: var(--muted);
+	}
+	.mute-pick select {
+		padding: 3px 6px;
 	}
 	select,
 	textarea {
